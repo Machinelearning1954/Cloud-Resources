@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a machine learning **portfolio/coursework repository** (Machine Learning Engineering & AI Bootcamp capstone work plus job-application portfolio projects), not a single runnable application. Files were added via GitHub web uploads, so the repo is a collection of flattened deliverables, docs, and archives rather than a conventional project layout. There is no repo-level `requirements.txt`, no test suite checked in, and no active CI (the `ci-cd-pipeline.yml` file is documentation — it lives inside a project folder, not under `.github/workflows/`).
 
-It contains two independent projects:
+It contains three independent projects:
 
 ### 1. Iris Flower Classification (repository root)
 
@@ -61,6 +61,21 @@ flake8 . --max-line-length=100 --ignore=E203,W503
 mypy . --ignore-missing-imports
 bandit -r . -ll                          # security scan
 pytest tests/ -v --cov                   # tests (no tests are currently checked in)
+```
+
+### 3. GTA 6 Hype Survey Analysis (`gta6-hype-survey/`)
+
+A small, self-contained tabular ML project on the Kaggle "GTA 6 Fan Expectations & Hype Survey 2026" dataset (synthetic survey data). Follows the same module pattern as the federal portfolio.
+
+- `gta6_hype_analysis.py` — `HypeSurveyModel`: preorder-intent classification (RandomForest in a leak-free `ColumnTransformer` pipeline, benchmarked against a 5-fold CV LogisticRegression AUC) plus fan-persona `KMeans` segmentation. CLI: `--train`, `--data <csv>`, `--output <dir>`, `--personas <k>`.
+- **Runs without the dataset**: if `--data` is omitted (or the file is absent), it generates a clearly-labeled *synthetic stand-in* matching the Kaggle schema so the pipeline executes end to end. This is a demo scaffold, not a substitute for the real CSV in a submission. The Kaggle dataset is itself synthetic.
+- `artifacts/` is gitignored (trained `.joblib` models are written there at runtime); `.gitkeep` preserves the directory.
+
+```bash
+cd gta6-hype-survey
+pip install -r requirements.txt
+python gta6_hype_analysis.py --train --data gta6_hype_survey.csv --output artifacts/
+python gta6_hype_analysis.py --train     # synthetic fallback, no CSV needed
 ```
 
 ## Conventions
