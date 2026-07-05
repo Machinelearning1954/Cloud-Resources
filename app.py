@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, render_template
 import joblib
 import numpy as np
 import os
+import csv
+import random
 import logging
 
 app = Flask(__name__)
@@ -30,6 +32,21 @@ else:
 
 # Define target names for Iris dataset (for user-friendly output)
 iris_target_names = ["setosa", "versicolor", "virginica"]
+
+# Load the dataset for the game: each entry is (features, target_index).
+# The game serves random real samples and checks guesses server-side.
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
+game_samples = []
+try:
+    with open(os.path.join(DATA_DIR, "iris_features.csv")) as ff, \
+         open(os.path.join(DATA_DIR, "iris_target.csv")) as tf:
+        feature_rows = list(csv.reader(ff))[1:]  # skip header
+        target_rows = list(csv.reader(tf))[1:]
+        for feats, target in zip(feature_rows, target_rows):
+            game_samples.append(([float(v) for v in feats], int(target[0])))
+    app.logger.info("Game dataset loaded: %d samples", len(game_samples))
+except Exception as e:
+    app.logger.error("Could not load game dataset: %s", str(e))
 
 @app.route("/")
 def home():
@@ -77,6 +94,60 @@ def predict():
             return jsonify({"error": str(e)}), 400
         else:
             return render_template("index.html", prediction_text=f"Error: {str(e)}"), 400
+
+@app.route("/game")
+def game():
+    app.logger.info("Game page accessed.")
+    return render_template("game.html")
+
+@app.route("/game/round")
+def game_round():
+    """Serve a random real sample from the dataset (without its label)."""
+    if not game_samples:
+        app.logger.error("Game round requested but dataset is not loaded.")
+        return jsonify({"error": "Game dataset not loaded."}), 500
+    sample_id = random.randrange(len(game_samples))
+    features = game_samples[sample_id][0]
+    app.logger.info("Game round served: sample %d", sample_id)
+    return jsonify({
+        "sample_id": sample_id,
+        "features": {
+            "sepal_length": features[0],
+            "sepal_width": features[1],
+            "petal_length": features[2],
+            "petal_width": features[3],
+        },
+    })
+
+@app.route("/game/guess", methods=["POST"])
+def game_guess():
+    """Score the player's guess against the truth and the model's prediction."""
+    if not game_samples:
+        return jsonify({"error": "Game dataset not loaded."}), 500
+    try:
+        data = request.get_json()
+        sample_id = int(data["sample_id"])
+        guess = int(data["guess"])
+        if not (0 <= sample_id < len(game_samples)) or not (0 <= guess <= 2):
+            raise ValueError("sample_id or guess out of range")
+    except Exception as e:
+        app.logger.error("Invalid game guess: %s", str(e))
+        return jsonify({"error": f"Invalid request: {str(e)}"}), 400
+
+    features, truth = game_samples[sample_id]
+    model_prediction = None
+    if model is not None:
+        model_prediction = int(model.predict(np.array(features).reshape(1, -1))[0])
+    app.logger.info("Game guess: sample %d, player %d, model %s, truth %d",
+                    sample_id, guess, model_prediction, truth)
+    return jsonify({
+        "truth": truth,
+        "truth_name": iris_target_names[truth],
+        "player_correct": guess == truth,
+        "model_prediction": model_prediction,
+        "model_prediction_name": iris_target_names[model_prediction] if model_prediction is not None else None,
+        "model_correct": model_prediction == truth if model_prediction is not None else None,
+    })
 
 @app.route("/health")
 def health_check():

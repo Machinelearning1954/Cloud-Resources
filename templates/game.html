@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iris Hunter — Beat the AI</title>
+<style>
+    :root {
+        --bg1: #1a1033; --bg2: #2d1b4e; --card: #241640;
+        --accent: #b388ff; --good: #4ade80; --bad: #f87171; --gold: #fbbf24;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: radial-gradient(ellipse at top, var(--bg2), var(--bg1) 70%);
+        color: #ede9fe; min-height: 100vh;
+        display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .game { width: 100%; max-width: 560px; }
+    h1 { text-align: center; font-size: 2rem; letter-spacing: 2px; margin-bottom: 4px;
+         background: linear-gradient(90deg, #b388ff, #f9a8d4, #b388ff);
+         -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .tagline { text-align: center; color: #a78bfa; margin-bottom: 16px; font-size: 0.95rem; }
+    .hud { display: flex; justify-content: space-between; align-items: center;
+           background: var(--card); border-radius: 12px; padding: 10px 16px; margin-bottom: 12px;
+           border: 1px solid #3b2a63; }
+    .hud .stat { text-align: center; }
+    .hud .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #a78bfa; }
+    .hud .value { font-size: 1.4rem; font-weight: bold; }
+    .hud .you .value { color: var(--good); }
+    .hud .ai .value { color: var(--accent); }
+    .hud .streak .value { color: var(--gold); }
+    .stage { background: var(--card); border-radius: 16px; padding: 20px;
+             border: 1px solid #3b2a63; text-align: center; }
+    .flower-box { position: relative; height: 240px; display: flex; align-items: center; justify-content: center; }
+    .measures { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px;
+                margin: 14px 0; font-size: 0.85rem; text-align: left; }
+    .measures .name { color: #a78bfa; white-space: nowrap; }
+    .measures .bar { align-self: center; height: 8px; border-radius: 4px; background: #3b2a63; overflow: hidden; }
+    .measures .bar span { display: block; height: 100%; border-radius: 4px;
+                          background: linear-gradient(90deg, #7c3aed, #b388ff);
+                          transition: width 0.5s ease; }
+    .measures .num { font-variant-numeric: tabular-nums; }
+    .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+    button {
+        font-family: inherit; font-size: 1rem; font-weight: bold; color: #ede9fe;
+        background: linear-gradient(180deg, #4c2f86, #38226b); border: 1px solid #6d4fc4;
+        border-radius: 10px; padding: 12px 8px; cursor: pointer; transition: transform 0.1s, filter 0.1s;
+    }
+    button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.2); }
+    button:disabled { opacity: 0.55; cursor: default; }
+    button .key { display: block; font-size: 0.65rem; color: #a78bfa; font-weight: normal; margin-top: 2px; }
+    button.correct { background: linear-gradient(180deg, #15803d, #166534); border-color: var(--good); }
+    button.wrong { background: linear-gradient(180deg, #b91c1c, #7f1d1d); border-color: var(--bad); }
+    .big-btn { width: 100%; padding: 14px; font-size: 1.1rem; margin-top: 12px;
+               background: linear-gradient(180deg, #7c3aed, #5b21b6); }
+    .result { min-height: 52px; margin-top: 12px; font-size: 0.95rem; line-height: 1.5; }
+    .result .win { color: var(--good); font-weight: bold; }
+    .result .lose { color: var(--bad); font-weight: bold; }
+    .result .ai-line { color: var(--accent); }
+    .round-label { color: #a78bfa; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+    .final h2 { font-size: 1.6rem; margin: 10px 0; }
+    .final .scores { font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
+    .hidden { display: none; }
+    @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .pop { animation: pop 0.35s ease; }
+    .confetti { position: fixed; top: -10px; font-size: 1.3rem; pointer-events: none; z-index: 10;
+                animation: fall linear forwards; }
+    @keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
+    a.back { display: block; text-align: center; margin-top: 14px; color: #a78bfa; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="game">
+    <h1>🌸 IRIS HUNTER</h1>
+    <p class="tagline">A mystery flower appears. Classify it before the AI shows you up.</p>
+
+    <div class="hud">
+        <div class="stat you"><div class="label">You</div><div class="value" id="player-score">0</div></div>
+        <div class="stat streak"><div class="label">Streak</div><div class="value" id="streak">0</div></div>
+        <div class="stat"><div class="label">Round</div><div class="value" id="round">–</div></div>
+        <div class="stat ai"><div class="label">AI</div><div class="value" id="ai-score">0</div></div>
+    </div>
+
+    <div class="stage">
+        <!-- Title screen -->
+        <div id="screen-title">
+            <div class="flower-box"><svg id="title-flower" width="220" height="220" viewBox="-110 -110 220 220"></svg></div>
+            <p style="margin-bottom:8px">10 rounds. Real flowers from the Iris dataset.<br>
+            Correct guess: <b>+10</b> &nbsp;·&nbsp; streak bonus: <b>+2/streak</b>.<br>
+            The RandomForest model is playing too. Good luck.</p>
+            <button class="big-btn" id="start-btn">▶ START GAME</button>
+        </div>
+
+        <!-- Round screen -->
+        <div id="screen-round" class="hidden">
+            <div class="round-label" id="round-label">Round 1 of 10</div>
+            <div class="flower-box"><svg id="flower" width="220" height="220" viewBox="-110 -110 220 220"></svg></div>
+            <div class="measures" id="measures"></div>
+            <div class="choices">
+                <button data-guess="0">Setosa<span class="key">press 1</span></button>
+                <button data-guess="1">Versicolor<span class="key">press 2</span></button>
+                <button data-guess="2">Virginica<span class="key">press 3</span></button>
+            </div>
+            <div class="result" id="result"></div>
+            <button class="big-btn hidden" id="next-btn">NEXT ROUND ▶</button>
+        </div>
+
+        <!-- Final screen -->
+        <div id="screen-final" class="final hidden">
+            <div class="flower-box"><svg id="final-flower" width="200" height="200" viewBox="-110 -110 220 220"></svg></div>
+            <h2 id="final-title"></h2>
+            <div class="scores"><span style="color:var(--good)" id="final-you">0</span>
+                <span style="color:#a78bfa"> : </span>
+                <span style="color:var(--accent)" id="final-ai">0</span></div>
+            <p id="final-line"></p>
+            <button class="big-btn" id="again-btn">↻ PLAY AGAIN</button>
+        </div>
+    </div>
+    <a class="back" href="/">← back to the plain classifier</a>
+</div>
+
+<script>
+(function () {
+    "use strict";
+    const TOTAL_ROUNDS = 10;
+    const NAMES = ["Setosa", "Versicolor", "Virginica"];
+    // Feature display config: label, dataset max (cm) for bar scaling
+    const FEATS = [
+        ["Sepal length", "sepal_length", 8.0],
+        ["Sepal width",  "sepal_width",  4.5],
+        ["Petal length", "petal_length", 7.0],
+        ["Petal width",  "petal_width",  2.6],
+    ];
+
+    let round = 0, playerScore = 0, aiScore = 0, streak = 0;
+    let sample = null, locked = false;
+
+    const $ = id => document.getElementById(id);
+    const screens = { title: $("screen-title"), round: $("screen-round"), final: $("screen-final") };
+    function show(name) {
+        for (const k in screens) screens[k].classList.toggle("hidden", k !== name);
+    }
+
+    // ---- Flower drawing: petal/sepal ellipses scaled by the real measurements ----
+    function drawFlower(svg, f, hue) {
+        const SCALE = 13; // cm -> px
+        const petals = [], sepals = [];
+        for (let i = 0; i < 3; i++) {
+            const a = i * 120 - 90;
+            sepals.push(ellipse(f.sepal_length * SCALE, f.sepal_width * SCALE, a + 60, "#3f7a4f", "#2c5c3a"));
+            petals.push(ellipse(f.petal_length * SCALE, f.petal_width * SCALE, a, hue || "#a78bfa", "#7c3aed"));
+        }
+        svg.innerHTML = sepals.join("") + petals.join("") +
+            '<circle r="9" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>';
+        svg.classList.remove("pop"); void svg.offsetWidth; svg.classList.add("pop");
+    }
+    function ellipse(len, wid, angleDeg, fill, stroke) {
+        // Ellipse extending outward from the center, rotated around it
+        const rx = Math.max(len / 2, 4), ry = Math.max(wid / 2, 3);
+        return `<ellipse cx="0" cy="${-rx}" rx="${ry}" ry="${rx}" fill="${fill}" stroke="${stroke}" ` +
+               `stroke-width="1.5" opacity="0.9" transform="rotate(${angleDeg})"/>`;
+    }
+
+    // ---- Tiny WebAudio sound effects ----
+    let audioCtx = null;
+    function beep(freq, dur, type) {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = type || "triangle"; o.frequency.value = freq;
+            g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + dur);
+        } catch (e) { /* sound is optional */ }
+    }
+    const sfxGood = () => { beep(660, 0.12); setTimeout(() => beep(880, 0.18), 90); };
+    const sfxBad = () => beep(160, 0.35, "sawtooth");
+
+    function confetti() {
+        const emo = ["🌸", "🌺", "🌼", "✨", "💮"];
+        for (let i = 0; i < 40; i++) {
+            const s = document.createElement("span");
+            s.className = "confetti";
+            s.textContent = emo[i % emo.length];
+            s.style.left = Math.random() * 100 + "vw";
+            s.style.animationDuration = 2 + Math.random() * 2 + "s";
+            s.style.animationDelay = Math.random() * 0.8 + "s";
+            document.body.appendChild(s);
+            setTimeout(() => s.remove(), 5000);
+        }
+    }
+
+    function updateHud() {
+        $("player-score").textContent = playerScore;
+        $("ai-score").textContent = aiScore;
+        $("streak").textContent = streak;
+        $("round").textContent = round ? round + "/" + TOTAL_ROUNDS : "–";
+    }
+
+    async function nextRound() {
+        round++;
+        locked = false;
+        updateHud();
+        $("round-label").textContent = "Round " + round + " of " + TOTAL_ROUNDS;
+        $("result").innerHTML = "";
+        $("next-btn").classList.add("hidden");
+        document.querySelectorAll(".choices button").forEach(b => {
+            b.disabled = false; b.classList.remove("correct", "wrong");
+        });
+        try {
+            const r = await fetch("/game/round");
+            sample = await r.json();
+        } catch (e) {
+            $("result").innerHTML = '<span class="lose">Could not reach the server — is the app running?</span>';
+            return;
+        }
+        const f = sample.features;
+        drawFlower($("flower"), f);
+        $("measures").innerHTML = FEATS.map(([label, key, max]) =>
+            `<span class="name">${label}</span>` +
+            `<span class="bar"><span style="width:${Math.min(100, f[key] / max * 100)}%"></span></span>` +
+            `<span class="num">${f[key].toFixed(1)} cm</span>`
+        ).join("");
+        show("round");
+    }
+
+    async function makeGuess(guess, btn) {
+        if (locked || !sample) return;
+        locked = true;
+        document.querySelectorAll(".choices button").forEach(b => b.disabled = true);
+        let res;
+        try {
+            const r = await fetch("/game/guess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sample_id: sample.sample_id, guess: guess }),
+            });
+            res = await r.json();
+        } catch (e) {
+            $("result").innerHTML = '<span class="lose">Server error — try the next round.</span>';
+            $("next-btn").classList.remove("hidden");
+            return;
+        }
+        const truthBtn = document.querySelector(`.choices button[data-guess="${res.truth}"]`);
+        truthBtn.classList.add("correct");
+        let html = "";
+        if (res.player_correct) {
+            const bonus = streak * 2;
+            streak++;
+            playerScore += 10 + bonus;
+            sfxGood();
+            html += `<span class="win">✔ Correct — it's ${NAMES[res.truth]}! +${10 + bonus}` +
+                    (bonus ? ` (streak bonus +${bonus})` : "") + "</span><br>";
+        } else {
+            streak = 0;
+            btn.classList.add("wrong");
+            sfxBad();
+            html += `<span class="lose">✘ Nope — it was ${NAMES[res.truth]}.</span><br>`;
+        }
+        if (res.model_prediction !== null) {
+            if (res.model_correct) aiScore += 10;
+            html += `<span class="ai-line">🤖 The AI said ${NAMES[res.model_prediction]} — ` +
+                    (res.model_correct ? "correct." : "wrong!") + "</span>";
+        } else {
+            html += '<span class="ai-line">🤖 The AI is asleep (model not loaded).</span>';
+        }
+        $("result").innerHTML = html;
+        updateHud();
+        $("next-btn").textContent = round >= TOTAL_ROUNDS ? "SEE FINAL SCORE ▶" : "NEXT ROUND ▶";
+        $("next-btn").classList.remove("hidden");
+        $("next-btn").focus();
+    }
+
+    function finish() {
+        $("final-you").textContent = playerScore;
+        $("final-ai").textContent = aiScore;
+        drawFlower($("final-flower"), { sepal_length: 6.5, sepal_width: 3.4, petal_length: 5.2, petal_width: 2.0 },
+                   playerScore >= aiScore ? "#4ade80" : "#f87171");
+        if (playerScore > aiScore) {
+            $("final-title").textContent = "🏆 YOU BEAT THE AI!";
+            $("final-line").textContent = "A human out-classifying a RandomForest. Frame this.";
+            confetti(); sfxGood();
+        } else if (playerScore === aiScore) {
+            $("final-title").textContent = "🤝 IT'S A DRAW";
+            $("final-line").textContent = "Carbon and silicon, evenly matched.";
+        } else {
+            $("final-title").textContent = "🤖 THE AI WINS";
+            $("final-line").textContent = "It did train on 105 of these flowers. Rematch?";
+            sfxBad();
+        }
+        show("final");
+    }
+
+    function startGame() {
+        round = 0; playerScore = 0; aiScore = 0; streak = 0;
+        updateHud();
+        nextRound();
+    }
+
+    $("start-btn").addEventListener("click", startGame);
+    $("again-btn").addEventListener("click", startGame);
+    $("next-btn").addEventListener("click", () => round >= TOTAL_ROUNDS ? finish() : nextRound());
+    document.querySelectorAll(".choices button").forEach(b =>
+        b.addEventListener("click", () => makeGuess(parseInt(b.dataset.guess, 10), b)));
+    document.addEventListener("keydown", e => {
+        if (["1", "2", "3"].includes(e.key) && !screens.round.classList.contains("hidden") && !locked) {
+            const btn = document.querySelector(`.choices button[data-guess="${+e.key - 1}"]`);
+            if (btn) makeGuess(+e.key - 1, btn);
+        }
+    });
+
+    // Decorative flower on the title screen
+    drawFlower($("title-flower"), { sepal_length: 6.3, sepal_width: 3.3, petal_length: 4.7, petal_width: 1.6 });
+    updateHud();
+})();
+</script>
+</body>
+</html>
