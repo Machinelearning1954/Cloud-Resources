@@ -7,11 +7,13 @@ import logging
 app = Flask(__name__)
 
 # Configure logging
-logging.basicConfig(filename=uild_log.txtuild_log.txt", level=logging.INFO, 
-                    format=%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
+logging.basicConfig(filename="build_log.txt", level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s")
 
-# Define paths
-MODEL_DIR = "/home/ubuntu/iris_project/model"
+# Define paths relative to this file so the app works both locally and inside the container.
+# MODEL_DIR can be overridden with an environment variable if needed.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.environ.get("MODEL_DIR", os.path.join(BASE_DIR, "model"))
 MODEL_PATH = os.path.join(MODEL_DIR, "iris_classifier_rf.joblib")
 
 # Load the trained model

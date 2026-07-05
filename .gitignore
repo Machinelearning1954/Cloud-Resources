@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Application logs
+build_log.txt
