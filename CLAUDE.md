@@ -85,3 +85,51 @@ python gta6_hype_analysis.py --train     # synthetic fallback, no CSV needed
 - The zip/tar.gz archives are uploaded deliverables and the most complete versions of their projects — treat them as reference sources of truth, and don't delete or regenerate them casually.
 - Filenames contain spaces (`Projects for Accenture Machine Learning Engineer Role/`, `README (1).md`) — quote paths in shell commands.
 - Documentation here doubles as portfolio writing (metrics, architecture diagrams, compliance sections describe the *intended* production system, not what's checked in). When editing code, verify claims against the actual files rather than the docs.
+
+## Media & Video References
+
+YouTube references cited during development (e.g. graphics/visual-fidelity direction for
+the interactive demos). The embed code for each is recorded here so it is available even
+though this environment's network policy blocks outbound requests to `www.youtube.com`.
+
+### aV3sPhzuQbQ — graphics / visual-fidelity reference
+
+- Watch: https://youtu.be/aV3sPhzuQbQ
+- Used as a "boost the graphics" reference for the top-down open-world demo (cinematic
+  post-processing pass: time-of-day color grading, sun/moon glint, vignette, film grain,
+  depth-graded water with sun sparkle).
+
+Standard responsive iframe embed:
+
+```html
+<iframe
+  width="560" height="315"
+  src="https://www.youtube.com/embed/aV3sPhzuQbQ"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen>
+</iframe>
+```
+
+Privacy-enhanced (`youtube-nocookie`) variant:
+
+```html
+<iframe
+  width="560" height="315"
+  src="https://www.youtube-nocookie.com/embed/aV3sPhzuQbQ"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen>
+</iframe>
+```
+
+Markdown thumbnail link (renders on GitHub, which strips raw iframes):
+
+```markdown
+[![Watch on YouTube](https://img.youtube.com/vi/aV3sPhzuQbQ/hqdefault.jpg)](https://youtu.be/aV3sPhzuQbQ)
+```
+
+To add another reference, append a new `### <video-id>` block in the same format.
