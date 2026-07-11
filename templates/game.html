@@ -80,7 +80,7 @@
 <body>
 <div class="game">
     <h1>🛩 IRIS SALVAGE 🤿</h1>
-    <p class="tagline">Fly the floatplane to the dive buoy. Land. Dive. Classify what you salvage.</p>
+    <p class="tagline">Fly or race to the dive buoy. Land. Dive. Classify what you salvage.</p>
 
     <div class="hud">
         <div class="stat you"><div class="label">You</div><div class="value" id="player-score">0</div></div>
@@ -107,7 +107,11 @@
                 <p><b>Move:</b> arrow keys / WASD, or tap where you want to go.<br>
                    <b>Score:</b> +10 per correct ID, streak bonus +2/streak.<br>
                    <b>Oxygen:</b> 45s per dive; correct IDs add +8s. Surfacing refills the tank.</p>
-                <button class="big-btn" id="start-btn">🛫 TAKE OFF</button>
+                <p><b>Pick your ride</b> — low &amp; slow, or fast &amp; loud:</p>
+                <div class="choices" style="grid-template-columns: 1fr 1fr;">
+                    <button class="big-btn" id="start-plane" style="margin-top:0">🛩 FLOATPLANE<span class="key">lands anywhere on the water</span></button>
+                    <button class="big-btn" id="start-boat" style="margin-top:0">🚤 SPEEDBOAT<span class="key">fast — ease off at the buoy</span></button>
+                </div>
             </div>
         </div>
 
@@ -137,7 +141,7 @@
                     <span style="color:#7dd3fc"> : </span>
                     <span style="color:#c4b5fd" id="final-ai">0</span></div>
                 <p id="final-line"></p>
-                <button class="big-btn" id="again-btn">↻ FLY AGAIN</button>
+                <button class="big-btn" id="again-btn">↻ PLAY AGAIN</button>
             </div>
         </div>
     </div>
@@ -170,6 +174,8 @@
     let state = "title";
     let playerScore, aiScore, streak, cratesDone, o2;
     let sample = null, locked = false;
+    let vehicle = "plane";        // "plane" | "boat"
+    let dusk = false;             // neon-night surface theme on alternating legs
     const plane = { x: 90, y: 200, vx: 40, vy: 0, face: 1, prop: 0 };
     const diver = { x: W / 2, y: 90, vx: 0, vy: 0, face: 1, kick: 0 };
     let buoy = null;              // {x} flight target
@@ -177,7 +183,24 @@
     let target = null;            // tap destination
     let splashT = 0;
     const keys = {};
-    const bubbles = [], fish = [], weeds = [], clouds = [], splashes = [];
+    const bubbles = [], fish = [], weeds = [], clouds = [], splashes = [], sprays = [];
+
+    // Neon skyline for dusk legs, generated once
+    const skyline = [];
+    (function buildSkyline() {
+        let x = 6;
+        while (x < W - 40) {
+            const w = 26 + Math.random() * 36;
+            const h = 55 + Math.random() * 115;
+            const windows = [];
+            for (let wx = 4; wx < w - 6; wx += 8)
+                for (let wy = 8; wy < h - 6; wy += 12)
+                    if (Math.random() < 0.38)
+                        windows.push({ dx: wx, dy: wy, c: Math.random() < 0.5 ? "#7dd3fc" : "#f9a8d4" });
+            skyline.push({ x, w, h, windows });
+            x += w + 5 + Math.random() * 15;
+        }
+    })();
 
     // ---------- ambient scenery ----------
     for (let i = 0; i < 7; i++) {
@@ -268,14 +291,22 @@
     function startFlight() {
         state = "fly";
         target = null;
-        plane.y = 180 + Math.random() * 60;
-        plane.vx = plane.face * 40; plane.vy = 0;
+        dusk = cratesDone % 2 === 1;
+        if (vehicle === "boat") {
+            plane.y = WATERLINE - 8;
+            plane.vx = plane.face * 60; plane.vy = 0;
+        } else {
+            plane.y = 180 + Math.random() * 60;
+            plane.vx = plane.face * 40; plane.vy = 0;
+        }
         let bx;
         do { bx = 80 + Math.random() * (W - 160); } while (Math.abs(bx - plane.x) < 220);
         buoy = { x: bx };
         o2 = O2_MAX;
         hideOverlays();
-        banner("🚩 Fly to the buoy and touch down on the water beside it", 3500);
+        banner(vehicle === "boat"
+            ? "🚩 Race to the buoy and ease off the throttle beside it"
+            : "🚩 Fly to the buoy and touch down on the water beside it", 3500);
         updateHud();
     }
 
@@ -415,7 +446,8 @@
         showOverlay("ov-final");
     }
 
-    function startGame() {
+    function startGame(v) {
+        vehicle = v === "boat" ? "boat" : "plane";
         playerScore = 0; aiScore = 0; streak = 0; cratesDone = 0; o2 = O2_MAX;
         plane.x = 90; plane.face = 1;
         updateHud();
@@ -439,8 +471,9 @@
         target = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
     });
 
-    $("start-btn").addEventListener("click", startGame);
-    $("again-btn").addEventListener("click", startGame);
+    $("start-plane").addEventListener("click", () => startGame("plane"));
+    $("start-boat").addEventListener("click", () => startGame("boat"));
+    $("again-btn").addEventListener("click", () => { state = "title"; showOverlay("ov-title"); });
     $("next-btn").addEventListener("click", afterClassify);
     document.querySelectorAll("#ov-classify .choices button").forEach(b =>
         b.addEventListener("click", () => makeGuess(parseInt(b.dataset.guess, 10), b)));
@@ -494,6 +527,23 @@
     }
 
     function updateFlight(dt) {
+        if (vehicle === "boat") {
+            // speedboat: pinned to the surface, throttle left/right, anchor by slowing down
+            steer(plane, 480, 310, dt);
+            plane.y = WATERLINE - 8;
+            plane.vy = 0;
+            plane.prop += dt * 40;
+            if (Math.abs(plane.vx) > 70 && Math.random() < dt * 26) {
+                sprays.push({ x: plane.x - plane.face * 20, y: WATERLINE - 6,
+                              vx: -plane.face * (30 + Math.random() * 50),
+                              vy: -50 - Math.random() * 70,
+                              r: 1.5 + Math.random() * 2.5 });
+            }
+            if (buoy && Math.abs(plane.x - buoy.x) < 60 && Math.abs(plane.vx) < 45) {
+                landPlane();
+            }
+            return;
+        }
         plane.vy += 26 * dt; // gentle gravity: planes want to descend
         steer(plane, 420, 240, dt);
         plane.prop += dt * 40;
@@ -535,14 +585,27 @@
     function renderFlight(t) {
         // sky
         const g = ctx.createLinearGradient(0, 0, 0, WATERLINE);
-        g.addColorStop(0, "#7ec8e3"); g.addColorStop(1, "#c9ebf5");
+        if (dusk) {
+            g.addColorStop(0, "#2b1055"); g.addColorStop(0.55, "#7a2a6e"); g.addColorStop(1, "#e96d9c");
+        } else {
+            g.addColorStop(0, "#7ec8e3"); g.addColorStop(1, "#c9ebf5");
+        }
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, WATERLINE);
-        // sun
-        ctx.fillStyle = "rgba(253, 230, 138, 0.9)";
-        ctx.beginPath(); ctx.arc(W - 80, 70, 30, 0, Math.PI * 2); ctx.fill();
+        if (dusk) {
+            // moon + a few stars
+            ctx.fillStyle = "rgba(237, 233, 254, 0.9)";
+            ctx.beginPath(); ctx.arc(W - 90, 70, 20, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            for (const [sx, sy] of [[60,50],[150,90],[240,40],[380,70],[480,110],[540,45]]) {
+                ctx.fillRect(sx, sy, 2, 2);
+            }
+        } else {
+            ctx.fillStyle = "rgba(253, 230, 138, 0.9)";
+            ctx.beginPath(); ctx.arc(W - 80, 70, 30, 0, Math.PI * 2); ctx.fill();
+        }
         // clouds
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillStyle = dusk ? "rgba(249, 168, 212, 0.35)" : "rgba(255,255,255,0.85)";
         for (const c of clouds) {
             c.x += c.v * (1 / 60);
             if (c.x > W + 60) c.x = -60;
@@ -552,28 +615,55 @@
             ctx.arc(c.x + c.s * 0.6, c.y + 5, c.s * 0.45, 0, Math.PI * 2);
             ctx.fill();
         }
-        // distant keys (islands)
-        ctx.fillStyle = "#67b28f";
-        for (const ix of [70, 300, 520]) {
-            ctx.beginPath();
-            ctx.ellipse(ix, WATERLINE - 2, 55, 12, 0, Math.PI, 0);
-            ctx.fill();
-            ctx.strokeStyle = "#2e7d4f"; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(ix, WATERLINE - 12); ctx.lineTo(ix, WATERLINE - 30); ctx.stroke();
-            ctx.beginPath();
-            for (const a of [-0.9, -0.3, 0.3, 0.9]) {
-                ctx.moveTo(ix, WATERLINE - 30);
-                ctx.quadraticCurveTo(ix + a * 12, WATERLINE - 38, ix + a * 20, WATERLINE - 32);
+        if (dusk) {
+            // neon city skyline on the horizon
+            for (const b of skyline) {
+                ctx.fillStyle = "#1a1033";
+                ctx.fillRect(b.x, WATERLINE - b.h, b.w, b.h);
+                for (const w of b.windows) {
+                    // windows flicker very slightly
+                    if ((((w.dx * 7 + w.dy * 13) | 0) + (t | 0)) % 29 === 0) continue;
+                    ctx.fillStyle = w.c;
+                    ctx.fillRect(b.x + w.dx, WATERLINE - b.h + w.dy, 3, 4);
+                }
             }
-            ctx.stroke();
+            // lit causeway bridge
+            ctx.strokeStyle = "#4c1d95";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(0, WATERLINE - 16); ctx.lineTo(W * 0.42, WATERLINE - 16); ctx.stroke();
+            ctx.lineWidth = 2;
+            for (let ax = 20; ax < W * 0.42; ax += 46) {
+                ctx.beginPath(); ctx.arc(ax, WATERLINE - 14, 14, Math.PI, 0); ctx.stroke();
+            }
+            ctx.fillStyle = "#f9a8d4";
+            for (let lx = 8; lx < W * 0.42; lx += 18) {
+                ctx.fillRect(lx, WATERLINE - 21, 2, 2);
+            }
+        } else {
+            // distant keys (islands)
+            ctx.fillStyle = "#67b28f";
+            for (const ix of [70, 300, 520]) {
+                ctx.beginPath();
+                ctx.ellipse(ix, WATERLINE - 2, 55, 12, 0, Math.PI, 0);
+                ctx.fill();
+                ctx.strokeStyle = "#2e7d4f"; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(ix, WATERLINE - 12); ctx.lineTo(ix, WATERLINE - 30); ctx.stroke();
+                ctx.beginPath();
+                for (const a of [-0.9, -0.3, 0.3, 0.9]) {
+                    ctx.moveTo(ix, WATERLINE - 30);
+                    ctx.quadraticCurveTo(ix + a * 12, WATERLINE - 38, ix + a * 20, WATERLINE - 32);
+                }
+                ctx.stroke();
+            }
         }
         // sea
         const s = ctx.createLinearGradient(0, WATERLINE, 0, H);
-        s.addColorStop(0, "#0e7490"); s.addColorStop(1, "#083d5c");
+        if (dusk) { s.addColorStop(0, "#4c1d95"); s.addColorStop(1, "#1e1b4b"); }
+        else { s.addColorStop(0, "#0e7490"); s.addColorStop(1, "#083d5c"); }
         ctx.fillStyle = s;
         ctx.fillRect(0, WATERLINE, W, H - WATERLINE);
         // waves
-        ctx.strokeStyle = "rgba(224, 242, 254, 0.4)";
+        ctx.strokeStyle = dusk ? "rgba(249, 168, 212, 0.35)" : "rgba(224, 242, 254, 0.4)";
         ctx.lineWidth = 2;
         for (let row = 0; row < 3; row++) {
             ctx.beginPath();
@@ -608,9 +698,48 @@
             if (p.y > WATERLINE + 8) { splashes.splice(i, 1); continue; }
             ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
         }
-        // the floatplane
-        if (state !== "title") drawPlane(t);
-        // during splash, sink the plane slightly
+        // boat spray
+        ctx.fillStyle = "rgba(224, 242, 254, 0.75)";
+        for (let i = sprays.length - 1; i >= 0; i--) {
+            const p = sprays[i];
+            p.vy += 260 * (1 / 60);
+            p.x += p.vx * (1 / 60); p.y += p.vy * (1 / 60);
+            if (p.y > WATERLINE + 4) { sprays.splice(i, 1); continue; }
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+        // the player's ride
+        if (state !== "title") {
+            if (vehicle === "boat") drawBoat(t); else drawPlane(t);
+        }
+    }
+
+    function drawBoat(t) {
+        ctx.save();
+        ctx.translate(plane.x, plane.y + Math.sin(t * 3) * 1.5);
+        ctx.scale(plane.face, 1);
+        // nose lifts a little under throttle
+        ctx.rotate(Math.max(-0.14, Math.min(0.02, -Math.abs(plane.vx) / 2200)));
+        // wake foam at the stern
+        ctx.fillStyle = "rgba(224, 242, 254, 0.6)";
+        ctx.beginPath(); ctx.ellipse(-26, 8, 10 + Math.abs(plane.vx) / 30, 4, 0, 0, Math.PI * 2); ctx.fill();
+        // hull with a neon wrap, pointed bow
+        const grad = ctx.createLinearGradient(-26, 0, 30, 0);
+        grad.addColorStop(0, "#ec4899"); grad.addColorStop(1, "#22d3ee");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-24, 0); ctx.lineTo(20, 0); ctx.lineTo(32, 4); ctx.lineTo(18, 10); ctx.lineTo(-22, 10);
+        ctx.closePath(); ctx.fill();
+        // topsides
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath();
+        ctx.moveTo(-22, 0); ctx.lineTo(20, 0); ctx.lineTo(24, -4); ctx.lineTo(-18, -4);
+        ctx.closePath(); ctx.fill();
+        // windshield + driver
+        ctx.fillStyle = "#7dd3fc";
+        ctx.beginPath(); ctx.moveTo(6, -4); ctx.lineTo(14, -11); ctx.lineTo(18, -4); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#c9a07a";
+        ctx.beginPath(); ctx.arc(2, -8, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
     }
 
     function drawPlane(t) {

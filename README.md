@@ -2,7 +2,7 @@
 
 This project implements a machine learning model to classify Iris flower species and deploys it as a production-ready web application using Flask and Docker. It was built as the deployment capstone (Step 11: Deployment Implementation) for the Machine Learning Engineering & AI Bootcamp, and adheres to the provided cloud resource guidelines.
 
-It also ships with **🛩🤿 Iris Salvage**, a browser game at `/game`: crates of botanical specimens went down with a cargo ship, scattered across the keys. Fly your classic floatplane to each dive buoy, touch down on the water, then dive to the sunken crate and classify the mystery iris inside — drawn to scale from a real sample in the dataset — before your oxygen runs out. The RandomForest model classifies each specimen too; eight crates, streak bonuses. Highest score wins. Can you out-dive the AI? (Controls: arrow keys/WASD, or tap where you want to go.)
+It also ships with **🛩🚤🤿 Iris Salvage**, a browser game at `/game`: crates of botanical specimens went down with a cargo ship, scattered across the keys. Pick your ride — the classic floatplane (low and slow, lands anywhere on the water) or the neon speedboat (fast, but you must ease off the throttle at the buoy) — travel to each dive buoy, then dive to the sunken crate and classify the mystery iris inside, drawn to scale from a real sample in the dataset, before your oxygen runs out. Surface legs alternate between sunny day and a neon night skyline. The RandomForest model classifies each specimen too; eight crates, streak bonuses. Highest score wins. Can you out-dive the AI? (Controls: arrow keys/WASD, or tap where you want to go.)
 
 ![Iris Salvage gameplay](docs/demo.gif)
 
