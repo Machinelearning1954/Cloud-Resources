@@ -2,7 +2,9 @@
 
 This project implements a machine learning model to classify Iris flower species and deploys it as a production-ready web application using Flask and Docker. It was built as the deployment capstone (Step 11: Deployment Implementation) for the Machine Learning Engineering & AI Bootcamp, and adheres to the provided cloud resource guidelines.
 
-It also ships with **🌸 Iris Hunter**, a browser game at `/game`: each round a mystery flower is drawn to scale from a real sample in the Iris dataset, you guess the species, and the RandomForest model makes its own prediction. Ten rounds, streak bonuses — highest score wins. Can you beat the AI?
+It also ships with **🛩🤿 Iris Salvage**, a browser game at `/game`: crates of botanical specimens went down with a cargo ship, scattered across the keys. Fly your classic floatplane to each dive buoy, touch down on the water, then dive to the sunken crate and classify the mystery iris inside — drawn to scale from a real sample in the dataset — before your oxygen runs out. The RandomForest model classifies each specimen too; eight crates, streak bonuses. Highest score wins. Can you out-dive the AI? (Controls: arrow keys/WASD, or tap where you want to go.)
+
+![Iris Salvage gameplay](docs/demo.gif)
 
 ## Project Structure
 
@@ -34,8 +36,8 @@ The application writes its runtime log to `build_log.txt` (created on first run;
     *   `POST /predict` — accepts feature data (JSON or form) and returns the predicted Iris species.
     *   `GET /health` — health check endpoint.
 *   **User Interface:** A simple web page to input flower measurements and get predictions.
-*   **Iris Hunter game (`/game`):** An arcade-style human-vs-model game served from the same app:
-    *   `GET /game` — the game UI (SVG flower rendered to scale, keyboard controls, sound effects).
+*   **Iris Salvage game (`/game`):** An underwater salvage game (human vs. model) served from the same app:
+    *   `GET /game` — the game UI: a canvas ocean scene (diver, fish, bubbles, sonar-pinging crates), an oxygen meter, and specimen classification with SVG flowers rendered to scale. Keyboard, mouse, and touch controls; sound effects.
     *   `GET /game/round` — returns a random unlabeled sample from the real dataset.
     *   `POST /game/guess` — body `{"sample_id": <int>, "guess": <0|1|2>}`; returns the true species, whether the player was right, and what the model predicted. Guesses are validated server-side so the answer is never exposed to the browser before the guess.
 *   **Logging:** Application events, predictions, and errors are logged to `build_log.txt` for monitoring and debugging.

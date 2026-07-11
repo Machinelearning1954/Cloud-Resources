@@ -3,118 +3,142 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iris Hunter — Beat the AI</title>
+<title>Iris Salvage — Fly. Dive. Classify.</title>
 <style>
     :root {
-        --bg1: #1a1033; --bg2: #2d1b4e; --card: #241640;
-        --accent: #b388ff; --good: #4ade80; --bad: #f87171; --gold: #fbbf24;
+        --hud: #06283d; --accent: #7dd3fc; --good: #4ade80; --bad: #f87171; --gold: #fbbf24;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-        font-family: "Segoe UI", Arial, sans-serif;
-        background: radial-gradient(ellipse at top, var(--bg2), var(--bg1) 70%);
-        color: #ede9fe; min-height: 100vh;
-        display: flex; align-items: center; justify-content: center; padding: 16px;
+        font-family: "Segoe UI", Arial, sans-serif; background: #021a2b; color: #e0f2fe;
+        min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 10px;
     }
-    .game { width: 100%; max-width: 560px; }
-    h1 { text-align: center; font-size: 2rem; letter-spacing: 2px; margin-bottom: 4px;
-         background: linear-gradient(90deg, #b388ff, #f9a8d4, #b388ff);
+    .game { width: 100%; max-width: 640px; }
+    h1 { text-align: center; font-size: 1.7rem; letter-spacing: 3px; margin-bottom: 2px;
+         background: linear-gradient(90deg, #7dd3fc, #fde68a, #7dd3fc);
          -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .tagline { text-align: center; color: #a78bfa; margin-bottom: 16px; font-size: 0.95rem; }
-    .hud { display: flex; justify-content: space-between; align-items: center;
-           background: var(--card); border-radius: 12px; padding: 10px 16px; margin-bottom: 12px;
-           border: 1px solid #3b2a63; }
+    .tagline { text-align: center; color: #7dd3fc; margin-bottom: 10px; font-size: 0.85rem; }
+    .hud { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+           background: var(--hud); border: 1px solid #0c4a6e; border-radius: 12px;
+           padding: 8px 14px; margin-bottom: 8px; }
     .hud .stat { text-align: center; }
-    .hud .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #a78bfa; }
-    .hud .value { font-size: 1.4rem; font-weight: bold; }
+    .hud .label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: #7dd3fc; }
+    .hud .value { font-size: 1.25rem; font-weight: bold; }
     .hud .you .value { color: var(--good); }
-    .hud .ai .value { color: var(--accent); }
+    .hud .ai .value { color: #c4b5fd; }
     .hud .streak .value { color: var(--gold); }
-    .stage { background: var(--card); border-radius: 16px; padding: 20px;
-             border: 1px solid #3b2a63; text-align: center; }
-    .flower-box { position: relative; height: 240px; display: flex; align-items: center; justify-content: center; }
-    .measures { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px;
-                margin: 14px 0; font-size: 0.85rem; text-align: left; }
-    .measures .name { color: #a78bfa; white-space: nowrap; }
-    .measures .bar { align-self: center; height: 8px; border-radius: 4px; background: #3b2a63; overflow: hidden; }
+    .o2wrap { flex: 1; max-width: 150px; }
+    .o2bar { height: 12px; border-radius: 6px; background: #0c4a6e; overflow: hidden; margin-top: 3px; }
+    .o2bar span { display: block; height: 100%; width: 100%;
+                  background: linear-gradient(90deg, #22d3ee, #7dd3fc); transition: width 0.3s linear; }
+    .o2bar.low span { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .scene { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid #0c4a6e; }
+    canvas { display: block; width: 100%; height: auto; touch-action: none; }
+    .banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+              background: rgba(6, 40, 61, 0.85); border: 1px solid #155e75; border-radius: 20px;
+              padding: 6px 16px; font-size: 0.8rem; color: #a5f3fc; white-space: nowrap; z-index: 4;
+              transition: opacity 0.4s; }
+    .overlay {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(2, 20, 35, 0.82); backdrop-filter: blur(2px); padding: 14px; z-index: 5;
+    }
+    .panel { background: #06283d; border: 1px solid #155e75; border-radius: 14px;
+             padding: 18px; width: 100%; max-width: 430px; text-align: center;
+             animation: rise 0.3s ease; }
+    @keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .panel h2 { margin-bottom: 8px; font-size: 1.25rem; color: #a5f3fc; letter-spacing: 1px; }
+    .panel p { font-size: 0.88rem; line-height: 1.5; margin-bottom: 8px; }
+    .measures { display: grid; grid-template-columns: auto 1fr auto; gap: 5px 10px;
+                margin: 10px 0; font-size: 0.8rem; text-align: left; }
+    .measures .name { color: #7dd3fc; white-space: nowrap; }
+    .measures .bar { align-self: center; height: 7px; border-radius: 4px; background: #0c4a6e; overflow: hidden; }
     .measures .bar span { display: block; height: 100%; border-radius: 4px;
-                          background: linear-gradient(90deg, #7c3aed, #b388ff);
-                          transition: width 0.5s ease; }
+                          background: linear-gradient(90deg, #0ea5e9, #7dd3fc); transition: width 0.5s ease; }
     .measures .num { font-variant-numeric: tabular-nums; }
-    .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+    .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
     button {
-        font-family: inherit; font-size: 1rem; font-weight: bold; color: #ede9fe;
-        background: linear-gradient(180deg, #4c2f86, #38226b); border: 1px solid #6d4fc4;
-        border-radius: 10px; padding: 12px 8px; cursor: pointer; transition: transform 0.1s, filter 0.1s;
+        font-family: inherit; font-size: 0.95rem; font-weight: bold; color: #e0f2fe;
+        background: linear-gradient(180deg, #0e7490, #155e75); border: 1px solid #22d3ee;
+        border-radius: 10px; padding: 11px 6px; cursor: pointer; transition: transform 0.1s, filter 0.1s;
     }
     button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.2); }
     button:disabled { opacity: 0.55; cursor: default; }
-    button .key { display: block; font-size: 0.65rem; color: #a78bfa; font-weight: normal; margin-top: 2px; }
+    button .key { display: block; font-size: 0.6rem; color: #7dd3fc; font-weight: normal; margin-top: 2px; }
     button.correct { background: linear-gradient(180deg, #15803d, #166534); border-color: var(--good); }
     button.wrong { background: linear-gradient(180deg, #b91c1c, #7f1d1d); border-color: var(--bad); }
-    .big-btn { width: 100%; padding: 14px; font-size: 1.1rem; margin-top: 12px;
-               background: linear-gradient(180deg, #7c3aed, #5b21b6); }
-    .result { min-height: 52px; margin-top: 12px; font-size: 0.95rem; line-height: 1.5; }
+    .big-btn { width: 100%; padding: 13px; font-size: 1.05rem; margin-top: 10px;
+               background: linear-gradient(180deg, #0284c7, #075985); }
+    .result { min-height: 46px; margin-top: 10px; font-size: 0.88rem; line-height: 1.5; }
     .result .win { color: var(--good); font-weight: bold; }
     .result .lose { color: var(--bad); font-weight: bold; }
-    .result .ai-line { color: var(--accent); }
-    .round-label { color: #a78bfa; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
-    .final h2 { font-size: 1.6rem; margin: 10px 0; }
-    .final .scores { font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
-    .hidden { display: none; }
-    @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .pop { animation: pop 0.35s ease; }
-    .confetti { position: fixed; top: -10px; font-size: 1.3rem; pointer-events: none; z-index: 10;
-                animation: fall linear forwards; }
-    @keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
-    a.back { display: block; text-align: center; margin-top: 14px; color: #a78bfa; font-size: 0.85rem; }
+    .result .ai-line { color: #c4b5fd; }
+    .scores { font-size: 2rem; font-weight: bold; margin: 8px 0; }
+    .hidden { display: none !important; }
+    a.back { display: block; text-align: center; margin-top: 10px; color: #7dd3fc; font-size: 0.8rem; }
 </style>
 </head>
 <body>
 <div class="game">
-    <h1>🌸 IRIS HUNTER</h1>
-    <p class="tagline">A mystery flower appears. Classify it before the AI shows you up.</p>
+    <h1>🛩 IRIS SALVAGE 🤿</h1>
+    <p class="tagline">Fly the floatplane to the dive buoy. Land. Dive. Classify what you salvage.</p>
 
     <div class="hud">
         <div class="stat you"><div class="label">You</div><div class="value" id="player-score">0</div></div>
         <div class="stat streak"><div class="label">Streak</div><div class="value" id="streak">0</div></div>
-        <div class="stat"><div class="label">Round</div><div class="value" id="round">–</div></div>
+        <div class="stat"><div class="label">Crates</div><div class="value" id="crates">0/8</div></div>
+        <div class="o2wrap"><div class="label">Oxygen</div>
+            <div class="o2bar" id="o2bar"><span id="o2fill"></span></div></div>
         <div class="stat ai"><div class="label">AI</div><div class="value" id="ai-score">0</div></div>
     </div>
 
-    <div class="stage">
-        <!-- Title screen -->
-        <div id="screen-title">
-            <div class="flower-box"><svg id="title-flower" width="220" height="220" viewBox="-110 -110 220 220"></svg></div>
-            <p style="margin-bottom:8px">10 rounds. Real flowers from the Iris dataset.<br>
-            Correct guess: <b>+10</b> &nbsp;·&nbsp; streak bonus: <b>+2/streak</b>.<br>
-            The RandomForest model is playing too. Good luck.</p>
-            <button class="big-btn" id="start-btn">▶ START GAME</button>
-        </div>
+    <div class="scene">
+        <canvas id="sea" width="620" height="700"></canvas>
+        <div class="banner hidden" id="banner"></div>
 
-        <!-- Round screen -->
-        <div id="screen-round" class="hidden">
-            <div class="round-label" id="round-label">Round 1 of 10</div>
-            <div class="flower-box"><svg id="flower" width="220" height="220" viewBox="-110 -110 220 220"></svg></div>
-            <div class="measures" id="measures"></div>
-            <div class="choices">
-                <button data-guess="0">Setosa<span class="key">press 1</span></button>
-                <button data-guess="1">Versicolor<span class="key">press 2</span></button>
-                <button data-guess="2">Virginica<span class="key">press 3</span></button>
+        <!-- Title overlay -->
+        <div class="overlay" id="ov-title">
+            <div class="panel">
+                <h2>SALVAGE BRIEFING</h2>
+                <p>Eight crates of botanical specimens went down with a cargo ship, scattered
+                   across the keys. Your classic floatplane 🛩 can land on the water anywhere.</p>
+                <p><b>Fly</b> to the dive buoy 🚩 and touch down on the water beside it.
+                   <b>Dive</b> to the crate 📦 and classify the mystery iris inside —
+                   the onboard AI (a RandomForest) classifies it too.</p>
+                <p><b>Move:</b> arrow keys / WASD, or tap where you want to go.<br>
+                   <b>Score:</b> +10 per correct ID, streak bonus +2/streak.<br>
+                   <b>Oxygen:</b> 45s per dive; correct IDs add +8s. Surfacing refills the tank.</p>
+                <button class="big-btn" id="start-btn">🛫 TAKE OFF</button>
             </div>
-            <div class="result" id="result"></div>
-            <button class="big-btn hidden" id="next-btn">NEXT ROUND ▶</button>
         </div>
 
-        <!-- Final screen -->
-        <div id="screen-final" class="final hidden">
-            <div class="flower-box"><svg id="final-flower" width="200" height="200" viewBox="-110 -110 220 220"></svg></div>
-            <h2 id="final-title"></h2>
-            <div class="scores"><span style="color:var(--good)" id="final-you">0</span>
-                <span style="color:#a78bfa"> : </span>
-                <span style="color:var(--accent)" id="final-ai">0</span></div>
-            <p id="final-line"></p>
-            <button class="big-btn" id="again-btn">↻ PLAY AGAIN</button>
+        <!-- Classification overlay -->
+        <div class="overlay hidden" id="ov-classify">
+            <div class="panel">
+                <h2 id="crate-title">CRATE RECOVERED</h2>
+                <div style="display:flex;justify-content:center">
+                    <svg id="flower" width="150" height="150" viewBox="-110 -110 220 220"></svg>
+                </div>
+                <div class="measures" id="measures"></div>
+                <div class="choices">
+                    <button data-guess="0">Setosa<span class="key">press 1</span></button>
+                    <button data-guess="1">Versicolor<span class="key">press 2</span></button>
+                    <button data-guess="2">Virginica<span class="key">press 3</span></button>
+                </div>
+                <div class="result" id="result"></div>
+                <button class="big-btn hidden" id="next-btn">SURFACE ▲</button>
+            </div>
+        </div>
+
+        <!-- Final overlay -->
+        <div class="overlay hidden" id="ov-final">
+            <div class="panel">
+                <h2 id="final-title"></h2>
+                <div class="scores"><span style="color:var(--good)" id="final-you">0</span>
+                    <span style="color:#7dd3fc"> : </span>
+                    <span style="color:#c4b5fd" id="final-ai">0</span></div>
+                <p id="final-line"></p>
+                <button class="big-btn" id="again-btn">↻ FLY AGAIN</button>
+            </div>
         </div>
     </div>
     <a class="back" href="/">← back to the plain classifier</a>
@@ -123,97 +147,179 @@
 <script>
 (function () {
     "use strict";
-    const TOTAL_ROUNDS = 10;
+    const TOTAL_CRATES = 8;
     const NAMES = ["Setosa", "Versicolor", "Virginica"];
-    // Feature display config: label, dataset max (cm) for bar scaling
     const FEATS = [
         ["Sepal length", "sepal_length", 8.0],
         ["Sepal width",  "sepal_width",  4.5],
         ["Petal length", "petal_length", 7.0],
         ["Petal width",  "petal_width",  2.6],
     ];
+    const O2_MAX = 45, O2_REWARD = 8;
 
-    let round = 0, playerScore = 0, aiScore = 0, streak = 0;
-    let sample = null, locked = false;
+    const canvas = document.getElementById("sea");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const SEABED = H - 46;        // dive scene floor
+    const WATERLINE = H - 170;    // flight scene sea level
 
     const $ = id => document.getElementById(id);
-    const screens = { title: $("screen-title"), round: $("screen-round"), final: $("screen-final") };
-    function show(name) {
-        for (const k in screens) screens[k].classList.toggle("hidden", k !== name);
+
+    // ---------- game state ----------
+    // states: title | fly | splash | dive | classify | final
+    let state = "title";
+    let playerScore, aiScore, streak, cratesDone, o2;
+    let sample = null, locked = false;
+    const plane = { x: 90, y: 200, vx: 40, vy: 0, face: 1, prop: 0 };
+    const diver = { x: W / 2, y: 90, vx: 0, vy: 0, face: 1, kick: 0 };
+    let buoy = null;              // {x} flight target
+    let crate = null;             // {x, y, bob} dive target
+    let target = null;            // tap destination
+    let splashT = 0;
+    const keys = {};
+    const bubbles = [], fish = [], weeds = [], clouds = [], splashes = [];
+
+    // ---------- ambient scenery ----------
+    for (let i = 0; i < 7; i++) {
+        weeds.push({ x: 30 + Math.random() * (W - 60), h: 40 + Math.random() * 55,
+                     sway: Math.random() * Math.PI * 2 });
+    }
+    for (let i = 0; i < 6; i++) spawnFish(true);
+    for (let i = 0; i < 5; i++) {
+        clouds.push({ x: Math.random() * W, y: 40 + Math.random() * 130,
+                      s: 22 + Math.random() * 26, v: 6 + Math.random() * 9 });
+    }
+    function spawnFish(anywhere) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        fish.push({
+            x: anywhere ? Math.random() * W : (dir === 1 ? -30 : W + 30),
+            y: 60 + Math.random() * (SEABED - 140),
+            v: dir * (18 + Math.random() * 26),
+            s: 6 + Math.random() * 7,
+            hue: 170 + Math.random() * 120,
+            wig: Math.random() * Math.PI * 2,
+        });
     }
 
-    // ---- Flower drawing: petal/sepal ellipses scaled by the real measurements ----
-    function drawFlower(svg, f, hue) {
-        const SCALE = 13; // cm -> px
-        const petals = [], sepals = [];
-        for (let i = 0; i < 3; i++) {
-            const a = i * 120 - 90;
-            sepals.push(ellipse(f.sepal_length * SCALE, f.sepal_width * SCALE, a + 60, "#3f7a4f", "#2c5c3a"));
-            petals.push(ellipse(f.petal_length * SCALE, f.petal_width * SCALE, a, hue || "#a78bfa", "#7c3aed"));
-        }
-        svg.innerHTML = sepals.join("") + petals.join("") +
-            '<circle r="9" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>';
-        svg.classList.remove("pop"); void svg.offsetWidth; svg.classList.add("pop");
-    }
-    function ellipse(len, wid, angleDeg, fill, stroke) {
-        // Ellipse extending outward from the center, rotated around it
-        const rx = Math.max(len / 2, 4), ry = Math.max(wid / 2, 3);
-        return `<ellipse cx="0" cy="${-rx}" rx="${ry}" ry="${rx}" fill="${fill}" stroke="${stroke}" ` +
-               `stroke-width="1.5" opacity="0.9" transform="rotate(${angleDeg})"/>`;
-    }
-
-    // ---- Tiny WebAudio sound effects ----
+    // ---------- audio ----------
     let audioCtx = null;
     function beep(freq, dur, type) {
         try {
             audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
             const o = audioCtx.createOscillator(), g = audioCtx.createGain();
             o.type = type || "triangle"; o.frequency.value = freq;
-            g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
             o.connect(g); g.connect(audioCtx.destination);
             o.start(); o.stop(audioCtx.currentTime + dur);
-        } catch (e) { /* sound is optional */ }
+        } catch (e) { /* sound optional */ }
     }
     const sfxGood = () => { beep(660, 0.12); setTimeout(() => beep(880, 0.18), 90); };
-    const sfxBad = () => beep(160, 0.35, "sawtooth");
+    const sfxBad = () => beep(150, 0.35, "sawtooth");
+    const sfxPing = () => beep(1200, 0.1, "sine");
+    const sfxSplash = () => beep(300, 0.25, "sine");
 
-    function confetti() {
-        const emo = ["🌸", "🌺", "🌼", "✨", "💮"];
-        for (let i = 0; i < 40; i++) {
-            const s = document.createElement("span");
-            s.className = "confetti";
-            s.textContent = emo[i % emo.length];
-            s.style.left = Math.random() * 100 + "vw";
-            s.style.animationDuration = 2 + Math.random() * 2 + "s";
-            s.style.animationDelay = Math.random() * 0.8 + "s";
-            document.body.appendChild(s);
-            setTimeout(() => s.remove(), 5000);
-        }
-    }
-
+    // ---------- HUD & banner ----------
     function updateHud() {
         $("player-score").textContent = playerScore;
         $("ai-score").textContent = aiScore;
         $("streak").textContent = streak;
-        $("round").textContent = round ? round + "/" + TOTAL_ROUNDS : "–";
+        $("crates").textContent = cratesDone + "/" + TOTAL_CRATES;
+        const lvl = (state === "dive" || state === "classify") ? o2 / O2_MAX : 1;
+        $("o2fill").style.width = Math.max(0, lvl * 100) + "%";
+        $("o2bar").classList.toggle("low", lvl < 0.25);
+    }
+    let bannerTimer = null;
+    function banner(msg, ms) {
+        const b = $("banner");
+        b.textContent = msg;
+        b.classList.remove("hidden");
+        clearTimeout(bannerTimer);
+        if (ms) bannerTimer = setTimeout(() => b.classList.add("hidden"), ms);
     }
 
-    async function nextRound() {
-        round++;
-        locked = false;
+    function showOverlay(name) {
+        ["ov-title", "ov-classify", "ov-final"].forEach(id =>
+            $(id).classList.toggle("hidden", id !== name));
+    }
+    function hideOverlays() {
+        ["ov-title", "ov-classify", "ov-final"].forEach(id => $(id).classList.add("hidden"));
+    }
+
+    // ---------- SVG flower (specimen rendering) ----------
+    function drawFlower(svg, f) {
+        const SCALE = 13;
+        const petals = [], sepals = [];
+        for (let i = 0; i < 3; i++) {
+            const a = i * 120 - 90;
+            sepals.push(petalShape(f.sepal_length * SCALE, f.sepal_width * SCALE, a + 60, "#3f7a4f", "#2c5c3a"));
+            petals.push(petalShape(f.petal_length * SCALE, f.petal_width * SCALE, a, "#a78bfa", "#7c3aed"));
+        }
+        svg.innerHTML = sepals.join("") + petals.join("") +
+            '<circle r="9" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>';
+    }
+    function petalShape(len, wid, angleDeg, fill, stroke) {
+        const rx = Math.max(len / 2, 4), ry = Math.max(wid / 2, 3);
+        return `<ellipse cx="0" cy="${-rx}" rx="${ry}" ry="${rx}" fill="${fill}" stroke="${stroke}" ` +
+               `stroke-width="1.5" opacity="0.92" transform="rotate(${angleDeg})"/>`;
+    }
+
+    // ---------- phase transitions ----------
+    function startFlight() {
+        state = "fly";
+        target = null;
+        plane.y = 180 + Math.random() * 60;
+        plane.vx = plane.face * 40; plane.vy = 0;
+        let bx;
+        do { bx = 80 + Math.random() * (W - 160); } while (Math.abs(bx - plane.x) < 220);
+        buoy = { x: bx };
+        o2 = O2_MAX;
+        hideOverlays();
+        banner("🚩 Fly to the buoy and touch down on the water beside it", 3500);
         updateHud();
-        $("round-label").textContent = "Round " + round + " of " + TOTAL_ROUNDS;
+    }
+
+    function landPlane() {
+        state = "splash";
+        splashT = 0.7;
+        sfxSplash();
+        for (let i = 0; i < 18; i++) {
+            splashes.push({ x: plane.x + (Math.random() - 0.5) * 50, y: WATERLINE,
+                            vx: (Math.random() - 0.5) * 90, vy: -60 - Math.random() * 110,
+                            r: 2 + Math.random() * 3 });
+        }
+    }
+
+    function startDive() {
+        state = "dive";
+        target = null;
+        diver.x = plane.x; diver.y = 70; diver.vx = 0; diver.vy = 30;
+        diver.face = plane.face;
+        let cx;
+        do { cx = 60 + Math.random() * (W - 120); } while (Math.abs(cx - diver.x) < 140);
+        crate = { x: cx, y: SEABED - 20, bob: Math.random() * Math.PI * 2 };
+        banner("📦 Sonar contact — recover the crate", 3000);
+        sfxPing();
+        updateHud();
+    }
+
+    async function openCrate() {
+        state = "classify";
+        crate = null;
+        locked = false;
         $("result").innerHTML = "";
         $("next-btn").classList.add("hidden");
-        document.querySelectorAll(".choices button").forEach(b => {
+        $("crate-title").textContent = "CRATE " + (cratesDone + 1) + " RECOVERED";
+        document.querySelectorAll("#ov-classify .choices button").forEach(b => {
             b.disabled = false; b.classList.remove("correct", "wrong");
         });
+        showOverlay("ov-classify");
         try {
             const r = await fetch("/game/round");
             sample = await r.json();
         } catch (e) {
-            $("result").innerHTML = '<span class="lose">Could not reach the server — is the app running?</span>';
+            $("result").innerHTML = '<span class="lose">Radio failure — could not reach the surface (server).</span>';
+            $("next-btn").classList.remove("hidden");
             return;
         }
         const f = sample.features;
@@ -223,13 +329,12 @@
             `<span class="bar"><span style="width:${Math.min(100, f[key] / max * 100)}%"></span></span>` +
             `<span class="num">${f[key].toFixed(1)} cm</span>`
         ).join("");
-        show("round");
     }
 
     async function makeGuess(guess, btn) {
-        if (locked || !sample) return;
+        if (locked || !sample || state !== "classify") return;
         locked = true;
-        document.querySelectorAll(".choices button").forEach(b => b.disabled = true);
+        document.querySelectorAll("#ov-classify .choices button").forEach(b => b.disabled = true);
         let res;
         try {
             const r = await fetch("/game/guess", {
@@ -239,81 +344,429 @@
             });
             res = await r.json();
         } catch (e) {
-            $("result").innerHTML = '<span class="lose">Server error — try the next round.</span>';
+            $("result").innerHTML = '<span class="lose">Server error — surfacing.</span>';
             $("next-btn").classList.remove("hidden");
             return;
         }
-        const truthBtn = document.querySelector(`.choices button[data-guess="${res.truth}"]`);
+        const truthBtn = document.querySelector(`#ov-classify .choices button[data-guess="${res.truth}"]`);
         truthBtn.classList.add("correct");
         let html = "";
         if (res.player_correct) {
             const bonus = streak * 2;
             streak++;
             playerScore += 10 + bonus;
+            o2 = Math.min(O2_MAX, o2 + O2_REWARD);
             sfxGood();
-            html += `<span class="win">✔ Correct — it's ${NAMES[res.truth]}! +${10 + bonus}` +
-                    (bonus ? ` (streak bonus +${bonus})` : "") + "</span><br>";
+            html += `<span class="win">✔ ${NAMES[res.truth]} — logged! +${10 + bonus}` +
+                    (bonus ? ` (streak +${bonus})` : "") + `</span><br>`;
         } else {
             streak = 0;
             btn.classList.add("wrong");
             sfxBad();
-            html += `<span class="lose">✘ Nope — it was ${NAMES[res.truth]}.</span><br>`;
+            html += `<span class="lose">✘ Mislabeled — it was ${NAMES[res.truth]}.</span><br>`;
         }
         if (res.model_prediction !== null) {
             if (res.model_correct) aiScore += 10;
-            html += `<span class="ai-line">🤖 The AI said ${NAMES[res.model_prediction]} — ` +
+            html += `<span class="ai-line">🤖 Onboard AI said ${NAMES[res.model_prediction]} — ` +
                     (res.model_correct ? "correct." : "wrong!") + "</span>";
         } else {
-            html += '<span class="ai-line">🤖 The AI is asleep (model not loaded).</span>';
+            html += '<span class="ai-line">🤖 Onboard AI is offline (model not loaded).</span>';
         }
+        cratesDone++;
         $("result").innerHTML = html;
         updateHud();
-        $("next-btn").textContent = round >= TOTAL_ROUNDS ? "SEE FINAL SCORE ▶" : "NEXT ROUND ▶";
+        $("next-btn").textContent = cratesDone >= TOTAL_CRATES ? "RETURN TO BASE 🛬" : "SURFACE & TAKE OFF 🛫";
         $("next-btn").classList.remove("hidden");
         $("next-btn").focus();
     }
 
-    function finish() {
-        $("final-you").textContent = playerScore;
-        $("final-ai").textContent = aiScore;
-        drawFlower($("final-flower"), { sepal_length: 6.5, sepal_width: 3.4, petal_length: 5.2, petal_width: 2.0 },
-                   playerScore >= aiScore ? "#4ade80" : "#f87171");
-        if (playerScore > aiScore) {
-            $("final-title").textContent = "🏆 YOU BEAT THE AI!";
-            $("final-line").textContent = "A human out-classifying a RandomForest. Frame this.";
-            confetti(); sfxGood();
+    function afterClassify() {
+        if (cratesDone >= TOTAL_CRATES) return finish(true);
+        plane.x = diver.x;
+        startFlight();
+    }
+
+    function finish(surfaced) {
+        state = "final";
+        crate = null; buoy = null;
+        let title, line;
+        if (!surfaced) {
+            title = "🫧 OUT OF AIR";
+            line = "Emergency ascent at crate " + (cratesDone + 1) + " of " + TOTAL_CRATES +
+                   ". The specimens can wait — you can't.";
+            sfxBad();
+        } else if (playerScore > aiScore) {
+            title = "🏆 YOU OUT-DOVE THE AI";
+            line = "A human beating a RandomForest at its own dataset. Log it in the dive book.";
+            sfxGood();
         } else if (playerScore === aiScore) {
-            $("final-title").textContent = "🤝 IT'S A DRAW";
-            $("final-line").textContent = "Carbon and silicon, evenly matched.";
+            title = "🤝 DEAD HEAT";
+            line = "Carbon and silicon, evenly matched at depth.";
         } else {
-            $("final-title").textContent = "🤖 THE AI WINS";
-            $("final-line").textContent = "It did train on 105 of these flowers. Rematch?";
+            title = "🤖 THE AI WINS";
+            line = "It trained on 105 of these specimens. Rematch?";
             sfxBad();
         }
-        show("final");
+        $("final-title").textContent = title;
+        $("final-line").textContent = line;
+        $("final-you").textContent = playerScore;
+        $("final-ai").textContent = aiScore;
+        $("banner").classList.add("hidden");
+        showOverlay("ov-final");
     }
 
     function startGame() {
-        round = 0; playerScore = 0; aiScore = 0; streak = 0;
+        playerScore = 0; aiScore = 0; streak = 0; cratesDone = 0; o2 = O2_MAX;
+        plane.x = 90; plane.face = 1;
         updateHud();
-        nextRound();
+        startFlight();
     }
+
+    // ---------- input ----------
+    document.addEventListener("keydown", e => {
+        keys[e.key.toLowerCase()] = true;
+        if (state === "classify" && ["1", "2", "3"].includes(e.key) && !locked) {
+            const btn = document.querySelector(`#ov-classify .choices button[data-guess="${+e.key - 1}"]`);
+            if (btn) makeGuess(+e.key - 1, btn);
+        }
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(e.key.toLowerCase()))
+            e.preventDefault();
+    });
+    document.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+    canvas.addEventListener("pointerdown", e => {
+        if (state !== "dive" && state !== "fly") return;
+        const r = canvas.getBoundingClientRect();
+        target = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
+    });
 
     $("start-btn").addEventListener("click", startGame);
     $("again-btn").addEventListener("click", startGame);
-    $("next-btn").addEventListener("click", () => round >= TOTAL_ROUNDS ? finish() : nextRound());
-    document.querySelectorAll(".choices button").forEach(b =>
+    $("next-btn").addEventListener("click", afterClassify);
+    document.querySelectorAll("#ov-classify .choices button").forEach(b =>
         b.addEventListener("click", () => makeGuess(parseInt(b.dataset.guess, 10), b)));
-    document.addEventListener("keydown", e => {
-        if (["1", "2", "3"].includes(e.key) && !screens.round.classList.contains("hidden") && !locked) {
-            const btn = document.querySelector(`.choices button[data-guess="${+e.key - 1}"]`);
-            if (btn) makeGuess(+e.key - 1, btn);
-        }
-    });
 
-    // Decorative flower on the title screen
-    drawFlower($("title-flower"), { sepal_length: 6.3, sepal_width: 3.3, petal_length: 4.7, petal_width: 1.6 });
+    // Read-only hook so automated tests can steer without pixel-hunting.
+    window.__salvage = {
+        get state() { return state; },
+        get crate() { return crate ? { x: crate.x, y: crate.y } : null; },
+        get buoy() { return buoy ? { x: buoy.x, y: WATERLINE } : null; },
+        get plane() { return { x: plane.x, y: plane.y }; },
+    };
+
+    // ---------- simulation ----------
+    let last = performance.now();
+    function tick(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        if (state === "fly") updateFlight(dt);
+        else if (state === "dive") updateDive(dt);
+        else if (state === "splash") {
+            splashT -= dt;
+            if (splashT <= 0) startDive();
+        }
+        render(now / 1000);
+        requestAnimationFrame(tick);
+    }
+
+    function steer(entity, ACC, MAX, dt) {
+        let ax = 0, ay = 0;
+        if (keys["arrowleft"] || keys["a"]) ax -= 1;
+        if (keys["arrowright"] || keys["d"]) ax += 1;
+        if (keys["arrowup"] || keys["w"]) ay -= 1;
+        if (keys["arrowdown"] || keys["s"]) ay += 1;
+        if (ax || ay) target = null;
+        if (target) {
+            const dx = target.x - entity.x, dy = target.y - entity.y;
+            const d = Math.hypot(dx, dy);
+            if (d < 12) target = null;
+            else { ax = dx / d; ay = dy / d; }
+        }
+        entity.vx += ax * ACC * dt;
+        entity.vy += ay * ACC * dt;
+        entity.vx *= (1 - 2.2 * dt);
+        entity.vy *= (1 - 2.2 * dt);
+        const sp = Math.hypot(entity.vx, entity.vy);
+        if (sp > MAX) { entity.vx *= MAX / sp; entity.vy *= MAX / sp; }
+        entity.x = Math.max(28, Math.min(W - 28, entity.x + entity.vx * dt));
+        entity.y += entity.vy * dt;
+        if (Math.abs(entity.vx) > 6) entity.face = entity.vx > 0 ? 1 : -1;
+        return sp;
+    }
+
+    function updateFlight(dt) {
+        plane.vy += 26 * dt; // gentle gravity: planes want to descend
+        steer(plane, 420, 240, dt);
+        plane.prop += dt * 40;
+        plane.y = Math.max(50, plane.y);
+        if (plane.y >= WATERLINE - 14) {
+            if (buoy && Math.abs(plane.x - buoy.x) < 95) {
+                landPlane();
+            } else {
+                plane.vy = -110; // bounce off the water
+                banner("🚩 Too far from the buoy — touch down next to it", 2000);
+                beep(220, 0.15, "square");
+            }
+        }
+    }
+
+    function updateDive(dt) {
+        const sp = steer(diver, 340, 190, dt);
+        diver.y = Math.max(40, Math.min(SEABED - 14, diver.y));
+        diver.kick += dt * (2 + sp / 30);
+        if (Math.random() < dt * 6) {
+            bubbles.push({ x: diver.x + diver.face * 14, y: diver.y - 8,
+                           r: 1.5 + Math.random() * 3, v: 26 + Math.random() * 22 });
+        }
+        o2 -= dt;
+        updateHud();
+        if (o2 <= 0) return finish(false);
+        if (crate && Math.hypot(diver.x - crate.x, diver.y - (crate.y - 8)) < 46) {
+            openCrate();
+        }
+    }
+
+    // ---------- rendering ----------
+    function render(t) {
+        if (state === "fly" || state === "splash" || state === "title" ||
+            (state === "final" && !crate)) renderFlight(t);
+        else renderDive(t);
+    }
+
+    function renderFlight(t) {
+        // sky
+        const g = ctx.createLinearGradient(0, 0, 0, WATERLINE);
+        g.addColorStop(0, "#7ec8e3"); g.addColorStop(1, "#c9ebf5");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, WATERLINE);
+        // sun
+        ctx.fillStyle = "rgba(253, 230, 138, 0.9)";
+        ctx.beginPath(); ctx.arc(W - 80, 70, 30, 0, Math.PI * 2); ctx.fill();
+        // clouds
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        for (const c of clouds) {
+            c.x += c.v * (1 / 60);
+            if (c.x > W + 60) c.x = -60;
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.s * 0.55, 0, Math.PI * 2);
+            ctx.arc(c.x - c.s * 0.6, c.y + 4, c.s * 0.4, 0, Math.PI * 2);
+            ctx.arc(c.x + c.s * 0.6, c.y + 5, c.s * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        // distant keys (islands)
+        ctx.fillStyle = "#67b28f";
+        for (const ix of [70, 300, 520]) {
+            ctx.beginPath();
+            ctx.ellipse(ix, WATERLINE - 2, 55, 12, 0, Math.PI, 0);
+            ctx.fill();
+            ctx.strokeStyle = "#2e7d4f"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(ix, WATERLINE - 12); ctx.lineTo(ix, WATERLINE - 30); ctx.stroke();
+            ctx.beginPath();
+            for (const a of [-0.9, -0.3, 0.3, 0.9]) {
+                ctx.moveTo(ix, WATERLINE - 30);
+                ctx.quadraticCurveTo(ix + a * 12, WATERLINE - 38, ix + a * 20, WATERLINE - 32);
+            }
+            ctx.stroke();
+        }
+        // sea
+        const s = ctx.createLinearGradient(0, WATERLINE, 0, H);
+        s.addColorStop(0, "#0e7490"); s.addColorStop(1, "#083d5c");
+        ctx.fillStyle = s;
+        ctx.fillRect(0, WATERLINE, W, H - WATERLINE);
+        // waves
+        ctx.strokeStyle = "rgba(224, 242, 254, 0.4)";
+        ctx.lineWidth = 2;
+        for (let row = 0; row < 3; row++) {
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += 8) {
+                const y = WATERLINE + 12 + row * 26 + Math.sin(x / 26 + t * 2 + row) * 3;
+                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        // buoy
+        if (buoy && (state === "fly" || state === "splash")) {
+            const by = WATERLINE + 4 + Math.sin(t * 2.4) * 3;
+            ctx.save();
+            ctx.translate(buoy.x, by);
+            ctx.fillStyle = "#f87171";
+            ctx.beginPath(); ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#7f1d1d"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, -26); ctx.stroke();
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(14, -21); ctx.lineTo(0, -16); ctx.closePath(); ctx.fill();
+            const ring = (t * 30) % 34;
+            ctx.strokeStyle = `rgba(224, 242, 254, ${1 - ring / 34})`;
+            ctx.beginPath(); ctx.arc(0, 0, 12 + ring, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+        }
+        // splash particles
+        ctx.fillStyle = "rgba(224, 242, 254, 0.8)";
+        for (let i = splashes.length - 1; i >= 0; i--) {
+            const p = splashes[i];
+            p.vy += 300 * (1 / 60);
+            p.x += p.vx * (1 / 60); p.y += p.vy * (1 / 60);
+            if (p.y > WATERLINE + 8) { splashes.splice(i, 1); continue; }
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+        // the floatplane
+        if (state !== "title") drawPlane(t);
+        // during splash, sink the plane slightly
+    }
+
+    function drawPlane(t) {
+        const sinking = state === "splash" ? (0.7 - splashT) * 10 : 0;
+        ctx.save();
+        ctx.translate(plane.x, plane.y + sinking);
+        ctx.scale(plane.face, 1);
+        const tilt = Math.max(-0.3, Math.min(0.3, plane.vy / 400));
+        ctx.rotate(tilt);
+        // pontoons
+        ctx.fillStyle = "#94a3b8";
+        ctx.beginPath(); ctx.ellipse(-2, 16, 16, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#475569"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(-8, 4); ctx.moveTo(6, 12); ctx.lineTo(8, 4); ctx.stroke();
+        // fuselage
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath(); ctx.ellipse(0, 0, 24, 8, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#a16207"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(0, 0, 24, 8, 0, 0, Math.PI * 2); ctx.stroke();
+        // tail
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath(); ctx.moveTo(-22, -2); ctx.lineTo(-32, -16); ctx.lineTo(-24, -16); ctx.lineTo(-16, -4);
+        ctx.closePath(); ctx.fill();
+        // wing
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath(); ctx.ellipse(2, -8, 17, 4, -0.08, 0, Math.PI * 2); ctx.fill();
+        // cockpit
+        ctx.fillStyle = "#7dd3fc";
+        ctx.beginPath(); ctx.arc(10, -4, 5, Math.PI, 0); ctx.fill();
+        // propeller
+        ctx.strokeStyle = "rgba(71, 85, 105, 0.85)";
+        ctx.lineWidth = 3;
+        const spin = Math.sin(plane.prop * 6);
+        ctx.beginPath(); ctx.moveTo(25, -10 * spin); ctx.lineTo(25, 10 * spin); ctx.stroke();
+        ctx.restore();
+    }
+
+    function renderDive(t) {
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, "#0a5d8f"); g.addColorStop(0.5, "#07456e"); g.addColorStop(1, "#032a45");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        // light rays
+        ctx.save();
+        ctx.globalAlpha = 0.07;
+        ctx.fillStyle = "#e0f2fe";
+        for (let i = 0; i < 3; i++) {
+            const x = 90 + i * 200 + Math.sin(t / 3 + i) * 30;
+            ctx.beginPath();
+            ctx.moveTo(x - 18, 0); ctx.lineTo(x + 18, 0);
+            ctx.lineTo(x + 90, H); ctx.lineTo(x - 90, H);
+            ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        // fish
+        for (let i = fish.length - 1; i >= 0; i--) {
+            const f = fish[i];
+            f.x += f.v * (1 / 60);
+            f.wig += 0.1;
+            if (f.x < -40 || f.x > W + 40) { fish.splice(i, 1); spawnFish(false); continue; }
+            const fy = f.y + Math.sin(f.wig) * 4;
+            ctx.save();
+            ctx.translate(f.x, fy);
+            ctx.scale(f.v > 0 ? 1 : -1, 1);
+            ctx.fillStyle = `hsla(${f.hue}, 60%, 60%, 0.85)`;
+            ctx.beginPath(); ctx.ellipse(0, 0, f.s, f.s * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-f.s, 0); ctx.lineTo(-f.s - f.s * 0.7, -f.s * 0.5);
+            ctx.lineTo(-f.s - f.s * 0.7, f.s * 0.5); ctx.closePath(); ctx.fill();
+            ctx.restore();
+        }
+        // seabed
+        ctx.fillStyle = "#8a6f47";
+        ctx.beginPath();
+        ctx.moveTo(0, SEABED + 8);
+        for (let x = 0; x <= W; x += 40) ctx.lineTo(x, SEABED + 8 + Math.sin(x / 53) * 5);
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#75593a";
+        for (let x = 20; x < W; x += 90) {
+            ctx.beginPath(); ctx.ellipse(x, SEABED + 22, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        // seaweed
+        for (const wd of weeds) {
+            ctx.strokeStyle = "#2e7d4f";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(wd.x, SEABED + 10);
+            for (let s = 1; s <= 5; s++) {
+                ctx.lineTo(wd.x + Math.sin(t * 1.3 + wd.sway + s) * 6 * s / 5, SEABED + 10 - wd.h * s / 5);
+            }
+            ctx.stroke();
+        }
+        // crate
+        if (crate) {
+            const cy = crate.y + Math.sin(t * 2 + crate.bob) * 2;
+            ctx.save();
+            ctx.translate(crate.x, cy);
+            ctx.fillStyle = "#5b7286";
+            ctx.strokeStyle = "#93b4cc";
+            ctx.lineWidth = 2;
+            ctx.fillRect(-26, -20, 52, 36);
+            ctx.strokeRect(-26, -20, 52, 36);
+            for (let i = -1; i <= 1; i++) {
+                ctx.beginPath(); ctx.moveTo(i * 15, -20); ctx.lineTo(i * 15, 16); ctx.stroke();
+            }
+            ctx.fillStyle = "#fbbf24";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("BILGE CO", 0, 2);
+            const ring = (t * 40) % 40;
+            ctx.strokeStyle = `rgba(125, 211, 252, ${1 - ring / 40})`;
+            ctx.beginPath(); ctx.arc(0, -4, 30 + ring, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+        }
+        // diver
+        ctx.save();
+        ctx.translate(diver.x, diver.y);
+        ctx.scale(diver.face, 1);
+        const kick = Math.sin(diver.kick * 4) * 0.5;
+        ctx.fillStyle = "#eab308";
+        ctx.beginPath(); ctx.ellipse(-8, -4, 5, 11, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath(); ctx.ellipse(0, 0, 16, 8, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.save();
+        ctx.translate(-15, 2); ctx.rotate(kick);
+        ctx.fillStyle = "#0ea5e9";
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-13, -4); ctx.lineTo(-13, 6); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = "#c9a07a";
+        ctx.beginPath(); ctx.arc(15, -4, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#7dd3fc";
+        ctx.fillRect(14, -8, 8, 6);
+        ctx.strokeStyle = "#0c4a6e"; ctx.lineWidth = 1; ctx.strokeRect(14, -8, 8, 6);
+        ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 5; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(6, 3); ctx.lineTo(20, 7 + kick * 4); ctx.stroke();
+        ctx.restore();
+        // bubbles
+        ctx.fillStyle = "rgba(224, 242, 254, 0.55)";
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            const b = bubbles[i];
+            b.y -= b.v * (1 / 60);
+            b.x += Math.sin(b.y / 14) * 0.5;
+            if (b.y < -8) { bubbles.splice(i, 1); continue; }
+            ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+        }
+        // swim target marker
+        if (target && state === "dive") {
+            ctx.strokeStyle = "rgba(125, 211, 252, 0.7)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(target.x, target.y, 8 + Math.sin(t * 6) * 2, 0, Math.PI * 2); ctx.stroke();
+        }
+    }
+
+    playerScore = 0; aiScore = 0; streak = 0; cratesDone = 0; o2 = O2_MAX;
     updateHud();
+    requestAnimationFrame(tick);
 })();
 </script>
 </body>
