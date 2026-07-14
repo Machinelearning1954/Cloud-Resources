@@ -112,6 +112,10 @@
                     <button class="big-btn" id="start-plane" style="margin-top:0">🛩 FLOATPLANE<span class="key">lands anywhere on the water</span></button>
                     <button class="big-btn" id="start-boat" style="margin-top:0">🚤 SPEEDBOAT<span class="key">fast — ease off at the buoy</span></button>
                 </div>
+                <button class="big-btn" id="realism-btn"
+                        style="background: linear-gradient(180deg,#7c3aed,#5b21b6)">🎬 REALISM: ON
+                    <span class="key">weather &amp; wind · reflections · depth fog &amp; headlamp · exertion O₂</span>
+                </button>
             </div>
         </div>
 
@@ -176,6 +180,11 @@
     let sample = null, locked = false;
     let vehicle = "plane";        // "plane" | "boat"
     let dusk = false;             // neon-night surface theme on alternating legs
+    let realism = true;           // "way too realistic" mode: weather, fog, exertion...
+    let rainy = false;            // this leg's weather (realism only)
+    let rainSeen = 0;             // rainy legs this session (exposed for tests)
+    let wind = 0;                 // horizontal gust force during rain
+    let shake = 0;                // camera shake intensity (decays per frame)
     const plane = { x: 90, y: 200, vx: 40, vy: 0, face: 1, prop: 0 };
     const diver = { x: W / 2, y: 90, vx: 0, vy: 0, face: 1, kick: 0 };
     let buoy = null;              // {x} flight target
@@ -183,7 +192,8 @@
     let target = null;            // tap destination
     let splashT = 0;
     const keys = {};
-    const bubbles = [], fish = [], weeds = [], clouds = [], splashes = [], sprays = [];
+    const bubbles = [], fish = [], weeds = [], clouds = [], splashes = [], sprays = [],
+          rain = [], rings = [], silt = [];
 
     // Neon skyline for dusk legs, generated once
     const skyline = [];
@@ -292,6 +302,9 @@
         state = "fly";
         target = null;
         dusk = cratesDone % 2 === 1;
+        rainy = realism && cratesDone % 3 === 1; // a squall every third leg
+        if (rainy) rainSeen++;
+        rain.length = 0; rings.length = 0;
         if (vehicle === "boat") {
             plane.y = WATERLINE - 8;
             plane.vx = plane.face * 60; plane.vy = 0;
@@ -304,9 +317,11 @@
         buoy = { x: bx };
         o2 = O2_MAX;
         hideOverlays();
-        banner(vehicle === "boat"
-            ? "🚩 Race to the buoy and ease off the throttle beside it"
-            : "🚩 Fly to the buoy and touch down on the water beside it", 3500);
+        banner(rainy
+            ? "⛈ Squall rolling through — mind the gusts"
+            : (vehicle === "boat"
+                ? "🚩 Race to the buoy and ease off the throttle beside it"
+                : "🚩 Fly to the buoy and touch down on the water beside it"), 3500);
         updateHud();
     }
 
@@ -314,7 +329,9 @@
         state = "splash";
         splashT = 0.7;
         sfxSplash();
-        for (let i = 0; i < 18; i++) {
+        if (realism) shake = 0.45;
+        const n = rainy ? 30 : 18; // choppier water in a squall
+        for (let i = 0; i < n; i++) {
             splashes.push({ x: plane.x + (Math.random() - 0.5) * 50, y: WATERLINE,
                             vx: (Math.random() - 0.5) * 90, vy: -60 - Math.random() * 110,
                             r: 2 + Math.random() * 3 });
@@ -394,6 +411,7 @@
             streak = 0;
             btn.classList.add("wrong");
             sfxBad();
+            if (realism) shake = 0.35;
             html += `<span class="lose">✘ Mislabeled — it was ${NAMES[res.truth]}.</span><br>`;
         }
         if (res.model_prediction !== null) {
@@ -474,6 +492,13 @@
     $("start-plane").addEventListener("click", () => startGame("plane"));
     $("start-boat").addEventListener("click", () => startGame("boat"));
     $("again-btn").addEventListener("click", () => { state = "title"; showOverlay("ov-title"); });
+    $("realism-btn").addEventListener("click", () => {
+        realism = !realism;
+        $("realism-btn").childNodes[0].textContent = "🎬 REALISM: " + (realism ? "ON" : "OFF");
+        $("realism-btn").style.background = realism
+            ? "linear-gradient(180deg,#7c3aed,#5b21b6)"
+            : "linear-gradient(180deg,#334155,#1e293b)";
+    });
     $("next-btn").addEventListener("click", afterClassify);
     document.querySelectorAll("#ov-classify .choices button").forEach(b =>
         b.addEventListener("click", () => makeGuess(parseInt(b.dataset.guess, 10), b)));
@@ -484,6 +509,9 @@
         get crate() { return crate ? { x: crate.x, y: crate.y } : null; },
         get buoy() { return buoy ? { x: buoy.x, y: WATERLINE } : null; },
         get plane() { return { x: plane.x, y: plane.y }; },
+        get realism() { return realism; },
+        get rainy() { return rainy; },
+        get rainSeen() { return rainSeen; },
     };
 
     // ---------- simulation ----------
@@ -527,6 +555,9 @@
     }
 
     function updateFlight(dt) {
+        // gusty crosswind during a squall; the plane feels it more than the boat
+        wind = rainy ? Math.sin(performance.now() / 1300) * 55 + 25 : 0;
+        if (wind) plane.vx += wind * dt * (vehicle === "boat" ? 0.35 : 1);
         if (vehicle === "boat") {
             // speedboat: pinned to the surface, throttle left/right, anchor by slowing down
             steer(plane, 480, 310, dt);
@@ -567,7 +598,23 @@
             bubbles.push({ x: diver.x + diver.face * 14, y: diver.y - 8,
                            r: 1.5 + Math.random() * 3, v: 26 + Math.random() * 22 });
         }
-        o2 -= dt;
+        if (realism) {
+            // kicking hard burns air faster (up to ~1.6x at full speed)
+            o2 -= dt * (1 + 0.6 * sp / 190);
+            // fish keep their distance from the big noisy mammal
+            for (const f of fish) {
+                if (Math.hypot(f.x - diver.x, f.y - diver.y) < 70) {
+                    f.v = (f.x < diver.x ? -1 : 1) * (44 + Math.random() * 26);
+                }
+            }
+            // kicking near the bottom stirs up sediment
+            if (diver.y > SEABED - 42 && sp > 60 && Math.random() < dt * 9) {
+                silt.push({ x: diver.x - diver.face * 12, y: SEABED + 2,
+                            r: 3 + Math.random() * 4, a: 0.3 });
+            }
+        } else {
+            o2 -= dt;
+        }
         updateHud();
         if (o2 <= 0) return finish(false);
         if (crate && Math.hypot(diver.x - crate.x, diver.y - (crate.y - 8)) < 46) {
@@ -577,18 +624,27 @@
 
     // ---------- rendering ----------
     function render(t) {
+        ctx.save();
+        if (realism && shake > 0) {
+            shake = Math.max(0, shake - 1 / 60);
+            const m = shake * 9;
+            ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m);
+        }
         if (state === "fly" || state === "splash" || state === "title" ||
             (state === "final" && !crate)) renderFlight(t);
         else renderDive(t);
+        ctx.restore();
     }
 
     function renderFlight(t) {
-        // sky
+        // sky (grey-shifted when a squall is passing)
         const g = ctx.createLinearGradient(0, 0, 0, WATERLINE);
         if (dusk) {
-            g.addColorStop(0, "#2b1055"); g.addColorStop(0.55, "#7a2a6e"); g.addColorStop(1, "#e96d9c");
+            if (rainy) { g.addColorStop(0, "#1e1238"); g.addColorStop(0.55, "#4e2050"); g.addColorStop(1, "#8f4a72"); }
+            else { g.addColorStop(0, "#2b1055"); g.addColorStop(0.55, "#7a2a6e"); g.addColorStop(1, "#e96d9c"); }
         } else {
-            g.addColorStop(0, "#7ec8e3"); g.addColorStop(1, "#c9ebf5");
+            if (rainy) { g.addColorStop(0, "#6b7f8f"); g.addColorStop(1, "#9fb4bd"); }
+            else { g.addColorStop(0, "#7ec8e3"); g.addColorStop(1, "#c9ebf5"); }
         }
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, WATERLINE);
@@ -604,10 +660,11 @@
             ctx.fillStyle = "rgba(253, 230, 138, 0.9)";
             ctx.beginPath(); ctx.arc(W - 80, 70, 30, 0, Math.PI * 2); ctx.fill();
         }
-        // clouds
-        ctx.fillStyle = dusk ? "rgba(249, 168, 212, 0.35)" : "rgba(255,255,255,0.85)";
+        // clouds (darker and faster in a squall)
+        ctx.fillStyle = rainy ? "rgba(75, 85, 99, 0.8)"
+                       : dusk ? "rgba(249, 168, 212, 0.35)" : "rgba(255,255,255,0.85)";
         for (const c of clouds) {
-            c.x += c.v * (1 / 60);
+            c.x += c.v * (rainy ? 2.4 : 1) * (1 / 60);
             if (c.x > W + 60) c.x = -60;
             ctx.beginPath();
             ctx.arc(c.x, c.y, c.s * 0.55, 0, Math.PI * 2);
@@ -706,6 +763,64 @@
             p.x += p.vx * (1 / 60); p.y += p.vy * (1 / 60);
             if (p.y > WATERLINE + 4) { sprays.splice(i, 1); continue; }
             ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+        if (realism && !rainy) {
+            if (dusk) {
+                // skyline neon smeared across the water
+                ctx.globalAlpha = 0.3;
+                for (const b of skyline) {
+                    for (let wi = 0; wi < b.windows.length; wi += 3) {
+                        const w = b.windows[wi];
+                        const rx = b.x + w.dx + Math.sin(t * 2 + w.dy) * 2;
+                        ctx.fillStyle = w.c;
+                        ctx.fillRect(rx, WATERLINE + 6 + w.dy * 0.25, 3, 3);
+                    }
+                }
+                ctx.globalAlpha = 1;
+            } else {
+                // sun glitter path
+                ctx.fillStyle = "rgba(253, 230, 138, 0.5)";
+                for (let row = 0; row < 8; row++) {
+                    const gy = WATERLINE + 8 + row * 14;
+                    const gw = 26 + row * 6;
+                    const gx = W - 80 + Math.sin(t * 2.6 + row * 1.7) * (6 + row * 2);
+                    ctx.globalAlpha = 0.5 * (0.55 + 0.45 * Math.sin(t * 3 + row * 2.1));
+                    ctx.fillRect(gx - gw / 2, gy, gw, 2.5);
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+        if (realism && rainy && state !== "title") {
+            // rain streaks, slanted by the wind
+            if (rain.length < 90) {
+                for (let i = 0; i < 5; i++) {
+                    rain.push({ x: Math.random() * (W + 120) - 60, y: -10 - Math.random() * 40 });
+                }
+            }
+            ctx.strokeStyle = "rgba(203, 225, 240, 0.5)";
+            ctx.lineWidth = 1.4;
+            const slant = wind * 0.35;
+            ctx.beginPath();
+            for (let i = rain.length - 1; i >= 0; i--) {
+                const d = rain[i];
+                d.x += slant * (1 / 60); d.y += 470 * (1 / 60);
+                if (d.y >= WATERLINE) {
+                    rings.push({ x: d.x, y: WATERLINE + 3 + Math.random() * 10, r: 1, a: 0.5 });
+                    rain.splice(i, 1); continue;
+                }
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(d.x + slant * 0.03, d.y + 13);
+            }
+            ctx.stroke();
+            // impact rings on the water
+            for (let i = rings.length - 1; i >= 0; i--) {
+                const r = rings[i];
+                r.r += 26 * (1 / 60); r.a -= 0.9 * (1 / 60);
+                if (r.a <= 0) { rings.splice(i, 1); continue; }
+                ctx.strokeStyle = `rgba(224, 242, 254, ${r.a})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r, r.r * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
+            }
         }
         // the player's ride
         if (state !== "title") {
@@ -848,7 +963,7 @@
             ctx.fillStyle = "#fbbf24";
             ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("BILGE CO", 0, 2);
+            ctx.fillText("SALVCO", 0, 2);
             const ring = (t * 40) % 40;
             ctx.strokeStyle = `rgba(125, 211, 252, ${1 - ring / 40})`;
             ctx.beginPath(); ctx.arc(0, -4, 30 + ring, 0, Math.PI * 2); ctx.stroke();
@@ -890,6 +1005,39 @@
             ctx.strokeStyle = "rgba(125, 211, 252, 0.7)";
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(target.x, target.y, 8 + Math.sin(t * 6) * 2, 0, Math.PI * 2); ctx.stroke();
+        }
+        if (realism) {
+            // silt kicked up near the seabed
+            for (let i = silt.length - 1; i >= 0; i--) {
+                const s = silt[i];
+                s.r += 9 * (1 / 60); s.a -= 0.18 * (1 / 60); s.y -= 4 * (1 / 60);
+                if (s.a <= 0) { silt.splice(i, 1); continue; }
+                ctx.fillStyle = `rgba(138, 111, 71, ${s.a})`;
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+            }
+            // depth fog: darker the deeper you go, heavier on night dives
+            const depth = Math.min(1, diver.y / SEABED);
+            const fog = ctx.createLinearGradient(0, 0, 0, H);
+            fog.addColorStop(0, "rgba(2, 16, 30, 0)");
+            fog.addColorStop(1, `rgba(2, 10, 25, ${(dusk ? 0.28 : 0.08) + (dusk ? 0.5 : 0.32) * depth})`);
+            ctx.fillStyle = fog;
+            ctx.fillRect(0, 0, W, H);
+            // headlamp cone on night dives
+            if (dusk) {
+                const lx = diver.x + diver.face * 18, ly = diver.y - 4;
+                ctx.save();
+                const lg = ctx.createRadialGradient(lx, ly, 4, lx + diver.face * 80, ly, 150);
+                lg.addColorStop(0, "rgba(253, 240, 180, 0.30)");
+                lg.addColorStop(1, "rgba(253, 240, 180, 0)");
+                ctx.fillStyle = lg;
+                ctx.beginPath();
+                ctx.moveTo(lx, ly);
+                ctx.lineTo(lx + diver.face * 175, ly - 72);
+                ctx.lineTo(lx + diver.face * 175, ly + 72);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
         }
     }
 

@@ -4,6 +4,8 @@ This project implements a machine learning model to classify Iris flower species
 
 It also ships with **🛩🚤🤿 Iris Salvage**, a browser game at `/game`: crates of botanical specimens went down with a cargo ship, scattered across the keys. Pick your ride — the classic floatplane (low and slow, lands anywhere on the water) or the neon speedboat (fast, but you must ease off the throttle at the buoy) — travel to each dive buoy, then dive to the sunken crate and classify the mystery iris inside, drawn to scale from a real sample in the dataset, before your oxygen runs out. Surface legs alternate between sunny day and a neon night skyline. The RandomForest model classifies each specimen too; eight crates, streak bonuses. Highest score wins. Can you out-dive the AI? (Controls: arrow keys/WASD, or tap where you want to go.)
 
+A **🎬 REALISM mode** (on by default, toggleable on the briefing screen) layers in atmosphere and harder physics: passing squalls with slanted rain, impact rings and gusty crosswinds; sun glitter and neon skyline reflections on calm water; depth fog that thickens as you descend, with a headlamp cone on night dives; skittish fish, silt kicked up off the seabed, camera shake on hard landings — and oxygen that burns up to 1.6× faster the harder you kick.
+
 ![Iris Salvage gameplay](docs/demo.gif)
 
 ## Project Structure
