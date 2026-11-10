@@ -1,0 +1,20 @@
+{
+  "test_accuracy": 0.8889,
+  "cv_accuracy_mean": 0.9524,
+  "cv_accuracy_std": 0.0301,
+  "n_train": 105,
+  "n_test": 45,
+  "feature_names": [
+    "sepal_length",
+    "sepal_width",
+    "petal_length",
+    "petal_width"
+  ],
+  "target_names": [
+    "setosa",
+    "versicolor",
+    "virginica"
+  ],
+  "sklearn_version": "1.9.1",
+  "random_state": 42
+}

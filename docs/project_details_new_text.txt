@@ -1,0 +1,379 @@
+Machine
+Learning
+Engineering
+&
+AI
+Bootcamp
+Capst one
+S t e p
+1 1 :
+D e p l o y
+Y o u r
+A p p l i c a t i o n
+t o
+P r o d u c t i o n
+S u m m a r y
+Time
+Estimate:
+15
+-
+20
+hours
+Now
+that
+y ou’v e
+r efact or ed
+y our
+code
+and
+designed
+an
+ar chitectur e
+for
+y our
+system,
+it’ s
+time
+t o
+actually
+implement
+the
+ar chitectur e
+and
+deplo y
+it
+t o
+pr oduction.
+The
+exact
+steps
+y ou
+follow
+her e
+will
+depend
+on
+y our
+pr oject.
+Y ou
+and
+y our
+ment or
+will
+work
+on
+that
+t ogether .
+Her e
+ar e
+a
+f ew
+common
+steps
+that
+MLEs
+might
+follow:
+1.
+Step
+One
+:
+Implement
+y our
+data
+pipeline.
+This
+is
+wher e
+all
+of
+the
+engineering
+skills
+y ou’v e
+learned
+will
+come
+in
+handy .
+a.
+Implement
+the
+right
+systems
+for
+st oring
+y our
+data,
+loading
+it
+for
+tr aining
+y our
+model,
+and
+making
+pr edictions
+with
+y our
+model.
+b.
+Mak e
+sur e
+y ou
+log
+necessar y
+and
+suﬃcient
+information
+for
+monit oring
+and
+debugging
+y our
+system.
+c.
+T est
+each
+component
+and
+subsystem
+as
+much
+as
+possible
+as
+y ou
+build
+it
+out.
+It’ s
+much
+easier
+t o
+ﬁnd
+bugs
+in
+smaller
+systems
+than
+lar ger
+ones
+2.
+Step
+T wo
+:
+Design
+an
+API
+using
+a
+t ool
+such
+as
+Swagger .
+If
+y ou
+choose
+t o
+use
+a
+managed
+ML
+ser vice
+(e.g.
+Domino,
+A WS
+SageMak er ,
+Google
+Cloud
+ML),
+the y
+might
+pr o vide
+out-of-the-bo x
+API
+calls.
+That’ s
+completely
+ﬁne!
+a.
+As
+y ou
+design
+y our
+API,
+tr y
+t o
+mak e
+sur e
+y our
+API
+follows
+good
+design
+principles
+.
+b.
+Use
+a
+t ool
+such
+as
+Flask
+t o
+cr eate
+a
+simple
+user
+inter face
+for
+y our
+API
+3.
+Step
+Thr ee
+:
+T est
+y our
+API
+using
+t ools
+such
+as
+P ostman
+or
+Swagger
+.
+Mak e
+sur e
+y ou
+test
+both
+r ead
+and
+write
+functions
+and
+v arious
+corner
+cases.
+4.
+Step
+F our
+:
+Document
+y our
+API.
+Using
+a
+t ool
+such
+as
+Sphinx
+lets
+y ou
+aut omatically
+cr eate
+beautiful
+API
+documentation
+fr om
+annotations
+in
+y our
+code.
+Add
+y our
+documentation
+t o
+y our
+GitHub
+r eposit or y .
+5.
+Step
+Fiv e
+:
+Add
+instructions
+at
+the
+v er y
+beginning
+of
+the
+README
+for
+y our
+GitHub
+r eposit or y
+on
+how
+t o
+install
+and
+build
+y our
+pr oject
+fr om
+scr atch,
+as
+well
+as
+how
+t o
+access
+and
+use
+y our
+application.
+6.
+Step
+Six
+:
+Include
+a
+Jup yter
+notebook
+in
+the
+r epo
+that
+demonstr ates
+how
+t o
+use
+the
+API,
+and
+why
+it
+is
+useful.
+W riting
+a
+blog-style
+ar ticle
+is
+e v en
+better .
+Look
+at
+fast.ai
+t o
+see
+how
+the y
+do
+it.
+7.
+Step
+Se v en
+:
+Submit
+a
+link
+t o
+y our
+GitHub
+r eposit or y .

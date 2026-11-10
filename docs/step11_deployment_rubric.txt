@@ -1,0 +1,36 @@
+
+Machine Learning Engineering Bootcamp Capstone: Deployment Implementation
+Step 11
+
+Learning Objective
+
+Create a production application out of the production-ready code.
+
+Criteria
+Meets Expectations
+Weightage
+Time Estimate
+15 - 20 hours 
+
+
+Completion
+The student has submitted a link to a production repository i.e. a Github repository with production-ready code and instructions in the README on how to run the application. (2 points)
+2 points
+Process and understanding
+The submission demonstrates that the student has a clear understanding of how to take production-ready code into deployment. Specifically:
+The proposed data pipelines have been implemented; all of the data can be stored, and transported as needed to the right component(s) in the application. (1.5 points)
+The application logs the necessary information to monitor performance and debug it in case of issues. (1.5 points)
+The application is adequately ‘containerized’, whether by using a managed platform such as Domino or Google’s Cloud ML Engine or by using Docker or similar containerization tools. (1.5 points)
+The application has a sensible, well-documented, and tested API and a UI.  (1.5 points)
+6 points
+Presentation
+The Github repository has clear instructions on how to run the application. (0.5 points)
+When ‘spun up’ and run, the application can be queried easily via the API and/or the UI and returns sensible results or error messages. (1 point)
+The code is well-documented and well-organized, with clear instructions on how the code should be run. (0.5 points)
+2 points
+
+
+Excellence: The above criteria were met and 
+The code is particularly clean and elegant.
+The API is well-designed and well-implemented.
+The student has gone above and beyond in ensuring that the application is stable and scalable, even under edge cases and stress.  

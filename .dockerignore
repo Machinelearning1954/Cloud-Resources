@@ -1,0 +1,8 @@
+.git
+archive
+docs
+tests
+Projects for Accenture Machine Learning Engineer Role
+__pycache__
+*.pyc
+.pytest_cache
