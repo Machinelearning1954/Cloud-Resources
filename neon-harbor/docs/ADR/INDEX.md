@@ -14,3 +14,4 @@
 | [0047](ADR-0047-world-browser.md) | Browser World Browser — No WASM Native Port | RECONSTRUCTED |
 | [0048](ADR-0048-focus-transient.md) | Focus System — Transient State ≠ Save Data | RECONSTRUCTED |
 | [0049](ADR-0049-amenity-parity.md) | GTA6 Amenity Parity Through Original Translation | **ADOPTED (new)** |
+| [0050](ADR-0050-visual-fidelity-targets.md) | Visual Fidelity Targets per Tier (Original Art Direction) | PROPOSED (targets PENDING) |

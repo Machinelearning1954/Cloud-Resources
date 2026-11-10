@@ -23,6 +23,7 @@ tests/test_app.py       pytest suite (API, UI, validation, model quality)
 docs/                   Rubrics, cloud guidelines, original checklist
 archive/original-uploads/  Original uploaded deliverables, kept unchanged
 Projects for Accenture Machine Learning Engineer Role/  Separate portfolio project
+neon-harbor/            Separate project: Neon Harbor game docs/data repo (see its README)
 ```
 
 ## Quick start (local)

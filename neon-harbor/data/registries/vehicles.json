@@ -1,13 +1,150 @@
 {
   "$schema_note": "Vehicles registry — REBUILD STUB. The original table (17 vehicles, each with a NoiseRating spectrum entry) was lost with the tree; this registry restarts with the amenity-linked classes ADR 0049 requires and carries explicit rebuild slots. All names original.",
-  "rebuild_slots": "11 more rows to reach the recovered contract of 17",
+  "rebuild_slots": "0 — contract of 17 met on 2026-11-10 (manifest said '11 more', but 7+11=18; the recovered 17-row contract was followed). The 10 added rows are NEW originals, not recovered rows.",
   "vehicles": [
-    { "id": "VH-JETSKI-01", "name": "Spray Board 500", "class": "watercraft_pwc", "noise_rating": "NR-4-loud", "consumed_by": ["NH-AM-12"] },
-    { "id": "VH-KAYAK-01", "name": "Mangrove One", "class": "watercraft_human", "noise_rating": "NR-0-silent", "consumed_by": ["NH-AM-11"] },
-    { "id": "VH-AIRBOAT-01", "name": "Glass Skimmer", "class": "watercraft_airboat", "noise_rating": "NR-5-very-loud", "consumed_by": ["NH-AM-13"] },
-    { "id": "VH-DIRTBIKE-01", "name": "Dutty Thumper 250", "class": "motorcycle_dirt", "noise_rating": "NR-4-loud", "consumed_by": ["NH-AM-15"] },
-    { "id": "VH-RALLY-01", "name": "Bauxite Runner", "class": "car_rally", "noise_rating": "NR-3-moderate", "consumed_by": ["NH-AM-16"] },
-    { "id": "VH-SCOOTER-01", "name": "Zippy Micro", "class": "micro_mobility", "noise_rating": "NR-1-quiet", "consumed_by": ["NH-AM-27"] },
-    { "id": "VH-BOAT-01", "name": "Cane Bay Skiff", "class": "watercraft_outboard", "noise_rating": "NR-2-low", "consumed_by": ["NH-AM-01", "NH-AM-25"] }
+    {
+      "id": "VH-JETSKI-01",
+      "name": "Spray Board 500",
+      "class": "watercraft_pwc",
+      "noise_rating": "NR-4-loud",
+      "consumed_by": [
+        "NH-AM-12"
+      ]
+    },
+    {
+      "id": "VH-KAYAK-01",
+      "name": "Mangrove One",
+      "class": "watercraft_human",
+      "noise_rating": "NR-0-silent",
+      "consumed_by": [
+        "NH-AM-11"
+      ]
+    },
+    {
+      "id": "VH-AIRBOAT-01",
+      "name": "Glass Skimmer",
+      "class": "watercraft_airboat",
+      "noise_rating": "NR-5-very-loud",
+      "consumed_by": [
+        "NH-AM-13"
+      ]
+    },
+    {
+      "id": "VH-DIRTBIKE-01",
+      "name": "Dutty Thumper 250",
+      "class": "motorcycle_dirt",
+      "noise_rating": "NR-4-loud",
+      "consumed_by": [
+        "NH-AM-15"
+      ]
+    },
+    {
+      "id": "VH-RALLY-01",
+      "name": "Bauxite Runner",
+      "class": "car_rally",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [
+        "NH-AM-16"
+      ]
+    },
+    {
+      "id": "VH-SCOOTER-01",
+      "name": "Zippy Micro",
+      "class": "micro_mobility",
+      "noise_rating": "NR-1-quiet",
+      "consumed_by": [
+        "NH-AM-27"
+      ]
+    },
+    {
+      "id": "VH-BOAT-01",
+      "name": "Cane Bay Skiff",
+      "class": "watercraft_outboard",
+      "noise_rating": "NR-2-low",
+      "consumed_by": [
+        "NH-AM-01",
+        "NH-AM-25"
+      ]
+    },
+    {
+      "id": "VH-SEDAN-01",
+      "name": "Harbour Cruiser",
+      "class": "car_sedan",
+      "noise_rating": "NR-2-low",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-TAXI-01",
+      "name": "Route Runner Coaster",
+      "class": "bus_minibus",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-PICKUP-01",
+      "name": "Cockpit Hauler",
+      "class": "truck_pickup",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-SPORT-01",
+      "name": "Palisadoes Streak",
+      "class": "car_sport",
+      "noise_rating": "NR-4-loud",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-MOTO-01",
+      "name": "Bridgeport Courier 125",
+      "class": "motorcycle_street",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-VAN-01",
+      "name": "Old Town Delivery Box",
+      "class": "van_cargo",
+      "noise_rating": "NR-2-low",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-EV-01",
+      "name": "Potomac Glide",
+      "class": "car_electric",
+      "noise_rating": "NR-1-quiet",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-SUV-01",
+      "name": "Gulf Dune Tourer",
+      "class": "suv",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-PATROL-01",
+      "name": "Harbour Patrol Launch",
+      "class": "watercraft_patrol",
+      "noise_rating": "NR-3-moderate",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    },
+    {
+      "id": "VH-BIKE-01",
+      "name": "Yardie Pedal Cruiser",
+      "class": "bicycle",
+      "noise_rating": "NR-0-silent",
+      "consumed_by": [],
+      "provenance": "NEW-2026-11-10 original (not recovered)"
+    }
   ]
 }

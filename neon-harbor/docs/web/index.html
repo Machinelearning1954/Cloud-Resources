@@ -1,0 +1,154 @@
+<!doctype html>
+<!--
+  Neon Harbor: Kingston — World Browser (ADR 0047)
+  Plain HTML/JS, zero build step, zero CDN. Reads registry JSON from
+  ../../data/registries/ and renders it read-only. Serve the neon-harbor/ folder
+  over HTTP (browsers block fetch() from file://):
+      cd neon-harbor && python3 -m http.server 8000
+      open http://localhost:8000/docs/web/
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Harbor World Browser</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --accent: #ff4fa3; --accent2: #2bd9c8; --warn: #f2b84b;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f6f8fa; --panel: #ffffff; --line: #d0d7de; --text: #1f2328; --muted: #57606a;
+            --accent: #c2186f; --accent2: #0f8a7e; --warn: #9a6700; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 20px 16px 8px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .stat b { display: block; font-size: 22px; color: var(--accent2); }
+  .stat small { color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  nav button { background: var(--panel); color: var(--text); border: 1px solid var(--line);
+               border-radius: 999px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  nav button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .controls input, .controls select { background: var(--panel); color: var(--text); border: 1px solid var(--line);
+               border-radius: 6px; padding: 7px 10px; font: inherit; font-size: 14px; min-width: 0; flex: 1 1 160px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  tr:last-child td { border-bottom: 0; }
+  .tag { display: inline-block; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin: 1px 2px 1px 0;
+         font-size: 11px; color: var(--muted); }
+  .gate { color: var(--warn); border-color: var(--warn); }
+  .err { color: var(--warn); padding: 12px; border: 1px solid var(--warn); border-radius: 8px; }
+  footer { color: var(--muted); font-size: 12px; padding: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>NEON <span>HARBOR</span>: Kingston — World Browser</h1>
+  <div class="sub">Read-only view of the registry JSON (ADR 0047). The registries are the single source of truth.</div>
+</header>
+<main>
+  <section class="stats" id="stats" aria-label="Registry totals"></section>
+  <nav id="tabs" aria-label="Registries"></nav>
+  <div class="controls">
+    <input id="q" type="search" placeholder="Filter rows…" aria-label="Filter rows">
+    <select id="district" aria-label="District filter"><option value="">All districts</option></select>
+  </div>
+  <div id="view"></div>
+</main>
+<footer>Doctor green ≠ code green · data rendered as-is from <code>data/registries/</code></footer>
+<script>
+"use strict";
+const BASE = "../../data/registries/";
+const FILES = {
+  amenities: ["amenities.json", "amenities", ["id","name","category","district","milestone","gate","tiers","systems"]],
+  districts: ["districts.json", "districts", ["id","name","real_world_anchor","character","amenity_ids"]],
+  vehicles:  ["vehicles.json",  "vehicles",  ["id","name","class","noise_rating","consumed_by"]],
+  species:   ["species.json",   "species",   ["id","name","status","bounty_eligible","consumed_by"]],
+  services:  ["services.json",  "services",  ["id","name","district","consumes"]],
+  bounties:  ["bounties.json",  "bounties",  ["id","target_species","payout","board"]],
+  crews:     ["crews.json",     "crews",     ["id","name","role","venue"]],
+};
+const state = { data: {}, tab: "amenities", q: "", district: "" };
+const $ = (id) => document.getElementById(id);
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const k of kids) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return n;
+}
+
+function cell(key, val) {
+  if (Array.isArray(val)) return el("td", {}, ...val.map((v) => el("span", { class: "tag" }, v)));
+  if (key === "gate" && val) return el("td", {}, el("span", { class: "tag gate" }, val));
+  return el("td", {}, val === null || val === undefined ? "—" : val);
+}
+
+function rowDistrict(tab, r) {
+  if (tab === "districts") return r.id;
+  return r.district || "";
+}
+
+function render() {
+  const [, key, cols] = FILES[state.tab];
+  const rows = (state.data[state.tab]?.[key] || []).filter((r) => {
+    if (state.district && rowDistrict(state.tab, r) !== state.district) return false;
+    if (!state.q) return true;
+    return JSON.stringify(r).toLowerCase().includes(state.q.toLowerCase());
+  });
+  const table = el("table", { id: "grid" },
+    el("thead", {}, el("tr", {}, ...cols.map((c) => el("th", { scope: "col" }, c.replace(/_/g, " "))))),
+    el("tbody", {}, ...rows.map((r) => el("tr", {}, ...cols.map((c) => cell(c, r[c]))))));
+  $("view").replaceChildren(el("div", { class: "tablewrap" }, table),
+    el("p", { class: "sub", id: "count" }, `${rows.length} row(s)`));
+  for (const b of $("tabs").children) b.setAttribute("aria-pressed", String(b.dataset.tab === state.tab));
+}
+
+async function main() {
+  try {
+    const entries = await Promise.all(Object.entries(FILES).map(async ([tab, [file]]) => {
+      const res = await fetch(BASE + file);
+      if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`);
+      return [tab, await res.json()];
+    }));
+    state.data = Object.fromEntries(entries);
+  } catch (e) {
+    $("view").replaceChildren(el("div", { class: "err" },
+      `Could not load registries (${e.message}). Serve the neon-harbor/ folder over HTTP: ` +
+      "python3 -m http.server 8000, then open /docs/web/."));
+    return;
+  }
+  const am = state.data.amenities.amenities;
+  const stats = [
+    [am.length, "amenities"],
+    [state.data.districts.districts.length, "districts"],
+    [state.data.vehicles.vehicles.length, "vehicles"],
+    [state.data.species.species.length, "species"],
+    [am.filter((a) => a.gate).length, "gated (M3.5)"],
+  ];
+  $("stats").replaceChildren(...stats.map(([n, l]) => el("div", { class: "stat" }, el("b", {}, n), el("small", {}, l))));
+  for (const tab of Object.keys(FILES)) {
+    const b = el("button", { type: "button", "data-tab": tab }, tab);
+    b.addEventListener("click", () => { state.tab = tab; render(); });
+    $("tabs").append(b);
+  }
+  for (const d of state.data.districts.districts) $("district").append(el("option", { value: d.id }, d.name));
+  $("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+  $("district").addEventListener("change", (e) => { state.district = e.target.value; render(); });
+  render();
+}
+main();
+</script>
+</body>
+</html>

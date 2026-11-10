@@ -28,8 +28,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 8 ADRs) | 7 reconstructed, **ADR 0049 new** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–62 full** | rows 54/59 PENDING |
+| `docs/ADR/` | Architecture decision records (INDEX + 9 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 new (visual targets, PENDING)** |
+| `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–63 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -55,3 +56,14 @@ names, district-anchored, tier-gated, four-walls-scanned — so the game deliver
 density players expect from the genre while every brand, venue and character remains ours.
 27 amenities, full matrix in `docs/ADR/ADR-0049-amenity-parity.md`, registry data in
 `data/registries/amenities.json`.
+
+## Added 2026-11-10 (after NH-REBUILD-1)
+
+- **`docs/web/`** — the world browser (ADR 0047), regenerated. Run
+  `python3 -m http.server 8000` in this folder, then open `http://localhost:8000/docs/web/`.
+- **Vehicles registry 7 → 17** — 10 NEW original rows, each tagged
+  `provenance: NEW-2026-11-10`. They are not recovered rows.
+- **ADR 0050** — original art direction and per-tier visual targets. Every number is
+  PENDING until a profiled capture from a real build replaces it.
+- **Ledger row 63** — records the "GTA 6 graphics / 150 GB" request and how it was
+  closed: no likeness target and no size padding.

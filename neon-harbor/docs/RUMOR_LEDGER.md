@@ -81,6 +81,23 @@ binding.)
   silently altered.
 - **Close:** POLICY → ADR 0008 note + ADR 0049 district weighting.
 
+## Row 63 — User directive: "just like GTA 6 graphics and all 150 GB"
+
+- **Class:** POLICY (and partial ADOPT)
+- **Received (2026-11-10):** "Add what I am missing make it just like gta 6 graphics and all 150 gb"
+- **Interpretation:**
+  - *"Just like GTA 6 graphics"* → refused as stated. It is a likeness and trade-dress
+    target, and CLAUDE.md rule 8 bans comparisons to R* titles. Adopted instead: original
+    art direction with per-tier fidelity targets in **ADR 0050** (PENDING measurement).
+  - *"All 150 GB"* → refused as a goal. Install size is an output of authored assets,
+    produced in Unreal Editor on the developer's machine. Padding the repo is
+    fabrication (rule 7).
+  - *"What I am missing"* → ADOPT for the gaps this tree names itself:
+    - vehicles registry 7 → 17 rows (10 NEW originals, labelled as not recovered)
+    - `docs/web/` world browser (ADR 0047)
+    - ADR 0050
+- **Close:** POLICY → ADR 0050 · ADOPT → vehicles.json, docs/web/.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
