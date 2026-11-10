@@ -98,6 +98,31 @@ binding.)
     - ADR 0050
 - **Close:** POLICY → ADR 0050 · ADOPT → vehicles.json, docs/web/.
 
+## Row 64 — User directive: "With dread heads and ethiopian woman and jamacians with waves"
+
+- **Class:** ADOPT
+- **Received (2026-11-10, verbatim):** "With dread heads and ethiopian woman and jamacians with waves"
+- **Interpretation:** add original cast members with locs, Ethiopian women, and
+  Jamaicans with 360 waves (the hairstyle). Respectful and skilled roles, with hairstyle
+  locked as identity on every tier.
+- **Evidence for the setting fit:** the DC region (including Alexandria and Silver
+  Spring, MD) is widely described as home to the largest Ethiopian community in the US.
+  Size estimates vary.
+  - https://en.wikipedia.org/wiki/Ethiopians_in_Washington,_D.C.
+  - https://ggwash.org/view/39188/dcs-little-ethiopia-has-moved-to-silver-spring-and-alexandria
+- **Name screening (web search, 2026-11-10):**
+  - **"Delly Ranks" (NH-REBUILD-1 row CR-PERF-02) matches a real Jamaican dancehall
+    artist** (Delly Ranx, also spelled Delly Ranks):
+    https://en.wikipedia.org/wiki/Delly_Ranx. The row was renamed to
+    Ranford 'Echo' Campbell, because wall W1 outranks byte-fidelity.
+  - Candidate "Errol Dixon" was dropped as a likely real musician.
+  - The other new names returned no public-figure match.
+- **Flag for the user:** the source articles place the Ethiopian community in
+  **Silver Spring, Maryland**. This project's district is "Silver Springs, Virginia
+  (user designation)". The user should confirm which one was meant. Nothing has been
+  changed.
+- **Close:** ADOPT → ADR 0051 + `data/registries/crews.json` (8 new rows, 1 rename).
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

@@ -1,7 +1,182 @@
 {
-  "$schema_note": "Crew registry — REBUILD STUB. All characters fictional (canon-character wall). Crew members feed amenities NH-AM-04 and NH-AM-26 per ADR 0049.",
+  "$schema_note": "Crew registry. All characters are fictional (canon-character and real-person walls). Crew members feed amenity venues per ADR 0049. Appearance follows ADR 0051: hair_style ids resolve to hair_styles below, and identity_lock means weaker tiers render the SAME style more cheaply, never swap it.",
+  "hair_styles": [
+    {
+      "id": "HAIR-LOCS-FREEFORM",
+      "description": "locs, freeform, shoulder length"
+    },
+    {
+      "id": "HAIR-LOCS-LONG-WRAP",
+      "description": "locs, waist length, often tied up in a head wrap"
+    },
+    {
+      "id": "HAIR-LOCS-GREY",
+      "description": "locs, grey, mid-back, elder"
+    },
+    {
+      "id": "HAIR-WAVES-360",
+      "description": "360 waves, short, brushed"
+    },
+    {
+      "id": "HAIR-WAVES-360-LINEUP",
+      "description": "360 waves with a sharp line-up"
+    },
+    {
+      "id": "HAIR-NATURAL-AFRO",
+      "description": "natural coils, rounded afro"
+    },
+    {
+      "id": "HAIR-SHURUBA",
+      "description": "shuruba braids (Ethiopian/Eritrean cornrow braids)"
+    },
+    {
+      "id": "HAIR-BRAIDS-LONG",
+      "description": "long box braids, tied back on duty"
+    }
+  ],
   "crews": [
-    { "id": "CR-PERF-01", "name": "Marlene 'Zinc' Pryce", "role": "soundhall performer", "venue": "NH-AM-04", "four_walls": "clean" },
-    { "id": "CR-PERF-02", "name": "Delly Ranks (fictional)", "role": "managed artist", "venue": "NH-AM-26", "four_walls": "clean" }
+    {
+      "id": "CR-PERF-01",
+      "name": "Marlene 'Zinc' Pryce",
+      "role": "soundhall performer",
+      "venue": "NH-AM-04",
+      "four_walls": "clean"
+    },
+    {
+      "id": "CR-PERF-02",
+      "name": "Ranford 'Echo' Campbell",
+      "role": "managed artist",
+      "venue": "NH-AM-26",
+      "four_walls": "clean",
+      "rename_note": "Renamed 2026-11-10 from the NH-REBUILD-1 name, which matched a real dancehall artist (rule 1, ledger row 64)."
+    },
+    {
+      "id": "CR-LOC-01",
+      "name": "Omari 'Bassline' Grant",
+      "role": "sound engineer, runs the soundhall rig",
+      "venue": "NH-AM-04",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Jamaican",
+        "hair_style": "HAIR-LOCS-FREEFORM",
+        "identity_lock": true
+      },
+      "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "builds the speaker stacks himself; teaches teens the desk on Sundays"
+    },
+    {
+      "id": "CR-LOC-02",
+      "name": "Nadine 'Brass' Whyte",
+      "role": "master boatwright",
+      "venue": "NH-AM-25",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Jamaican",
+        "hair_style": "HAIR-LOCS-LONG-WRAP",
+        "identity_lock": true
+      },
+      "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "owns the slipway; nobody hangs a custom hull without her sign-off"
+    },
+    {
+      "id": "CR-LOC-03",
+      "name": "Linton 'Compass' Rowe",
+      "role": "charter captain",
+      "venue": "NH-AM-01",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Jamaican",
+        "hair_style": "HAIR-LOCS-GREY",
+        "identity_lock": true
+      },
+      "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "forty years on the harbour; knows every protected reef by name"
+    },
+    {
+      "id": "CR-WAV-01",
+      "name": "Kemar 'Ripple' Lindo",
+      "role": "rally driver",
+      "venue": "NH-AM-16",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Jamaican",
+        "hair_style": "HAIR-WAVES-360",
+        "identity_lock": true
+      },
+      "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "durag off-duty, helmet on-duty; reigning Bauxite Rally champion"
+    },
+    {
+      "id": "CR-WAV-02",
+      "name": "Dwayne 'Tideline' Ellis",
+      "role": "dive instructor",
+      "venue": "NH-AM-09",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Jamaican",
+        "hair_style": "HAIR-WAVES-360-LINEUP",
+        "identity_lock": true
+      },
+      "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "runs the lionfish cull dives; strict about the protected list"
+    },
+    {
+      "id": "CR-ETH-01",
+      "name": "Mahlet Gebeyehu",
+      "role": "founder and owner, scooter fleet",
+      "venue": "NH-AM-27",
+      "district": "alexandria",
+      "appearance": {
+        "heritage": "Ethiopian-American",
+        "hair_style": "HAIR-NATURAL-AFRO",
+        "identity_lock": true
+      },
+      "dialogue_language": "English + Amharic — Amharic lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "built the fleet from two scooters; expanding to the Dubai promenade"
+    },
+    {
+      "id": "CR-ETH-02",
+      "name": "Hiwot Tadesse",
+      "role": "record producer",
+      "venue": "NH-AM-26",
+      "district": "kingston",
+      "appearance": {
+        "heritage": "Ethiopian-born, lives in Kingston",
+        "hair_style": "HAIR-SHURUBA",
+        "identity_lock": true
+      },
+      "dialogue_language": "English + Amharic — Amharic lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "signature sound blends Ethio-jazz horns with dancehall riddims; manages Ranford 'Echo' Campbell"
+    },
+    {
+      "id": "CR-ETH-03",
+      "name": "Meron Assefa",
+      "role": "chief range safety officer",
+      "venue": "NH-AM-19",
+      "district": "alexandria",
+      "appearance": {
+        "heritage": "Ethiopian-American",
+        "hair_style": "HAIR-BRAIDS-LONG",
+        "identity_lock": true
+      },
+      "dialogue_language": "English + Amharic — Amharic lines PENDING native review",
+      "provenance": "NEW-2026-11-10 original (ledger row 64)",
+      "four_walls": "clean",
+      "note": "runs the range's safety course; zero tolerance for horseplay"
+    }
   ]
 }

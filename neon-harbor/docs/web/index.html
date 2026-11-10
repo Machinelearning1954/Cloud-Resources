@@ -77,9 +77,9 @@ const FILES = {
   species:   ["species.json",   "species",   ["id","name","status","bounty_eligible","consumed_by"]],
   services:  ["services.json",  "services",  ["id","name","district","consumes"]],
   bounties:  ["bounties.json",  "bounties",  ["id","target_species","payout","board"]],
-  crews:     ["crews.json",     "crews",     ["id","name","role","venue"]],
+  crews:     ["crews.json",     "crews",     ["id","name","role","venue","district","appearance"]],
 };
-const state = { data: {}, tab: "amenities", q: "", district: "" };
+const state = { data: {}, tab: "amenities", q: "", district: "", hairById: {} };
 const $ = (id) => document.getElementById(id);
 
 function el(tag, attrs = {}, ...kids) {
@@ -92,11 +92,15 @@ function el(tag, attrs = {}, ...kids) {
 function cell(key, val) {
   if (Array.isArray(val)) return el("td", {}, ...val.map((v) => el("span", { class: "tag" }, v)));
   if (key === "gate" && val) return el("td", {}, el("span", { class: "tag gate" }, val));
+  if (val && typeof val === "object") {
+    const hair = state.hairById[val.hair_style] || val.hair_style;
+    return el("td", {}, [val.heritage, hair].filter(Boolean).join(" · "));
+  }
   return el("td", {}, val === null || val === undefined ? "—" : val);
 }
 
 // Tabs whose rows carry a district (the filter is disabled on the others).
-const DISTRICT_TABS = new Set(["amenities", "districts", "services"]);
+const DISTRICT_TABS = new Set(["amenities", "districts", "services", "crews"]);
 function rowDistrict(tab, r) {
   if (tab === "districts") return r.id;
   return r.district || "";
@@ -133,6 +137,7 @@ async function main() {
       "python3 -m http.server 8000, then open /docs/web/."));
     return;
   }
+  for (const h of state.data.crews.hair_styles || []) state.hairById[h.id] = h.description;
   const am = state.data.amenities.amenities;
   const stats = [
     [am.length, "amenities"],

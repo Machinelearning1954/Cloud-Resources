@@ -28,9 +28,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 9 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 new (visual targets, PENDING)** |
+| `docs/ADR/` | Architecture decision records (INDEX + 10 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets) and ADR 0051 (character appearance), both PENDING** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–63 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–64 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -67,3 +67,8 @@ density players expect from the genre while every brand, venue and character rem
   PENDING until a profiled capture from a real build replaces it.
 - **Ledger row 63** — records the "GTA 6 graphics / 150 GB" request and how it was
   closed: no likeness target and no size padding.
+- **Cast (ledger row 64, ADR 0051)** — 8 new original crew members:
+  - characters with locs, Jamaicans with 360 waves, and three Ethiopian women
+  - every role is skilled and named after its venue
+  - hairstyles are identity-locked on every tier
+- **Rename:** `CR-PERF-02` was renamed because its rebuilt name matched a real artist.
