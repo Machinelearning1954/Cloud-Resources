@@ -27,3 +27,5 @@ Neon Harbor: Kingston uses **real place names with fictional depiction**:
   as the anchor districts; Dubai retained per standing decision.
 
 > **Amended 2026-11-10 by ADR 0052:** the world now has seven districts (Washington, Ethiopia and Eritrea added). This reconstructed text is kept as-is for history.
+>
+> **Corrected 2026-11-10 (ledger row 66):** district 2 is Silver Spring, **Maryland**, per the user. The "Silver Springs, Virginia" wording above is historical.

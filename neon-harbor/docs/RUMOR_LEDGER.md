@@ -192,9 +192,52 @@ binding.)
   - POLICY → ADR 0053 (build-time only, imagery as reference, purchase PENDING)
   - No imagery was acquired in this revision.
 
+## Row 66 — User directives: radio, Silver Spring MD, graphics question, hairstyles
+
+- **Class:** ADOPT (radio, hair, district) + POLICY (no streaming) + answer
+- **Received (2026-11-10, verbatim):**
+  - "Connect radio station to latest Jamacian reggae live dance hall livealso afro beats live also possibly use youtube"
+  - "Did you mean Silver Spring, Maryland yes"
+  - "Did you use gta 6 level graphics?"
+  - "Add all jamacian and ethiopian hairstyles"
+- **Silver Spring:** the user confirmed **Maryland**. This supersedes the Virginia pin
+  in row 65.
+  - The place is named for a mica-flecked spring found in 1840; centre about
+    38.996 N, 77.028 W: https://boundarystones.weta.org/2022/03/22/whats-name-silver-spring
+  - It fits the row-64 evidence that the region's Ethiopian businesses concentrate
+    there.
+  - The district id stays `silver-springs`.
+- **Radio (ADR 0054):**
+  - YouTube's developer policies bar separating audio from video and background
+    play: https://developers.google.com/youtube/terms/developer-policies-guide
+  - A commercial song needs a sync licence and a master-use licence, and expiring
+    terms can pull a game from sale:
+    https://www.carltonfields.com/insights/publications/2019/getting-creative-video-games-sync-rights-wrongs ,
+    https://usethirdchair.com/blog/music-licensing-for-video-games-rights-and-deal-terms
+  - Station names searched ("Blue Mountain Roots Radio", "Zinc Roof Live",
+    "Afro Current"): no existing station found.
+  - Close: three offline, simulated-live stations; 0 tracks cleared; music PENDING.
+- **Graphics question:** answered **no**. This repository holds no rendered graphics
+  at all: only docs, data and a registry browser. ADR 0050 holds targets, all PENDING.
+  No comparison to any other title is made (rule 8).
+- **Hairstyles (ADR 0051, `crews.json → hair_styles`, 8 → 29):**
+  - Ethiopian/Eritrean: albaso, shuruba variants, asa shuruba, gilbach (Tigray),
+    gofere, mertu (Oromo):
+    https://ethiopianbusinessreview.net/returning-to-roots/ ,
+    https://ethiopedia.blogspot.com/2008/07/ethiopian-hair-styles.html ,
+    https://omirenstyles.com/habesha-hairstyling-traditions/
+  - Jamaican: canerows (with and without beads), traditional/freeform locs,
+    sisterlocks, dancehall statement styles, "chiney bumps" (name only):
+    https://en.wikipedia.org/wiki/Cornrows ,
+    https://jamaica-star.com/article/entertainment/20180328/star-fashion-dancehall-style-%E2%80%98hair%E2%80%99-stay
+  - "All" is not claimed. Sources are blogs and press, so regional attributions are
+    indicative. Three styles are marked `pending` for stylist review. No Hamar or
+    Afar style was added, because no usable source was found.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 66** — radio music catalogue (0 of 72 track slots cleared); three hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
 - **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies
   to any runtime/online interpretation.

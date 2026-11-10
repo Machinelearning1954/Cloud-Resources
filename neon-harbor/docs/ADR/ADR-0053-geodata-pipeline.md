@@ -35,7 +35,7 @@ new captures over areas of active conflict is out of scope (ADR 0052).
 
 | Class id | What it is | Licence posture | Used for |
 | --- | --- | --- | --- |
-| `GEO-ELEV-LIDAR-1M-PUBLIC` | US national lidar programme: 1 m DEM + point clouds | public domain (row 65) | terrain: Silver Springs, Alexandria, Washington |
+| `GEO-ELEV-LIDAR-1M-PUBLIC` | US national lidar programme: 1 m DEM + point clouds | public domain (row 65) | terrain: Silver Spring, Alexandria, Washington |
 | `GEO-IMG-AERIAL-60CM-PUBLIC` | US national agricultural aerial orthoimagery, 60 cm | public domain; **Virginia/DC vintage PENDING** | land cover and layout reference: US districts |
 | `GEO-ELEV-30M-OPEN` | Global 30 m DEM (European programme) | free worldwide licence with attribution; **commercial-use clause to re-read in the licence PDF** | terrain: Kingston, Dubai, Addis Ababa, Asmara |
 | `GEO-IMG-SAT-10M-OPEN` | European 10 m multispectral satellite imagery | free, full and open; the attribution notice "Contains modified Copernicus Sentinel data [year]" is required | land cover fallback: all districts |
@@ -70,7 +70,7 @@ the neutral class ids, which keeps content files clean under wall W2.
 
 | District | Terrain | Layout reference |
 | --- | --- | --- |
-| Silver Springs, Alexandria, Washington | 1 m lidar (public) | 60 cm aerial (public) |
+| Silver Spring, Alexandria, Washington | 1 m lidar (public) | 60 cm aerial (public) |
 | Kingston, Dubai, Addis Ababa, Asmara | 30 m DEM (open), hand-sculpted detail | 10 m open satellite; 30 cm if purchased |
 
 The US districts get much better free data. The other four reach the same quality only
@@ -78,20 +78,19 @@ if 30 cm imagery is bought, plus artist sculpting.
 
 ## Open items
 
-- **Silver Springs terrain mismatch.**
-  - The district's registry character uses glass-bottom boat heritage, wetlands and
-    a marina, which are the hosts of NH-AM-07, NH-AM-12 and NH-AM-13.
-  - That glass-bottom boat heritage belongs to **Silver Springs, Florida** (ledger
-    row 65).
-  - The proposed Virginia pin is an inland Fairfax County suburb. Real terrain there
-    has no water body for those three venues.
+- **Silver Spring water venues.**
+  - The district is now Silver Spring, Maryland (ledger row 66).
+  - Its registry character still uses glass-bottom boat heritage, wetlands and a
+    marina, which host NH-AM-07, NH-AM-12 and NH-AM-13. That heritage belongs to
+    Silver Springs, Florida.
+  - The real Maryland terrain has a creek valley but no marina or wetland large
+    enough for jet skis or airboats.
   - Options:
-    - (a) invent a fictional spring and wetland on the Virginia terrain, which
-      ADR 0008 allows;
-    - (b) move those venues to a district with water;
-    - (c) pick a different Virginia pin with water.
+    - (a) invent a fictional spring-fed lake there, which ADR 0008 allows;
+    - (b) move those venues to a district with open water;
+    - (c) re-theme the three venues for a creek and park setting.
   - Decision PENDING with the user.
-- **City anchors:** Addis Ababa, Asmara and the Fairfax pin are proposals.
+- **City anchors:** Addis Ababa and Asmara are proposals.
 - **The 30 cm imagery purchase:** quotes and licence tier PENDING.
 
 ## Rejected

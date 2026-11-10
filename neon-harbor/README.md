@@ -16,7 +16,8 @@ marketable, trademark-scannable, and legally ownable. Real place names + fiction
 (ADR 0008), anchored to:
 
 - **Kingston, Jamaica** (harbour, Blue Mountain fringes, sink-country interior)
-- **Silver Springs, Virginia** (wetlands, glass-bottom boat heritage, marina row)
+- **Silver Spring, Maryland** (corrected by the user on 2026-11-10; earlier text said
+  "Silver Springs, Virginia" — see ledger row 66 and the open water-venue item in ADR 0053)
 - **Alexandria, Virginia** (Old Town grid, industrial waterfront, metro corridor)
 - **Dubai** (fourth district per standing ADR 0008 — retained; see ledger row 62)
 - **Washington, D.C.**, **Addis Ababa (Ethiopia)** and **Asmara (Eritrea)** — added by ADR 0052
@@ -30,9 +31,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 12 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline)** |
+| `docs/ADR/` | Architecture decision records (INDEX + 13 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–65 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–66 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -75,8 +76,14 @@ density players expect from the genre while every brand, venue and character rem
   - hairstyles are identity-locked on every tier
 - **Rename:** `CR-PERF-02` was renamed because its rebuilt name matched a real artist.
 - **Seven districts (ADR 0052, ledger row 65)** — Washington, Ethiopia (Addis Ababa) and
-  Eritrea (Asmara) added, with 0 amenities each for now. Silver Springs, VA is confirmed
-  as a real place in Fairfax County.
+  Eritrea (Asmara) added, with 0 amenities each for now. The Silver Springs, VA pin proposed
+  here was later superseded: the district is Silver Spring, Maryland (row 66).
 - **Geodata pipeline (ADR 0053)** — a build-time-only satellite and elevation plan: free
   public lidar and aerial imagery for the US districts, and 30 cm commercial imagery as
   a purchase for the rest. No imagery has been acquired yet.
+- **Radio (ADR 0054, ledger row 66)** — three original stations: reggae, dancehall and
+  Afrobeats. They are offline and "simulated live" on a world-time schedule. 0 tracks
+  are cleared; music licensing or commissioning is PENDING.
+- **Hair library 8 → 29 styles** — Jamaican and Ethiopian/Eritrean styles, each tagged
+  sourced, generic or pending review.
+- **Silver Spring is Maryland** — corrected per the user.

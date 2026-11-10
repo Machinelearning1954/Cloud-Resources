@@ -78,6 +78,8 @@ const FILES = {
   services:  ["services.json",  "services",  ["id","name","district","consumes"]],
   bounties:  ["bounties.json",  "bounties",  ["id","target_species","payout","board"]],
   crews:     ["crews.json",     "crews",     ["id","name","role","venue","district","appearance"]],
+  hair:      ["crews.json",     "hair_styles", ["id","description","heritage","source_status"]],
+  radio:     ["services.json",  "radio_stations", ["id","name","genre","band","host_crew","schedule","tracks_cleared","districts"]],
 };
 const state = { data: {}, tab: "amenities", q: "", district: "", hairById: {} };
 const $ = (id) => document.getElementById(id);
@@ -90,7 +92,8 @@ function el(tag, attrs = {}, ...kids) {
 }
 
 function cell(key, val) {
-  if (Array.isArray(val)) return el("td", {}, ...val.map((v) => el("span", { class: "tag" }, v)));
+  if (Array.isArray(val)) return el("td", {}, ...val.map((v) => el("span", { class: "tag" },
+    v && typeof v === "object" ? Object.values(v).join(" · ") : v)));
   if (key === "gate" && val) return el("td", {}, el("span", { class: "tag gate" }, val));
   if (val && typeof val === "object" && "hair_style" in val) {
     const hair = state.hairById[val.hair_style] || val.hair_style;
@@ -103,9 +106,10 @@ function cell(key, val) {
 }
 
 // Tabs whose rows carry a district (the filter is disabled on the others).
-const DISTRICT_TABS = new Set(["amenities", "districts", "services", "crews"]);
+const DISTRICT_TABS = new Set(["amenities", "districts", "services", "crews", "radio"]);
 function rowDistrict(tab, r) {
   if (tab === "districts") return r.id;
+  if (tab === "radio") return (r.districts || []).includes(state.district) ? state.district : "";
   return r.district || "";
 }
 

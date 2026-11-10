@@ -3,35 +3,177 @@
   "hair_styles": [
     {
       "id": "HAIR-LOCS-FREEFORM",
-      "description": "locs, freeform, shoulder length"
+      "description": "locs, freeform, shoulder length",
+      "heritage": "jamaican",
+      "source_status": "sourced"
     },
     {
       "id": "HAIR-LOCS-LONG-WRAP",
-      "description": "locs, waist length, often tied up in a head wrap"
+      "description": "locs, waist length, often tied up in a head wrap",
+      "heritage": "jamaican",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-LOCS-GREY",
-      "description": "locs, grey, mid-back, elder"
+      "description": "locs, grey, mid-back, elder",
+      "heritage": "jamaican",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-WAVES-360",
-      "description": "360 waves, short, brushed"
+      "description": "360 waves, short, brushed",
+      "heritage": "jamaican",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-WAVES-360-LINEUP",
-      "description": "360 waves with a sharp line-up"
+      "description": "360 waves with a sharp line-up",
+      "heritage": "jamaican",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-NATURAL-AFRO",
-      "description": "natural coils, rounded afro"
+      "description": "natural coils, rounded afro",
+      "heritage": "shared",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-SHURUBA",
-      "description": "shuruba braids (Ethiopian/Eritrean cornrow braids)"
+      "description": "shuruba braids (Ethiopian/Eritrean cornrow braids)",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
     },
     {
       "id": "HAIR-BRAIDS-LONG",
-      "description": "long box braids, tied back on duty"
+      "description": "long box braids, tied back on duty",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-LOCS-TRADITIONAL",
+      "description": "traditional locs, palm-rolled or twisted, even sections",
+      "heritage": "jamaican",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-SISTERLOCKS",
+      "description": "sisterlocks: very small, uniform locs",
+      "heritage": "jamaican",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-LOCS-UPDO",
+      "description": "locs pinned up in a crown or bun",
+      "heritage": "jamaican",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-LOCS-SHORT",
+      "description": "short starter locs",
+      "heritage": "jamaican",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-CANEROWS",
+      "description": "canerows (cornrows), straight back",
+      "heritage": "jamaican",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-CANEROWS-BEADS",
+      "description": "canerows finished with beads",
+      "heritage": "jamaican",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-CHINEY-BUMPS",
+      "description": "chiney bumps: name sourced from Jamaican press; exact construction PENDING stylist review",
+      "heritage": "jamaican",
+      "source_status": "pending"
+    },
+    {
+      "id": "HAIR-DANCEHALL-COLOUR",
+      "description": "dancehall statement style: bold colour, daring cut or intricate braids",
+      "heritage": "jamaican",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-FADE-LOW",
+      "description": "low fade with a line-up",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-FADE-HIGH-TOP",
+      "description": "high-top fade",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-TWISTS",
+      "description": "two-strand twists",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-BALD-BEARD",
+      "description": "shaved head with a full beard",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-HEADWRAP",
+      "description": "hair fully wrapped in a patterned head wrap",
+      "heritage": "shared",
+      "source_status": "generic"
+    },
+    {
+      "id": "HAIR-ALBASO",
+      "description": "albaso: thick raised braids wrapped with thread or yarn",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-ASA-SHURUBA",
+      "description": "asa shuruba: fish-pattern scalp braids for special occasions",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-SHURUBA-CROWN",
+      "description": "shuruba braided into a crown or bun",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-SHURUBA-OPEN",
+      "description": "shuruba braided to the crown with hair spread loose at the shoulders",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-GILBACH",
+      "description": "gilbach: very fine braids (Tigray tradition)",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-GOFERE",
+      "description": "gofere: full rounded afro of tight springy curls",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "sourced"
+    },
+    {
+      "id": "HAIR-MERTU",
+      "description": "mertu: Oromo traditional style; exact construction PENDING stylist review",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "pending"
+    },
+    {
+      "id": "HAIR-NETELA-COVER",
+      "description": "hair worn under a light white shawl draped over the head",
+      "heritage": "ethiopian_eritrean",
+      "source_status": "pending"
     }
   ],
   "crews": [
@@ -180,5 +322,6 @@
       "four_walls": "clean",
       "note": "runs the range's safety course; zero tolerance for horseplay"
     }
-  ]
+  ],
+  "hair_styles_note": "29 styles. This is a growing library, not a complete list of every Jamaican or Ethiopian hairstyle. source_status: 'sourced' = name and description cited in ledger row 66 (or rows 64); 'generic' = common barber/salon style, no cultural claim; 'pending' = needs review by a stylist from that community before any art is made (ADR 0051)."
 }

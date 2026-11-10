@@ -1,8 +1,142 @@
 {
-  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md.",
+  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md. Radio stations (ADR 0054) live here under radio_stations: offline, world-time scheduled, never streamed (rule 0).",
   "services": [
-    { "id": "SV-TAXI-HARBOUR", "name": "Harbour Water Taxi", "district": "kingston", "consumes": ["VH-BOAT-01"], "notes": "kingston harbour transit loop" },
-    { "id": "SV-RENTAL-SPRAY", "name": "Spray Rentals desk", "district": "silver-springs", "consumes": ["NH-AM-12"] },
-    { "id": "SV-PROBATION", "name": "Municipal Probation Office", "district": "kingston", "consumes": ["NH-AM-23"], "notes": "sentence progress is save data (ADR 0048 boundary)" }
+    {
+      "id": "SV-TAXI-HARBOUR",
+      "name": "Harbour Water Taxi",
+      "district": "kingston",
+      "consumes": [
+        "VH-BOAT-01"
+      ],
+      "notes": "kingston harbour transit loop"
+    },
+    {
+      "id": "SV-RENTAL-SPRAY",
+      "name": "Spray Rentals desk",
+      "district": "silver-springs",
+      "consumes": [
+        "NH-AM-12"
+      ]
+    },
+    {
+      "id": "SV-PROBATION",
+      "name": "Municipal Probation Office",
+      "district": "kingston",
+      "consumes": [
+        "NH-AM-23"
+      ],
+      "notes": "sentence progress is save data (ADR 0048 boundary)"
+    }
+  ],
+  "radio_stations": [
+    {
+      "id": "RS-REGGAE-01",
+      "name": "Blue Mountain Roots Radio",
+      "genre": "reggae",
+      "districts": [
+        "kingston",
+        "silver-springs",
+        "alexandria",
+        "washington-dc"
+      ],
+      "host_crew": null,
+      "band": "91.5",
+      "playback": "offline_baked",
+      "live_mode": "simulated_live_world_time_schedule",
+      "state": "transient_adr0048",
+      "schedule": [
+        {
+          "slot": "06:00-12:00",
+          "show": "Morning Roots"
+        },
+        {
+          "slot": "12:00-18:00",
+          "show": "Lovers Hour"
+        },
+        {
+          "slot": "18:00-06:00",
+          "show": "Dub After Dark"
+        }
+      ],
+      "track_slots": 24,
+      "tracks_cleared": 0,
+      "music_source": "PENDING — licensed real tracks (two licences per song) or commissioned originals; see ADR 0054",
+      "provenance": "NEW-2026-11-10 original (ledger row 66)",
+      "four_walls": "clean"
+    },
+    {
+      "id": "RS-DANCEHALL-01",
+      "name": "Zinc Roof Live",
+      "genre": "dancehall",
+      "districts": [
+        "kingston",
+        "silver-springs",
+        "alexandria",
+        "washington-dc",
+        "dubai"
+      ],
+      "host_crew": "CR-LOC-01",
+      "band": "96.9",
+      "playback": "offline_baked",
+      "live_mode": "simulated_live_world_time_schedule",
+      "state": "transient_adr0048",
+      "schedule": [
+        {
+          "slot": "06:00-16:00",
+          "show": "Riddim Rewind"
+        },
+        {
+          "slot": "16:00-22:00",
+          "show": "Drive Time Juggling"
+        },
+        {
+          "slot": "22:00-06:00",
+          "show": "Soundhall Live — simulated live set from NH-AM-04"
+        }
+      ],
+      "track_slots": 24,
+      "tracks_cleared": 0,
+      "music_source": "PENDING — licensed real tracks (two licences per song) or commissioned originals; see ADR 0054",
+      "provenance": "NEW-2026-11-10 original (ledger row 66)",
+      "four_walls": "clean"
+    },
+    {
+      "id": "RS-AFROBEATS-01",
+      "name": "Afro Current",
+      "genre": "afrobeats",
+      "districts": [
+        "dubai",
+        "washington-dc",
+        "silver-springs",
+        "alexandria",
+        "ethiopia",
+        "eritrea",
+        "kingston"
+      ],
+      "host_crew": "CR-ETH-02",
+      "band": "103.3",
+      "playback": "offline_baked",
+      "live_mode": "simulated_live_world_time_schedule",
+      "state": "transient_adr0048",
+      "schedule": [
+        {
+          "slot": "06:00-14:00",
+          "show": "Morning Current"
+        },
+        {
+          "slot": "14:00-21:00",
+          "show": "Continental Drift"
+        },
+        {
+          "slot": "21:00-06:00",
+          "show": "Night Market Mix — simulated live"
+        }
+      ],
+      "track_slots": 24,
+      "tracks_cleared": 0,
+      "music_source": "PENDING — licensed real tracks (two licences per song) or commissioned originals; see ADR 0054",
+      "provenance": "NEW-2026-11-10 original (ledger row 66)",
+      "four_walls": "clean"
+    }
   ]
 }

@@ -24,14 +24,15 @@ Unreal Editor and kept in Git LFS or Perforce, not in this docs/data repository.
 - **Light as identity.** Each district has a signature light:
   - Kingston: hard tropical noon and sodium-orange harbour nights, with sound-system
     LED spill.
-  - Silver Springs: green-filtered wetland haze, with caustics under glass-bottom hulls.
+  - Silver Spring: green-filtered creek-valley haze (water look PENDING the open item
+    in ADR 0053).
   - Alexandria: cool brick-and-river dusk, with wet-asphalt reflections.
   - Dubai: dust-scattered white heat, with glass-tower specular at golden hour.
 - **Material truth.** The street-level hero materials are:
   - Kingston: zinc roofing, hand-painted signage (original fonts and brands only),
     jerk-pan smoke, wet limestone.
   - Alexandria: Old Town brick.
-  - Silver Springs: mangrove mud.
+  - Silver Spring: creek stone and wet leaf litter.
 - **Weather as gameplay light.** Tropical squall fronts, harbour fog, and Virginia
   thunderstorms drive both visuals and the systems the density promise counts.
 

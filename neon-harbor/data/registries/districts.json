@@ -43,8 +43,8 @@
     },
     {
       "id": "silver-springs",
-      "name": "Silver Springs",
-      "real_world_anchor": "Silver Springs, Virginia (user-confirmed state; Fairfax County populated place near Alexandria is the PROPOSED pin, ledger row 65)",
+      "name": "Silver Spring",
+      "real_world_anchor": "Silver Spring, Montgomery County, Maryland (user-confirmed 2026-11-10, ledger row 66; id kept as 'silver-springs' so existing references hold)",
       "character": "Wetlands, glass-bottom boat heritage, marina row, family strip",
       "user_anchor": true,
       "amenity_ids": [
@@ -58,8 +58,8 @@
         "imagery_fallback": "GEO-IMG-SAT-30CM-PURCHASE",
         "vectors": "GEO-VEC-OPEN-MAP",
         "approx_center": [
-          38.784,
-          -77.129
+          38.996,
+          -77.028
         ]
       }
     },

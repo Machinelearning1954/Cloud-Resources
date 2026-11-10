@@ -11,16 +11,17 @@ named:
 | id | District | Real-world anchor | Status |
 | --- | --- | --- | --- |
 | `kingston` | Kingston | Kingston, Jamaica | existing |
-| `silver-springs` | Silver Springs | Silver Springs, Fairfax County, Virginia | existing (anchor confirmed) |
+| `silver-springs` | Silver Spring | Silver Spring, Montgomery County, **Maryland** | existing; state corrected by the user (ledger row 66) |
 | `alexandria` | Alexandria | Alexandria, Virginia | existing |
 | `dubai` | Dubai | Dubai, UAE | existing (user re-confirmed) |
 | `washington-dc` | Washington | Washington, D.C. | **new** |
 | `ethiopia` | Addis Ababa | Addis Ababa, Ethiopia | **new**, city PROPOSED |
 | `eritrea` | Asmara | Asmara, Eritrea | **new**, city PROPOSED |
 
-Silver Springs check: a populated place called Silver Springs exists in Fairfax County,
-VA, inside the Rose Hill CDP, at roughly 38.784 N, 77.129 W. Silver Springs is also a
-neighbourhood name in the City of Alexandria. Sources are in ledger row 65.
+**Silver Spring correction (2026-11-10, ledger row 66):** the user confirmed they mean
+Silver Spring, **Maryland**. Earlier text in this repo said "Silver Springs, Virginia",
+and row 65 had proposed a Fairfax County pin; both are superseded. The district id
+stays `silver-springs` so existing references hold.
 
 The user named the countries Ethiopia and Eritrea. Their capitals were picked as
 **proposed** anchors, and the district ids stay country-level so the anchor city can
