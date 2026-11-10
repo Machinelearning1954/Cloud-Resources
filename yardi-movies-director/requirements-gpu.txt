@@ -1,0 +1,12 @@
+# Real generation on a CUDA GPU. Install the torch build that matches your CUDA version first:
+#   https://pytorch.org/get-started/locally/
+-r requirements.txt
+torch
+diffusers>=0.42
+transformers
+accelerate
+sentencepiece
+protobuf
+ftfy
+imageio[ffmpeg]
+av

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yardi Movies Director</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="stripe" aria-hidden="true"></div>
+<header class="top">
+  <h1><span aria-hidden="true">🎬</span> Yardi Movies Director</h1>
+  <div class="pills">
+    <span class="pill free" title="No accounts, no subscriptions, no metering">Free · ∞ credits</span>
+    <span class="pill" id="engine">…</span>
+  </div>
+</header>
+
+<p class="notice" id="notice" hidden></p>
+
+<main>
+  <form class="slate" id="slate" autocomplete="off">
+    <div class="seg" role="tablist" aria-label="What to make">
+      <button type="button" role="tab" data-kind="video" aria-selected="true">Video</button>
+      <button type="button" role="tab" data-kind="image" aria-selected="false">Image</button>
+    </div>
+
+    <fieldset>
+      <legend>Model</legend>
+      <div class="models" id="models"></div>
+    </fieldset>
+
+    <label class="field">
+      <span>Scene</span>
+      <textarea id="prompt" rows="5" maxlength="2000" required
+        placeholder="A lighthouse keeper climbs the spiral stairs at dusk, lantern swinging, storm clouds rolling in over the sea"></textarea>
+    </label>
+
+    <fieldset>
+      <legend>Direction <small>added to your scene</small></legend>
+      <div class="chips" id="chips"></div>
+    </fieldset>
+
+    <div class="row">
+      <label class="field">
+        <span>Frame</span>
+        <select id="aspect"></select>
+      </label>
+      <label class="field" id="secondsField">
+        <span>Length</span>
+        <select id="seconds"></select>
+      </label>
+      <label class="field" id="countField">
+        <span>Takes</span>
+        <select id="count"></select>
+      </label>
+    </div>
+
+    <details>
+      <summary>More controls</summary>
+      <label class="field" id="negativeField">
+        <span>Keep out of frame</span>
+        <input id="negative" type="text" maxlength="2000" placeholder="blurry, subtitles, watermark">
+      </label>
+      <label class="field">
+        <span>Seed <small>blank = random</small></span>
+        <input id="seed" type="number" min="0" max="4294967295" step="1" placeholder="random">
+      </label>
+    </details>
+
+    <button class="action" id="action" type="submit">Action!</button>
+    <p class="error" id="error" role="alert" hidden></p>
+  </form>
+
+  <section class="reel" aria-label="Your takes">
+    <div class="reel-head">
+      <h2>Reel</h2>
+      <span id="count-label"></span>
+    </div>
+    <div class="takes" id="takes"></div>
+    <p class="empty" id="empty">No takes yet. Describe a scene and call “Action!”</p>
+  </section>
+</main>
+
+<footer>
+  Runs on your own hardware with open-weights models. Nothing to buy, nothing to top up.
+</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>
