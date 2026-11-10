@@ -95,6 +95,8 @@ function cell(key, val) {
   return el("td", {}, val === null || val === undefined ? "—" : val);
 }
 
+// Tabs whose rows carry a district (the filter is disabled on the others).
+const DISTRICT_TABS = new Set(["amenities", "districts", "services"]);
 function rowDistrict(tab, r) {
   if (tab === "districts") return r.id;
   return r.district || "";
@@ -103,7 +105,7 @@ function rowDistrict(tab, r) {
 function render() {
   const [, key, cols] = FILES[state.tab];
   const rows = (state.data[state.tab]?.[key] || []).filter((r) => {
-    if (state.district && rowDistrict(state.tab, r) !== state.district) return false;
+    if (state.district && DISTRICT_TABS.has(state.tab) && rowDistrict(state.tab, r) !== state.district) return false;
     if (!state.q) return true;
     return JSON.stringify(r).toLowerCase().includes(state.q.toLowerCase());
   });
@@ -113,6 +115,8 @@ function render() {
   $("view").replaceChildren(el("div", { class: "tablewrap" }, table),
     el("p", { class: "sub", id: "count" }, `${rows.length} row(s)`));
   for (const b of $("tabs").children) b.setAttribute("aria-pressed", String(b.dataset.tab === state.tab));
+  $("district").disabled = !DISTRICT_TABS.has(state.tab);
+  $("district").title = $("district").disabled ? "This registry has no district field" : "";
 }
 
 async function main() {

@@ -76,7 +76,7 @@
     },
     {
       "id": "VH-TAXI-01",
-      "name": "Route Runner Coaster",
+      "name": "Route Runner Minibus",
       "class": "bus_minibus",
       "noise_rating": "NR-3-moderate",
       "consumed_by": [],

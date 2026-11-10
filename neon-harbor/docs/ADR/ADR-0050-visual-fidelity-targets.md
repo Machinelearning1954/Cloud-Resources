@@ -48,8 +48,10 @@ Unreal Editor and kept in Git LFS or Perforce, not in this docs/data repository.
 | Water | single-layer water + caustics | same, no caustics | simplified | simplified |
 | Crowd/traffic draw | per ADR 0013 budgets | per ADR 0013 | per ADR 0013 | per ADR 0013 |
 
-Per ADR 0013, weaker tiers get **gated** content, never degraded content. A feature
-that would blow a tier's budget is switched off for that tier, never half-rendered.
+**Render settings scale per tier**, as the table shows: lower shadow resolution,
+cheaper volumetrics, simplified water. ADR 0013's "gated, never degraded" rule applies
+to **content**. An amenity, venue or system that a tier can't run properly is hidden on
+that tier, never shipped as a half-simulated shell.
 
 ## Measurable targets (all PENDING)
 
