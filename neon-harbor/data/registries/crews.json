@@ -40,15 +40,17 @@
       "name": "Marlene 'Zinc' Pryce",
       "role": "soundhall performer",
       "venue": "NH-AM-04",
-      "four_walls": "clean"
+      "four_walls": "clean",
+      "district": "kingston"
     },
     {
       "id": "CR-PERF-02",
-      "name": "Ranford 'Echo' Campbell",
+      "name": "Ranford 'Lighthouse' Campbell",
       "role": "managed artist",
       "venue": "NH-AM-26",
       "four_walls": "clean",
-      "rename_note": "Renamed 2026-11-10 from the NH-REBUILD-1 name, which matched a real dancehall artist (rule 1, ledger row 64)."
+      "rename_note": "Renamed 2026-11-10. The NH-REBUILD-1 name matched a real dancehall artist, and the first replacement nickname ('Echo') matched two real Jamaican artists (rule 1, ledger row 64).",
+      "district": "kingston"
     },
     {
       "id": "CR-LOC-01",
@@ -112,7 +114,7 @@
       "dialogue_language": "Jamaican Patois + English — lines PENDING native review",
       "provenance": "NEW-2026-11-10 original (ledger row 64)",
       "four_walls": "clean",
-      "note": "durag off-duty, helmet on-duty; reigning Bauxite Rally champion"
+      "note": "waves freshly brushed for every podium photo; reigning Bauxite Rally champion"
     },
     {
       "id": "CR-WAV-02",
@@ -160,7 +162,7 @@
       "dialogue_language": "English + Amharic — Amharic lines PENDING native review",
       "provenance": "NEW-2026-11-10 original (ledger row 64)",
       "four_walls": "clean",
-      "note": "signature sound blends Ethio-jazz horns with dancehall riddims; manages Ranford 'Echo' Campbell"
+      "note": "signature sound blends Ethio-jazz horns with dancehall riddims; manages Ranford 'Lighthouse' Campbell"
     },
     {
       "id": "CR-ETH-03",

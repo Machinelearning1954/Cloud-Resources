@@ -113,10 +113,22 @@ binding.)
 - **Name screening (web search, 2026-11-10):**
   - **"Delly Ranks" (NH-REBUILD-1 row CR-PERF-02) matches a real Jamaican dancehall
     artist** (Delly Ranx, also spelled Delly Ranks):
-    https://en.wikipedia.org/wiki/Delly_Ranx. The row was renamed to
-    Ranford 'Echo' Campbell, because wall W1 outranks byte-fidelity.
+    https://en.wikipedia.org/wiki/Delly_Ranx. The row was renamed, because wall W1
+    outranks byte-fidelity.
+  - The first replacement nickname, "Echo", matched two real Jamaican artists
+    (Echo Minott and General Echo):
+    https://www.roots-archives.com/artist/400. The final name is
+    Ranford 'Lighthouse' Campbell.
+  - "Skyline" was rejected because it is a Kingston music compilation series.
+  - All other new nicknames, and the manifest's "Marlene 'Zinc' Pryce", returned no
+    public-figure match.
   - Candidate "Errol Dixon" was dropped as a likely real musician.
   - The other new names returned no public-figure match.
+- **Cultural terms (sourced):**
+  - Shuruba is a traditional Ethiopian scalp-braid style:
+    https://www.undp.org/index%2Ephp/ethiopia/stories/shuruba-providing-healing-and-sanctuary-women-through-beauty-braids-and-cornrows
+  - Habesha names are patronymic, with no family surname:
+    https://en.wikipedia.org/wiki/Habesha_naming_conventions
 - **Flag for the user:** the source articles place the Ethiopian community in
   **Silver Spring, Maryland**. This project's district is "Silver Springs, Virginia
   (user designation)". The user should confirm which one was meant. Nothing has been

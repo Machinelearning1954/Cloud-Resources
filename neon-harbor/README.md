@@ -69,6 +69,6 @@ density players expect from the genre while every brand, venue and character rem
   closed: no likeness target and no size padding.
 - **Cast (ledger row 64, ADR 0051)** — 8 new original crew members:
   - characters with locs, Jamaicans with 360 waves, and three Ethiopian women
-  - every role is skilled and named after its venue
+  - every role is skilled and tied to a venue
   - hairstyles are identity-locked on every tier
 - **Rename:** `CR-PERF-02` was renamed because its rebuilt name matched a real artist.

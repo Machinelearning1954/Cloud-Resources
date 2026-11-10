@@ -28,13 +28,15 @@ generic default. This ADR makes them first-class.
      villain roles.
    - **Locs are not shorthand for religion.** No religious titles or sacred names are
      used as nicknames or decoration.
-   - **Ethiopian names** follow the given name + father's given name pattern, not a
-     Western family surname.
+   - **Ethiopian names** follow the given name + father's given name (patronymic)
+     pattern, not a Western family surname (ledger row 64 sources).
    - **Dialogue in Amharic and Jamaican Patois** is written or approved by native
      speakers. Until then it is marked PENDING; no machine-written dialect goes in.
-3. **Characters are fictional.** Every new full name and nickname was web-searched
-   against public figures before it was added (see ledger row 64), on top of the
-   doctor's four-walls scan.
+3. **Characters are fictional.** Each new full name was web-searched against public
+   figures, in grouped queries. Nicknames were searched in a Jamaican-music context.
+   These checks run on top of the doctor's four-walls scan. Two collisions were found
+   and fixed (ledger row 64). A web search lowers the risk of a collision but doesn't
+   rule it out, so trademark/likeness clearance before ship stays PENDING.
 
 ## Rendering plan (UE 5.5) — proposal, all PENDING
 
