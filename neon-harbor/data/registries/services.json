@@ -113,7 +113,7 @@
         "eritrea",
         "kingston"
       ],
-      "host_crew": "CR-ETH-02",
+      "host_crew": null,
       "band": "103.3",
       "playback": "offline_baked",
       "live_mode": "simulated_live_world_time_schedule",

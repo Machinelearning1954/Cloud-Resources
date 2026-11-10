@@ -56,15 +56,17 @@ generic default. This ADR makes them first-class.
 
 ## Hair library (expanded 2026-11-10, ledger row 66)
 
-`crews.json → hair_styles` now holds 29 styles, each tagged with a `heritage`
+`crews.json → hair_styles` now holds 28 styles, each tagged with a `heritage`
 (`jamaican`, `ethiopian_eritrean` or `shared`) and a `source_status`:
 
 - **sourced** — name and description are cited in the ledger.
-- **generic** — a common barber or salon style, with no cultural claim made.
+- **generic** — a common barber or salon style, tagged `shared`, with no cultural
+  claim made.
 - **pending** — needs review by a stylist from that community before art is made.
 
 The library is not a complete list of every Jamaican or Ethiopian hairstyle. It grows
-by adding a row with a source. Styles tied to a specific people or region (gilbach,
+by adding a row with a source. No trademarked method names are used as style names
+(one was found and replaced with the generic term microlocs, ledger row 66). Styles tied to a specific people or region (gilbach,
 mertu) are assigned only to characters of that background.
 
 ## Consequences

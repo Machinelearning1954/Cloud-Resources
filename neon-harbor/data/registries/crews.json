@@ -10,25 +10,25 @@
     {
       "id": "HAIR-LOCS-LONG-WRAP",
       "description": "locs, waist length, often tied up in a head wrap",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
       "id": "HAIR-LOCS-GREY",
       "description": "locs, grey, mid-back, elder",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
       "id": "HAIR-WAVES-360",
       "description": "360 waves, short, brushed",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
       "id": "HAIR-WAVES-360-LINEUP",
       "description": "360 waves with a sharp line-up",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
@@ -56,21 +56,21 @@
       "source_status": "sourced"
     },
     {
-      "id": "HAIR-SISTERLOCKS",
-      "description": "sisterlocks: very small, uniform locs",
-      "heritage": "jamaican",
-      "source_status": "sourced"
+      "id": "HAIR-MICROLOCS",
+      "description": "microlocs: very small, uniform locs",
+      "heritage": "shared",
+      "source_status": "generic"
     },
     {
       "id": "HAIR-LOCS-UPDO",
       "description": "locs pinned up in a crown or bun",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
       "id": "HAIR-LOCS-SHORT",
       "description": "short starter locs",
-      "heritage": "jamaican",
+      "heritage": "shared",
       "source_status": "generic"
     },
     {
@@ -86,8 +86,8 @@
       "source_status": "sourced"
     },
     {
-      "id": "HAIR-CHINEY-BUMPS",
-      "description": "chiney bumps: name sourced from Jamaican press; exact construction PENDING stylist review",
+      "id": "HAIR-BANTU-KNOTS",
+      "description": "Bantu knots: sections coiled into small knots (a contested local Jamaican name exists; in-game naming PENDING stylist review)",
       "heritage": "jamaican",
       "source_status": "pending"
     },
@@ -166,12 +166,6 @@
     {
       "id": "HAIR-MERTU",
       "description": "mertu: Oromo traditional style; exact construction PENDING stylist review",
-      "heritage": "ethiopian_eritrean",
-      "source_status": "pending"
-    },
-    {
-      "id": "HAIR-NETELA-COVER",
-      "description": "hair worn under a light white shawl draped over the head",
       "heritage": "ethiopian_eritrean",
       "source_status": "pending"
     }
@@ -323,5 +317,5 @@
       "note": "runs the range's safety course; zero tolerance for horseplay"
     }
   ],
-  "hair_styles_note": "29 styles. This is a growing library, not a complete list of every Jamaican or Ethiopian hairstyle. source_status: 'sourced' = name and description cited in ledger row 66 (or rows 64); 'generic' = common barber/salon style, no cultural claim; 'pending' = needs review by a stylist from that community before any art is made (ADR 0051)."
+  "hair_styles_note": "28 styles. This is a growing library, not a complete list of every Jamaican or Ethiopian hairstyle. source_status: 'sourced' = name and description cited in ledger rows 64 and 66; 'generic' = common barber/salon style, tagged 'shared', no cultural claim; 'pending' = needs review by a stylist from that community before any art is made (ADR 0051). No crew member wears a style added on 2026-11-10 yet."
 }

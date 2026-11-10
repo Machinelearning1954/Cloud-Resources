@@ -10,10 +10,11 @@ dancehall and Afrobeats, "possibly using YouTube". Two things block a literal li
 connection:
 
 - **Rule §0, no online services.** The shipped game never streams audio or video.
-- **YouTube's developer policies** bar playing audio without the video, background
-  play, and separating audio from video. A car radio is all three. The sources are in
-  ledger row 66, and the provider's current terms need a re-read before anyone
-  revisits this.
+- **YouTube's developer policies** bar separating the audio from a video, and
+  playing a video while its window is closed or minimised. A car radio needs audio
+  with no video on screen, which developers generally read as covered by those
+  rules. The sources are in ledger row 66, and the provider's current terms need a
+  re-read before anyone revisits this.
 
 So the game cannot play a real live stream. What it can do is feel live.
 
@@ -25,7 +26,7 @@ So the game cannot play a real live stream. What it can do is feel live.
    | --- | --- | --- | --- |
    | `RS-REGGAE-01` | Blue Mountain Roots Radio | reggae | none yet |
    | `RS-DANCEHALL-01` | Zinc Roof Live | dancehall | Omari 'Bassline' Grant |
-   | `RS-AFROBEATS-01` | Afro Current | Afrobeats | Hiwot Tadesse |
+   | `RS-AFROBEATS-01` | Afro Current | Afrobeats | none yet |
 
 2. **Simulated live.**
    - Each station runs a 24-hour show schedule driven by world time. This is the same
@@ -58,7 +59,8 @@ So the game cannot play a real live stream. What it can do is feel live.
 - The doctor does not validate station references. They were checked by a one-off
   script on 2026-11-10.
 - Station names were web-searched for existing stations (ledger row 66). A search
-  lowers the risk of a clash but is not trademark clearance.
+  lowers the risk of a clash but is not trademark clearance. Show names and dial
+  numbers were not screened.
 
 ## Rejected
 

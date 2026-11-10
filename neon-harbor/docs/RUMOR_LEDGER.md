@@ -202,8 +202,9 @@ binding.)
   - "Add all jamacian and ethiopian hairstyles"
 - **Silver Spring:** the user confirmed **Maryland**. This supersedes the Virginia pin
   in row 65.
-  - The place is named for a mica-flecked spring found in 1840; centre about
-    38.996 N, 77.028 W: https://boundarystones.weta.org/2022/03/22/whats-name-silver-spring
+  - The place is named for a mica-flecked spring found in 1840:
+    https://boundarystones.weta.org/2022/03/22/whats-name-silver-spring
+  - Centre about 38.996 N, 77.028 W: https://en.wikipedia.org/wiki/Silver_Spring,_Maryland
   - It fits the row-64 evidence that the region's Ethiopian businesses concentrate
     there.
   - The district id stays `silver-springs`.
@@ -220,24 +221,32 @@ binding.)
 - **Graphics question:** answered **no**. This repository holds no rendered graphics
   at all: only docs, data and a registry browser. ADR 0050 holds targets, all PENDING.
   No comparison to any other title is made (rule 8).
-- **Hairstyles (ADR 0051, `crews.json → hair_styles`, 8 → 29):**
+- **Hairstyles (ADR 0051, `crews.json → hair_styles`, 8 → 28):**
   - Ethiopian/Eritrean: albaso, shuruba variants, asa shuruba, gilbach (Tigray),
     gofere, mertu (Oromo):
     https://ethiopianbusinessreview.net/returning-to-roots/ ,
     https://ethiopedia.blogspot.com/2008/07/ethiopian-hair-styles.html ,
     https://omirenstyles.com/habesha-hairstyling-traditions/
+  - Asa shuruba and shuruba worn open at the shoulders:
+    https://solomon-abate.blogspot.com/2020/09/hair-style-as-expression-of-ones-culture.html
   - Jamaican: canerows (with and without beads), traditional/freeform locs,
-    sisterlocks, dancehall statement styles, "chiney bumps" (name only):
+    and dancehall statement styles:
     https://en.wikipedia.org/wiki/Cornrows ,
     https://jamaica-star.com/article/entertainment/20180328/star-fashion-dancehall-style-%E2%80%98hair%E2%80%99-stay
+  - A trademarked locking-method name was found in the first draft and replaced
+    with the generic "microlocs":
+    https://trademarks.justia.com/745/76/sisterlocks-74576996.html
+  - Bantu knots have a local Jamaican name whose origin is contested, so the
+    registry uses the neutral name and leaves in-game naming to a stylist:
+    https://jamaicans.com/?p=152404
   - "All" is not claimed. Sources are blogs and press, so regional attributions are
-    indicative. Three styles are marked `pending` for stylist review. No Hamar or
+    indicative. Two styles are marked `pending` for stylist review. No Hamar or
     Afar style was added, because no usable source was found.
 
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
-- **Row 66** — radio music catalogue (0 of 72 track slots cleared); three hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
+- **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
 - **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies
   to any runtime/online interpretation.

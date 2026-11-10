@@ -84,6 +84,6 @@ density players expect from the genre while every brand, venue and character rem
 - **Radio (ADR 0054, ledger row 66)** — three original stations: reggae, dancehall and
   Afrobeats. They are offline and "simulated live" on a world-time schedule. 0 tracks
   are cleared; music licensing or commissioning is PENDING.
-- **Hair library 8 → 29 styles** — Jamaican and Ethiopian/Eritrean styles, each tagged
+- **Hair library 8 → 28 styles** — Jamaican and Ethiopian/Eritrean styles, each tagged
   sourced, generic or pending review.
 - **Silver Spring is Maryland** — corrected per the user.

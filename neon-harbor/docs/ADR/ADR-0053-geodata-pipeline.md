@@ -36,7 +36,7 @@ new captures over areas of active conflict is out of scope (ADR 0052).
 | Class id | What it is | Licence posture | Used for |
 | --- | --- | --- | --- |
 | `GEO-ELEV-LIDAR-1M-PUBLIC` | US national lidar programme: 1 m DEM + point clouds | public domain (row 65) | terrain: Silver Spring, Alexandria, Washington |
-| `GEO-IMG-AERIAL-60CM-PUBLIC` | US national agricultural aerial orthoimagery, 60 cm | public domain; **Virginia/DC vintage PENDING** | land cover and layout reference: US districts |
+| `GEO-IMG-AERIAL-60CM-PUBLIC` | US national agricultural aerial orthoimagery, 60 cm | public domain; **Maryland/Virginia/DC vintage PENDING** | land cover and layout reference: US districts |
 | `GEO-ELEV-30M-OPEN` | Global 30 m DEM (European programme) | free worldwide licence with attribution; **commercial-use clause to re-read in the licence PDF** | terrain: Kingston, Dubai, Addis Ababa, Asmara |
 | `GEO-IMG-SAT-10M-OPEN` | European 10 m multispectral satellite imagery | free, full and open; the attribution notice "Contains modified Copernicus Sentinel data [year]" is required | land cover fallback: all districts |
 | `GEO-IMG-SAT-30CM-PURCHASE` | Commercial 30 cm class optical imagery | **purchase + licence PENDING** | layout reference where no public aerial imagery exists |
