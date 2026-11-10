@@ -23,3 +23,12 @@ jobs:
           curl -sf -X POST localhost:5000/predict -H 'Content-Type: application/json' \
             -d '{"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2}' | grep -q setosa
           docker logs iris
+
+  neon-harbor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Policy doctor (26 checks)
+        run: bash neon-harbor/tools/repo_doctor.sh
+      - name: Engine config static check
+        run: python3 neon-harbor/tools/check_engine_config.py

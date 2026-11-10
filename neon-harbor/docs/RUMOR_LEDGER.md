@@ -300,10 +300,41 @@ binding.)
   art assets and a compiled build, and neither exists yet.
 - **Close:** ADOPT → `Config/DefaultEngine.ini` (UNTESTED).
 
+## Row 70 — User directive: "Find a way to and fix the issue Test it"
+
+- **Class:** ADOPT (verification + test)
+- **Received (2026-11-10, verbatim):** "Find a way to  and fix the issueTest it"
+- **The issue:** row 69's settings file was untested, with seven unverified names.
+- **What was tried:**
+  - Running Unreal here: not possible (no engine, no GPU).
+  - Epic's documentation site: blocked by this session's network policy.
+  - Web search of public Unreal sources: worked.
+- **Verified (names, and values where stated):**
+  - `r.MegaLights.EnableForProject`, added in UE 5.5:
+    https://unrealdirective.com/resources/console-variables/r-megalights-enableforproject/
+  - `r.Nanite.ProjectEnabled`, `r.GenerateMeshDistanceFields` and
+    `r.SkinCache.CompileShaders`, seen together in a UE 5.5 project's renderer block:
+    https://forums.unrealengine.com/t/rendering-differences-between-5-5-and-5-7/2687111
+  - `r.AntiAliasingMethod` 4 = TSR:
+    https://indxzero.github.io/ue544cvarwiki/articles/r.antialiasingmethod
+  - DX12 and SM6 lines in the Windows target section:
+    https://indxzero.github.io/ue544cvarwiki/articles/d3d12targetedshaderformats
+  - `r.Lumen.HardwareRayTracing.LightingMode`: the name is confirmed, but sources
+    disagree on whether 1 or 2 is the wanted mode, so it stays commented out:
+    https://unrealdirective.com/tips/lumen-hit-lighting-reflections/
+- **Fix:** nine renderer settings and two Windows target settings are now active.
+  MegaLights and hit lighting stay off by default (experimental / value unsettled).
+- **Test:** `tools/check_engine_config.py`, 10 static checks. It passed on the real
+  file and failed correctly on a deliberately broken copy. It also runs in CI,
+  together with the doctor.
+- **Still untested:** rendering. The sources are community references, not Epic's
+  own pages. Nothing has been opened in Unreal Engine.
+- **Close:** ADOPT → `Config/DefaultEngine.ini`, `tools/check_engine_config.py`, CI job.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
-- **Row 69** — `Config/DefaultEngine.ini` is untested; seven settings await verification in UE 5.5.
+- **Row 70** — `Config/DefaultEngine.ini`: names verified from community sources, rendering untested; hit-lighting value unsettled.
 - **Row 68** — RTX Ultra: ray reconstruction plugin for UE 5.5 unverified; all Ultra targets unmeasured.
 - **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
