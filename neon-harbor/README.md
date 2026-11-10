@@ -31,9 +31,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 14 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio), 0055 (near-future Dubai)** |
+| `docs/ADR/` | Architecture decision records (INDEX + 15 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio), 0055 (near-future Dubai), 0056 (story)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–72 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–73 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -95,3 +95,5 @@ density players expect from the genre while every brand, venue and character rem
 - **Near-future Dubai (ADR 0055, ledger row 72)** — Dubai becomes a smart-city district,
   with four proposed systems: destructible interiors, flying vehicles (behind the
   M3.5 gate), property renovation and smart homes. Design only.
+- **Story (ADR 0056, ledger row 73)** — "Two Tides", an original crime saga in five acts
+  and 48 missions, with four endings. Story bible only; no mission rows yet.

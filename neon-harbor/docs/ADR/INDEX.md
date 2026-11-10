@@ -20,3 +20,4 @@
 | [0053](ADR-0053-geodata-pipeline.md) | Satellite & Geodata Pipeline — Build-Time Only | PROPOSED (no data acquired) |
 | [0054](ADR-0054-radio-stations.md) | In-Game Radio — Reggae, Dancehall, Afrobeats (Offline, Simulated Live) | ADOPTED (music PENDING) |
 | [0055](ADR-0055-dubai-smart-city.md) | Dubai as a Near-Future Smart City + Four Systems from Reference Videos | PROPOSED |
+| [0056](ADR-0056-story.md) | Story — "Two Tides" (5 acts, 48 missions outlined) | PROPOSED |

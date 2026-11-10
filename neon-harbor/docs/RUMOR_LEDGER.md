@@ -366,9 +366,24 @@ binding.)
   vehicles behind the M3.5 gate, property renovation, smart homes), all PROPOSED.
   No registry counts changed.
 
+## Row 73 — User directive: "a great storyline like power by 50 cent"
+
+- **Class:** ADOPT (original story) + POLICY (genre reference only)
+- **Received (2026-11-10, verbatim):** "Also add a great storyline like power by 50 cent"
+- **Interpretation:** the named TV drama is a genre reference: a prestige crime saga
+  about a double life and going legitimate. Nothing from it is copied: no characters,
+  plot lines, names, scenes or dialogue (walls W1, W3). Its title and its producer's
+  name stay out of all content files.
+- **Name screening (web search, 2026-11-10):** Imani Vassell, Carver Tulloch,
+  Dane Vassell, Soraya Al-Marri and Winston Vassell returned no public-figure match.
+  The search was one grouped query; this is not legal clearance.
+- **Close:** ADOPT → ADR 0056, story bible "Two Tides": 5 acts, 48 missions
+  outlined by act, 4 endings. No mission rows written yet.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 73** — story: writers' room pass and the 48 mission rows are still to do.
 - **Row 70** — `Config/DefaultEngine.ini`: names verified from community sources, rendering untested; hit-lighting value unsettled.
 - **Row 68** — RTX Ultra: ray reconstruction plugin for UE 5.5 unverified; all Ultra targets unmeasured.
 - **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
