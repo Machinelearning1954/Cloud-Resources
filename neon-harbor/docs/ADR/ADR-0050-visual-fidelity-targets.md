@@ -75,6 +75,46 @@ target; resolution and render settings are what give way to reach it.
 - These were 30 fps targets for T1–T3 before row 67. Nothing is measured yet, so all
   four remain PENDING.
 
+## RTX Ultra mode (added 2026-11-10, ledger row 68) — all PENDING
+
+The user asked for "the highest quality RTX graphics", with a reference screenshot of
+a high-end-card benchmark overlay (RTX 5090, 4K, upscaling + frame generation). This
+adds an optional **Ultra mode above T0**. It is a PC graphics preset, not a fifth
+budget tier: ADR 0013's four tiers and their gating rules are unchanged, and no
+content exists only in Ultra.
+
+| Setting | RTX Ultra (RTX 5080/5090 class) |
+| --- | --- |
+| Output | 4K |
+| Global illumination + reflections | Lumen hardware ray tracing at its highest quality, with hit lighting |
+| Direct lighting and shadows | MegaLights for many ray-traced area lights — **experimental in UE 5.5**, so behind a toggle until it is stable |
+| Photo mode / cinematics | UE Path Tracer (production-ready in 5.5) for stills and cutscene renders, not real-time play |
+| Geometry | Nanite at full detail; ray-traced Nanite where supported |
+| Upscaling | DLSS Super Resolution, Quality mode |
+| Denoising | DLSS Ray Reconstruction — **UE 5.5 plugin support PENDING verification** |
+| Frame generation | Optional, off by default (see below) |
+| Latency | Low-latency mode on whenever frame generation is on |
+
+**Targets for Ultra:**
+
+- **60 fps of rendered frames at 4K** with upscaling, GPU frame time p95 ≤ 16.6 ms.
+- Frame generation may multiply that up to the display's refresh rate. Generated
+  frames are reported separately and never counted toward the 60 fps target.
+  Benchmark overlays like the one in the reference usually include generated frames,
+  so their numbers are not comparable to rendered-frame targets.
+- VRAM budget and install-size impact: PENDING.
+
+**Not adopted yet:** the newest neural-rendering release from the same vendor
+(launched autumn 2026, RTX 50 series only, in a handful of games). It needs vendor
+integration work and an engine plugin that hasn't been verified for UE 5.5. Review it
+again at M3.
+
+**Other vendors:** equivalent upscalers and frame generation (FSR, XeSS) are offered
+at the same preset, so Ultra is not locked to one GPU brand.
+
+The reference screenshot shows another studio's game. It is evidence for the
+**settings class** only. No art, character or look is taken from it (rule 8, wall W3).
+
 ## How a target becomes a fact
 
 1. Capture a profile in a packaged build (`stat unit`, `stat gpu`, Unreal Insights) on

@@ -83,7 +83,7 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–67 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–68 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations)

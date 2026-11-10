@@ -258,10 +258,33 @@ binding.)
 - **Close:** ADOPT → ADR 0050 (60 fps on T0–T3, resolution scales, content gates).
   Targets remain PENDING measurement.
 
+## Row 68 — User directive: "highest quality RTX graphics" (screenshot)
+
+- **Class:** ADOPT (settings class) + REFERENCE (screenshot)
+- **Received (2026-11-10):** a phone screenshot of a short video, with the verbatim
+  request "Get it to the highest quality rtx graphics". The overlay reads
+  "RTX 5090 · 236 FPS · 4K · DLSS 4". The footage is another studio's superhero game.
+  This resolves row 67's PENDING link: the user has now shown what matters in it.
+- **Forensics (ADR 0014):** a third-party benchmark short, not first-hand. The frame
+  rate shown is not verified, and overlays of this kind usually include generated
+  frames. Used as evidence of a **settings class** only.
+- **Tech status (web, 2026-11-10):**
+  - DLSS 4.5 multi frame generation and an updated ray reconstruction are broadly
+    available; DLSS 5 launched in autumn 2026 for RTX 50 series only, in very few
+    games: https://www.nvidia.com/en-us/geforce/news/dlss-5-faster-ai-model-hogwarts-legacy-rtx-spark-laptops/ ,
+    https://en.wikipedia.org/wiki/Deep_Learning_Super_Sampling
+  - UE 5.5: MegaLights is experimental, the Path Tracer is production-ready, and
+    Lumen can run at 60 Hz with hardware support:
+    https://www.pugetsystems.com/blog/2024/11/06/unreal-engine-5-5-from-smpte-2110-to-megalights-whats-new-and-noteworthy/ ,
+    https://tomlooman.com/unreal-engine-5-5-performance-highlights/
+  - Ray reconstruction plugin support for UE 5.5: not confirmed, so PENDING.
+- **Close:** ADOPT → ADR 0050 "RTX Ultra mode" (optional PC preset above T0, all
+  targets PENDING). No art or look is taken from the referenced game.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
-- **Row 67** — video link not opened; awaiting a description in words.
+- **Row 68** — RTX Ultra: ray reconstruction plugin for UE 5.5 unverified; all Ultra targets unmeasured.
 - **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
 - **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies
