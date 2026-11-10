@@ -343,6 +343,29 @@ binding.)
 - **Close:** ADOPT → ADR 0050 "Where Neon Harbor aims to lead" (PROPOSED), with a
   one-block vertical slice as the first build target.
 
+## Row 72 — User directive: four reference videos + futuristic smart-city Dubai
+
+- **Class:** REFERENCE (videos) + ADOPT (design) + POLICY (two refusals)
+- **Received (2026-11-10):** four uploaded videos and a request to add what is
+  missing, to give insight on beating the genre leader, and for "futuristic smart
+  cities in dubai".
+- **Forensics (ADR 0014), frames reviewed:**
+  1. A suited man fights in a phone shop; shelves and stock are destroyed.
+  2. A flying luxury car leaves a villa. It carries a **real carmaker's badge**
+     (wall W2) and warped lettering.
+  3. A work crew converts a floor into a glass-topped reef pool.
+  4. Futuristic sea-platform homes, a hologram kitchen, towers with sky traffic; a
+     generator watermark is visible.
+  - All four appear AI-generated, with no first-hand source. They are used as concept
+    reference only. No frame, design, logo or likeness enters the repo.
+- **Refused:**
+  - Speaking as a former employee of the genre leader. No insider knowledge exists
+    here, and claiming it would be an invented fact (rule 7).
+  - Any claim of collaboration with, or action against, named real people.
+- **Close:** ADOPT → ADR 0055 (near-future Dubai; destructible interiors, flying
+  vehicles behind the M3.5 gate, property renovation, smart homes), all PROPOSED.
+  No registry counts changed.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

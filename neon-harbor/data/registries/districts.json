@@ -89,7 +89,7 @@
       "id": "dubai",
       "name": "Dubai",
       "real_world_anchor": "Dubai, United Arab Emirates (ADR 0008 district, re-confirmed by the user in ledger row 65)",
-      "character": "Gulf promenade, tower district, branch venues",
+      "character": "Near-future smart city (ADR 0055): sea-platform quarter, sky lanes between towers, responsive streets, Gulf promenade, branch venues",
       "user_anchor": true,
       "amenity_ids": [
         "NH-AM-28",
@@ -104,7 +104,8 @@
           25.2,
           55.27
         ]
-      }
+      },
+      "content_policy": "fictional near-future depiction; technology serves daily life; no real landmark, brand or authority is depicted (ADR 0055)"
     },
     {
       "id": "washington-dc",
