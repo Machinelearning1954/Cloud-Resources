@@ -44,7 +44,7 @@ Unreal Editor and kept in Git LFS or Perforce, not in this docs/data repository.
 | Reflections | Lumen RT reflections | Lumen SW | SSR | cubemaps |
 | Geometry | Nanite (world + foliage) | Nanite | LOD chains | LOD chains |
 | Shadows | Virtual Shadow Maps | VSM (reduced) | CSM 2 cascades | CSM 1 cascade |
-| Upscaling | TSR / DLSS, 1080p out | TSR, 900p out | MetalFX, native-ish | FSR-mobile |
+| Upscaling | TSR / DLSS, 1080p out | TSR, 720p–900p out (dynamic) | MetalFX, dynamic resolution | FSR-mobile, dynamic resolution |
 | Volumetrics | clouds + fog + god rays | fog + clouds (low) | height fog | height fog |
 | Water | single-layer water + caustics | same, no caustics | simplified | simplified |
 | Crowd/traffic draw | per ADR 0013 budgets | per ADR 0013 | per ADR 0013 | per ADR 0013 |
@@ -58,11 +58,22 @@ that tier, never shipped as a half-simulated shell.
 
 | Metric | T0 | T1 | T2 | T3 |
 | --- | --- | --- | --- | --- |
-| Frame rate | 60 fps @1080p | 30 fps @900p | 30 fps | 30 fps |
-| GPU frame time p95 | ≤ 16.6 ms | ≤ 33 ms | ≤ 33 ms | ≤ 33 ms |
+| Frame rate | 60 fps @1080p | 60 fps (dynamic res) | 60 fps (dynamic res) | 60 fps (dynamic res) |
+| GPU frame time p95 | ≤ 16.6 ms | ≤ 16.6 ms | ≤ 16.6 ms | ≤ 16.6 ms |
 | Streaming hitch p99 | ≤ 50 ms | ≤ 80 ms | ≤ 100 ms | ≤ 100 ms |
 | VRAM / memory budget | ≤ 7 GB | ≤ 3.5 GB | ≤ 3 GB | ≤ 3 GB |
 | Install size (output) | measured at content lock | — | — | — |
+
+**60 fps on every tier (user directive, ledger row 67).** Frame rate is the fixed
+target; resolution and render settings are what give way to reach it.
+
+- T1–T3 use dynamic resolution and the cheaper settings in the feature table.
+- If a tier still can't hold 60 fps in a district, content is **gated** on that tier
+  (ADR 0013). The frame rate is not dropped to 30.
+- On phones, sustained 60 fps is also limited by heat and battery. A 30 fps
+  battery-saver mode is allowed as a player option, never as the default.
+- These were 30 fps targets for T1–T3 before row 67. Nothing is measured yet, so all
+  four remain PENDING.
 
 ## How a target becomes a fact
 

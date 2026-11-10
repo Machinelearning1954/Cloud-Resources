@@ -243,9 +243,25 @@ binding.)
     indicative. Two styles are marked `pending` for stylist review. No Hamar or
     Afar style was added, because no usable source was found.
 
+## Row 67 — User directive: 60 fps (and a video link)
+
+- **Class:** ADOPT (frame rate) + POLICY (DEDUPE of row 63)
+- **Received (2026-11-10):** a video link, https://youtu.be/GLZP4bhvBrs , with a
+  request to "train it on Gta 6 graphics for the absolute match"; then the
+  clarification, verbatim: "I mean 60 fps".
+- **Link:** not opened. **PENDING**: the user is asked to describe in words what in
+  the video matters.
+- **Interpretation:**
+  - An exact match of another title's graphics stays refused (rule 8, row 63).
+    Nothing in this repo can be "trained": it holds no graphics and no model.
+  - **60 fps is adopted** as the frame-rate target on all four tiers.
+- **Close:** ADOPT → ADR 0050 (60 fps on T0–T3, resolution scales, content gates).
+  Targets remain PENDING measurement.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 67** — video link not opened; awaiting a description in words.
 - **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
 - **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies

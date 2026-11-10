@@ -33,7 +33,7 @@ compile-time law, not documentation.
 | --- | --- | --- |
 | `docs/ADR/` | Architecture decision records (INDEX + 13 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–66 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–67 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -87,3 +87,5 @@ density players expect from the genre while every brand, venue and character rem
 - **Hair library 8 → 28 styles** — Jamaican and Ethiopian/Eritrean styles, each tagged
   sourced, generic or pending review.
 - **Silver Spring is Maryland** — corrected per the user.
+- **60 fps on every tier (ledger row 67)** — ADR 0050 now targets 60 fps on all four
+  device tiers, with resolution scaling to reach it. Not measured yet.
