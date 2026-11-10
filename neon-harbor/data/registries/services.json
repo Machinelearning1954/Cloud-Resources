@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md. Radio stations (ADR 0054) live here under radio_stations: offline, world-time scheduled, never streamed (rule 0).",
+  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md. Radio stations (ADR 0054) live here under radio_stations: offline, world-time scheduled, never streamed (rule 0). Multiplayer budgets (ADR 0057) live under multiplayer; tools/check_net_budget.py verifies the arithmetic.",
   "services": [
     {
       "id": "SV-TAXI-HARBOUR",
@@ -138,5 +138,118 @@
       "provenance": "NEW-2026-11-10 original (ledger row 66)",
       "four_walls": "clean"
     }
-  ]
+  ],
+  "multiplayer": {
+    "status": "PROPOSED design budgets — nothing built or measured (ADR 0057)",
+    "authority": "dedicated_server_authoritative",
+    "server_tick_hz": 30,
+    "modes": [
+      {
+        "id": "MP-COOP-STORY",
+        "name": "Co-op story",
+        "max_players": 4,
+        "notes": "host's save owns story meters; guests keep their own character progress"
+      },
+      {
+        "id": "MP-FREEROAM",
+        "name": "Free-roam session",
+        "max_players": 16,
+        "notes": "one district per session; no district-versus-district framing"
+      }
+    ],
+    "tier_caps": [
+      {
+        "tier": "T0",
+        "max_session_players": 16,
+        "downstream_budget_kbps": 256,
+        "render_fps": 60
+      },
+      {
+        "tier": "T1",
+        "max_session_players": 16,
+        "downstream_budget_kbps": 256,
+        "render_fps": 60
+      },
+      {
+        "tier": "T2",
+        "max_session_players": 8,
+        "downstream_budget_kbps": 128,
+        "render_fps": 60
+      },
+      {
+        "tier": "T3",
+        "max_session_players": 8,
+        "downstream_budget_kbps": 128,
+        "render_fps": 60
+      }
+    ],
+    "replication_classes": [
+      {
+        "id": "NET-PLAYER",
+        "what": "other players",
+        "update_hz": 20,
+        "bytes_per_update": 32,
+        "relevant_count": {
+          "T0": 15,
+          "T1": 15,
+          "T2": 7,
+          "T3": 7
+        },
+        "notes": "quantised position and rotation, delta-compressed; smoothed by interpolation"
+      },
+      {
+        "id": "NET-VEHICLE",
+        "what": "driven vehicles",
+        "update_hz": 20,
+        "bytes_per_update": 32,
+        "relevant_count": {
+          "T0": 12,
+          "T1": 12,
+          "T2": 6,
+          "T3": 6
+        }
+      },
+      {
+        "id": "NET-NPC",
+        "what": "interactive pedestrians and traffic only",
+        "update_hz": 5,
+        "bytes_per_update": 20,
+        "relevant_count": {
+          "T0": 30,
+          "T1": 30,
+          "T2": 12,
+          "T3": 12
+        },
+        "notes": "ambient crowds are simulated on each client from a shared seed, not replicated"
+      },
+      {
+        "id": "NET-WORLD",
+        "what": "doors, debris events, venue state",
+        "update_hz": 2,
+        "bytes_per_update": 16,
+        "relevant_count": {
+          "T0": 40,
+          "T1": 40,
+          "T2": 20,
+          "T3": 20
+        },
+        "notes": "sent as events when something changes; this is the worst-case average"
+      }
+    ],
+    "latency_budget_ms": {
+      "target_round_trip": 80,
+      "max_playable_round_trip": 150,
+      "input_sampling": 17,
+      "server_tick": 33,
+      "interpolation_buffer": 67,
+      "render_frame": 17,
+      "felt_delay_local_actions": 34,
+      "felt_delay_limit_local": 50,
+      "seen_delay_remote_limit": 300
+    },
+    "packet_loss_tolerance_pct": 5,
+    "economy": "single currency only; nothing in multiplayer is sold for real money",
+    "offline_guarantee": "single-player never connects to anything (rule 0)",
+    "design_history": "Draft 1 (30 Hz players, 60 replicated NPCs) needed 397 kbps on T0 against a 256 kbps budget and failed check N2. Draft 2 lowers update rates, shrinks payloads and stops replicating ambient crowds."
+  }
 }

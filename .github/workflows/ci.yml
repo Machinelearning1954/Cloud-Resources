@@ -32,3 +32,5 @@ jobs:
         run: bash neon-harbor/tools/repo_doctor.sh
       - name: Engine config static check
         run: python3 neon-harbor/tools/check_engine_config.py
+      - name: Multiplayer net budget check
+        run: python3 neon-harbor/tools/check_net_budget.py

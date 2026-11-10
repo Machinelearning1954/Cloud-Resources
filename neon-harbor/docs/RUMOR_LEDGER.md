@@ -380,9 +380,31 @@ binding.)
 - **Close:** ADOPT → ADR 0056, story bible "Two Tides": 5 acts, 48 missions
   outlined by act, 4 endings. No mission rows written yet.
 
+## Row 74 — User directive: multiplayer, tested, "no glitches no lagging"
+
+- **Class:** ADOPT (design + budgets + test) + POLICY (rule §0 amended)
+- **Received (2026-11-10, verbatim):** "Make it multi-player..train test and debugg no glitches no lagging using top tier tech"
+- **Rule conflict:** rule §0 banned all online activity. The user's directive
+  outranks it, so the rule is amended narrowly: single-player stays fully offline,
+  and multiplayer is an opt-in mode (ADR 0057).
+- **Tech status (web, 2026-11-10):** Unreal's Iris replication and Mover movement
+  systems are still described as experimental, and were reported incompatible with
+  each other. The proven stack is chosen instead:
+  https://www.strayspark.studio/blog/iris-replication-unreal-engine-opt-in-2026 ,
+  https://forums.unrealengine.com/t/iris-network-prediction-plugin-incompatibilities/2651670
+- **Test and debug actually done:** `tools/check_net_budget.py`, 13 arithmetic
+  checks. Draft 1 of the design **failed** (397 kbps needed against a 256 kbps
+  budget). Draft 2 passes at 179 kbps (PC tiers) and 88 kbps (phones).
+- **Not done, and not possible yet:** any real network or play test. No build
+  exists. "No lag" cannot be promised for any online game; the targets are stated
+  as felt delay.
+- **Close:** ADOPT → ADR 0057, `services.json → multiplayer`, CI step. All budgets
+  PENDING measurement.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 74** — multiplayer: all budgets unmeasured; hosting provider, cost, moderation and privacy review to do.
 - **Row 73** — story: writers' room pass and the 48 mission rows are still to do.
 - **Row 70** — `Config/DefaultEngine.ini`: names verified from community sources, rendering untested; hit-lighting value unsettled.
 - **Row 68** — RTX Ultra: ray reconstruction plugin for UE 5.5 unverified; all Ultra targets unmeasured.
