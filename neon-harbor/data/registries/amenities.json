@@ -1,0 +1,211 @@
+{
+  "$schema_note": "Amenities registry — ADR 0049 parity-through-original-translation. Every category evidenced in ledger row 60 becomes an original Neon Harbor venue. Content files are four-walls scanned by tools/repo_doctor.sh; upstream marketing terms are banned here by design.",
+  "count_contract": "27 evidence-mapped amenities + 2 Dubai branch venues = 29 rows",
+  "amenities": [
+    {
+      "id": "NH-AM-01", "name": "Cane Bay Charters", "category": "fishing",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "charter_dock", "systems": ["species_registry_fail_safe", "single_currency"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "harbour fishing spots; protected species untargetable"
+    },
+    {
+      "id": "NH-AM-02", "name": "Iron Dutty Fitness", "category": "gym_weights_punching_bag",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "gym", "systems": ["focus_transient_adr0048"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "no save-codec fields; form-check anims capped on T2/T3"
+    },
+    {
+      "id": "NH-AM-03", "name": "The Silk Circuit", "category": "strip_club",
+      "evidence_source": ["IGN-2026-08-27", "RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "adult_venue", "systems": ["age_gate", "nightlife_economy"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "age gate on every tier; interior NPC cap 24/8/4/4"
+    },
+    {
+      "id": "NH-AM-04", "name": "Zinc Roof Soundhall", "category": "nightclub_dancing",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "nightclub", "systems": ["crew_registry_performers", "single_currency"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "sound-clash nights; crowd sim capped per tier"
+    },
+    {
+      "id": "NH-AM-05", "name": "Duppy Rum Bar", "category": "bar_drinking",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "bar", "systems": ["single_currency"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "clustered with Jerk Pan Yard to share streaming cell"
+    },
+    {
+      "id": "NH-AM-06", "name": "Rack Room", "category": "pool_billiards",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "bar_annex_minigame", "systems": ["single_currency"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "cheapest loop in the registry; pure anim"
+    },
+    {
+      "id": "NH-AM-07", "name": "Crazy Cane Links", "category": "mini_golf",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "silver-springs",
+      "venue_kind": "minigolf_course", "systems": ["single_currency"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "18 holes, 9 loaded per streaming cell"
+    },
+    {
+      "id": "NH-AM-08", "name": "Back-A-Wall Courts", "category": "basketball",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "half_court", "systems": ["pickup_3v3"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "6-agent cap incl. T3"
+    },
+    {
+      "id": "NH-AM-09", "name": "Cay Divers' Shack", "category": "scuba_diving",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "dive_shop", "systems": ["species_registry_fail_safe"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3; shore-dive variant on T2/T3",
+      "four_walls": "clean", "budget_note": "underwater streaming shared with NH-AM-10"
+    },
+    {
+      "id": "NH-AM-10", "name": "Cockpit Sinkholes", "category": "cave_diving",
+      "evidence_source": ["IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "sink_country_dive_site", "systems": ["underwater_streaming", "species_registry_fail_safe"],
+      "milestone": "M3.5", "gate": "flight-streaming",
+      "tiers": "T0 only",
+      "four_walls": "clean", "budget_note": "hidden, never degraded, until M3.5 validation passes"
+    },
+    {
+      "id": "NH-AM-11", "name": "Mangrove Run Tours", "category": "kayaking",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "tour_dock", "systems": ["watercraft_class"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "wetlands streaming cell shared with NH-AM-13"
+    },
+    {
+      "id": "NH-AM-12", "name": "Spray Rentals", "category": "jet_skiing",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "silver-springs",
+      "venue_kind": "marina_rental", "systems": ["vehicle_registry_noiserating", "single_currency"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "watercraft NoiseRating from vehicle registry"
+    },
+    {
+      "id": "NH-AM-13", "name": "Glassbottom & Airboat Co.", "category": "airboating",
+      "evidence_source": ["IGN-2026-08-27"], "district": "silver-springs",
+      "venue_kind": "tour_marina", "systems": ["wetlands_streaming", "watercraft_class"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T1; hidden on T2/T3",
+      "four_walls": "clean", "budget_note": "glass-bottom heritage homage; gated not degraded on mobile"
+    },
+    {
+      "id": "NH-AM-14", "name": "Backwood Bounty Board", "category": "hunting_trapping",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "bounty_board", "systems": ["bounty_registry", "species_registry_fail_safe"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "invasive-species bounties only; protected species fail-safe"
+    },
+    {
+      "id": "NH-AM-15", "name": "Dirt Dutty Series", "category": "dirt_bike_racing",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "dirt_track_series", "systems": ["vehicle_registry"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "mountain tracks; grid cap 8/8/4/4"
+    },
+    {
+      "id": "NH-AM-16", "name": "Bauxite Rally Circuit", "category": "rally_racing",
+      "evidence_source": ["IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "rally_circuit", "systems": ["vehicle_registry"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "disused mining roads; 4-car grid cap on T2/T3"
+    },
+    {
+      "id": "NH-AM-17", "name": "Chain-Link Cage", "category": "cage_fighting_mma",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "fight_warehouse", "systems": ["betting_single_currency"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "betting pays in the one currency only"
+    },
+    {
+      "id": "NH-AM-18", "name": "Yard Brawl Circuit", "category": "backyard_wrestling",
+      "evidence_source": ["IGN-2026-08-27"], "district": "alexandria",
+      "venue_kind": "backyard_ring", "systems": ["schedule_events"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "weekend schedule, no persistent sim"
+    },
+    {
+      "id": "NH-AM-19", "name": "Leadworks Range", "category": "shooting_range",
+      "evidence_source": ["IGN-2026-08-27"], "district": "alexandria",
+      "venue_kind": "indoor_range", "systems": ["fictional_firearms_only"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "real-world firearm brands banned at the wall"
+    },
+    {
+      "id": "NH-AM-20", "name": "Blue Mountain Jump Point", "category": "base_jump_parachute",
+      "evidence_source": ["IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "jump_point", "systems": ["flight_gate_m35"],
+      "milestone": "M3.5", "gate": "flight-streaming",
+      "tiers": "T0-T1",
+      "four_walls": "clean", "budget_note": "bFlightEnabled=False until streaming validation passes"
+    },
+    {
+      "id": "NH-AM-21", "name": "Two Fish Point", "category": "sunbathing",
+      "evidence_source": ["IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "public_beach", "systems": ["passive"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "free; no sim beyond crowd ambience"
+    },
+    {
+      "id": "NH-AM-22", "name": "Harbour Field Guide", "category": "studying_animals",
+      "evidence_source": ["IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "photo_survey", "systems": ["species_registry_fail_safe"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "photography only — zero kill state"
+    },
+    {
+      "id": "NH-AM-23", "name": "Court-Ordered Cleanup", "category": "litter_picking_community_service",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "probation_mechanic", "systems": ["probation_state_save", "transient_trash_adr0048"],
+      "milestone": "M1", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "sentence progress = save data; trash positions = transient"
+    },
+    {
+      "id": "NH-AM-24", "name": "NH-Cast", "category": "watching_tv",
+      "evidence_source": ["RED-BULL-2025-11-06", "IGN-2026-08-27"], "district": "kingston",
+      "venue_kind": "in_world_tv", "systems": ["transient_adr0048", "world_time_schedule"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T2",
+      "four_walls": "clean", "budget_note": "what airs is a function of world time, never save data"
+    },
+    {
+      "id": "NH-AM-25", "name": "Keelwright Boatworks", "category": "boat_customisation",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "boat_workshop", "systems": ["vehicle_registry_watercraft", "single_currency"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T2",
+      "four_walls": "clean", "budget_note": "custom parts pay in the one currency; cosmetic only"
+    },
+    {
+      "id": "NH-AM-26", "name": "Riddim Ranch Studio", "category": "music_artist_management",
+      "evidence_source": ["RED-BULL-2025-11-06"], "district": "kingston",
+      "venue_kind": "recording_studio", "systems": ["crew_registry"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T2",
+      "four_walls": "clean", "budget_note": "managed artists perform at Zinc Roof Soundhall (NH-AM-04)"
+    },
+    {
+      "id": "NH-AM-27", "name": "Zippy Rentals", "category": "electric_scooters",
+      "evidence_source": ["IGN-2026-08-27"], "district": "alexandria",
+      "venue_kind": "micro_mobility_rental", "systems": ["vehicle_registry_micro"],
+      "milestone": "M2", "gate": null, "tiers": "T0-T3",
+      "four_walls": "clean", "budget_note": "also spawns on Dubai promenade (districts.json)"
+    },
+    {
+      "id": "NH-AM-28", "name": "Zinc Roof DXB", "category": "nightclub_branch",
+      "evidence_source": ["ORIGINAL-ADR0049-branch"], "district": "dubai",
+      "venue_kind": "nightclub_branch", "systems": ["crew_registry_performers"],
+      "milestone": "M3", "gate": null, "tiers": "T0-T1",
+      "four_walls": "clean", "budget_note": "branch of NH-AM-04; keeps district four from being a shell"
+    },
+    {
+      "id": "NH-AM-29", "name": "Leadworks Gulf", "category": "shooting_range_branch",
+      "evidence_source": ["ORIGINAL-ADR0049-branch"], "district": "dubai",
+      "venue_kind": "range_annex", "systems": ["fictional_firearms_only"],
+      "milestone": "M3", "gate": null, "tiers": "T0-T1",
+      "four_walls": "clean", "budget_note": "annex of NH-AM-19"
+    }
+  ]
+}

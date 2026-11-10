@@ -1,0 +1,42 @@
+{
+  "$schema_note": "Districts registry — ADR 0008 (real place names + fictional depiction). Ledger row 62: kingston/silver-springs/alexandria are the user-named anchor districts.",
+  "districts": [
+    {
+      "id": "kingston",
+      "name": "Kingston",
+      "real_world_anchor": "Kingston, Jamaica",
+      "character": "Harbour city, downtown grid, Blue Mountain fringe, sink-country interior, wetlands",
+      "user_anchor": true,
+      "amenity_ids": [
+        "NH-AM-01", "NH-AM-02", "NH-AM-03", "NH-AM-04", "NH-AM-05", "NH-AM-06",
+        "NH-AM-08", "NH-AM-09", "NH-AM-10", "NH-AM-11", "NH-AM-14", "NH-AM-15",
+        "NH-AM-16", "NH-AM-17", "NH-AM-20", "NH-AM-21", "NH-AM-22", "NH-AM-23",
+        "NH-AM-24", "NH-AM-25", "NH-AM-26"
+      ]
+    },
+    {
+      "id": "silver-springs",
+      "name": "Silver Springs",
+      "real_world_anchor": "Silver Springs, Virginia (user designation; fictional depiction per ADR 0008)",
+      "character": "Wetlands, glass-bottom boat heritage, marina row, family strip",
+      "user_anchor": true,
+      "amenity_ids": ["NH-AM-07", "NH-AM-12", "NH-AM-13"]
+    },
+    {
+      "id": "alexandria",
+      "name": "Alexandria",
+      "real_world_anchor": "Alexandria, Virginia",
+      "character": "Old Town grid, industrial waterfront, metro corridor, suburbs",
+      "user_anchor": true,
+      "amenity_ids": ["NH-AM-18", "NH-AM-19", "NH-AM-27"]
+    },
+    {
+      "id": "dubai",
+      "name": "Dubai",
+      "real_world_anchor": "Dubai (standing ADR 0008 district; retained — flagged for next user check-in, ledger row 62)",
+      "character": "Gulf promenade, tower district, branch venues",
+      "user_anchor": false,
+      "amenity_ids": ["NH-AM-28", "NH-AM-29"]
+    }
+  ]
+}

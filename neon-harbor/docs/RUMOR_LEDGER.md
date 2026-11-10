@@ -1,0 +1,88 @@
+# RUMOR_LEDGER — Neon Harbor: Kingston
+
+Intake machine for every external claim, link, screenshot, "leak", and brand encounter.
+Six close categories: **ADOPT** (into architecture), **DEDUPE** (already handled),
+**DEFER** (parked with a condition), **GOSSIP** (no action), **REFERENCE** (evidence only),
+**POLICY** (becomes a rule). Four walls, enforced by the doctor on every run:
+real-person likeness / real brands / R* canon characters / real institutions.
+
+> **NH-REBUILD-1 note:** rows 1–58 below are a **lossy reconstruction** from the project
+> log after sandbox recycle (see `RECOVERY_LOG.md`). Each row is marked
+> `[RECONSTRUCTED-LOSSY]`; verbatim text and per-row evidence were not recoverable.
+> Rows 60–62 are live, full, and evidence-linked. Rows 54 and 59 remain **PENDING**.
+
+## Rows 1–58 — lossy summary block
+
+| Row | Class | Summary | Close | Tool deposited |
+| --- | --- | --- | --- | --- |
+| 0001–0009 | rumor wave | Early GTA6 rumor screenshots, map-size claims, release-date rumors | GOSSIP / REFERENCE | intake template |
+| 0010 | fake API | "GTA6 API" service offering scraped data | DEFER (never consume online services) | §0 no-online-services rule |
+| 0014 | AI forgery | AI-generated "leak" images with artifact trails | GOSSIP | AI-leak forensics checklist (ADR 0014) |
+| 0034 | real person | Screenshot featuring a real public figure's likeness | POLICY | real-person likeness wall |
+| 0037 | real person | Second likeness incident, different feed | DEDUPE | wall enforced in doctor |
+| 0039 | R* canon | R* canon character name surfaced in fan content | POLICY | canon-character wall (Jason/Lucia/…) |
+| 0043 | real institution | Real institution branding in propaganda-style intake | POLICY | institutions wall + scan |
+| 0044 | brand | Real firearms/automotive/eVTOL brands in fan renders | POLICY | trademark scan |
+| 0054 | link | Link ingest, content never reached the ledger | **PENDING** | — |
+| 0057 | currency claim | "Dual-currency economy" claim vs single-currency design | POLICY | single-currency guard |
+| 0065 | DLL claim | "Install this DLL to import content" style intake | POLICY | DLL ban in doctor |
+| 0083 | political figure | Political-figure imagery in a rumor collage | POLICY | political-figures scan |
+| 0085 | institution | Real-bank / real-agency marks in mock screenshots | POLICY | institutions scan |
+| 0059 | link | Instagram (borntoseephoto) "integrate the videos decode and embedd" — no browsing capability; needs pasted content. "Decode and embed" of video would fail §0 if runtime/online; acceptable only as dev-time STUDY material | **PENDING** | — |
+
+(All unlisted rows in 1–58 were closed GOSSIP/REFERENCE/DEFER without architectural
+impact; their verbatim entries were lost with the tree. The machine's rules — the six
+categories, the four walls, and the tool list above — were fully recovered and remain
+binding.)
+
+## Row 60 — "GTA6 upload that just released" — evidence pass
+
+- **Class:** REFERENCE (parity evidence for ADR 0049)
+- **Claim as received:** user: "all the amenities from gta six upload that just released."
+- **Verified timeline (web, 2026-11-10):**
+  - GTA VI launch date confirmed **2026-11-19** — Rockstar Newswire, Nov 6 2025:
+    https://www.rockstargames.com/newswire/article/ak3ak31a49a221/grand-theft-auto-vi-is-now-set-to-launch-november-19-2026
+  - **Launch Trailer** — Oct 15, 2026 (Newswire listing, original score by Justice, Oct 29):
+    https://www.rockstargames.com/newswire/article/9k2kaa1o3297k9/grand-theft-auto-vi-an-extended-look
+  - ***An Extended Look*** ~30 min gameplay — premiered Aug 27, 2026 (Newswire, Aug 6 2026).
+  - **Launch Gallery** — Nov 5, 2026; **Pre-Load begins today, Nov 10, 2026**
+    (Newswire, Nov 3 2026).
+- **Amenity evidence:**
+  - IGN, Aug 27 2026 — 18 side activities:
+    https://www.ign.com/articles/heres-every-gta-6-side-activity-weve-spotted-so-far
+  - Red Bull, Nov 6 2025 — Trailer 2 side activities (incl. boat customisation,
+    litter-picking, hunting, MMA cage):
+    https://www.redbull.com/us-en/gta-6-side-activities
+- **R* features page `rockstargames.com/GTAVIfeatures` returned 404 on fetch** — not used
+  as a source.
+- **Close:** REFERENCE → feeds row 61. **No R* text, names, trade dress, or assets enter
+  the repo** — only activity *categories*, each translated per ADR 0049.
+
+## Row 61 — User directive: full amenity parity, original IP
+
+- **Class:** ADOPT
+- **Received:** "add everything I'm missing … keep it original to make it marketable."
+- **Interpretation:** parity on *category and density*, never on content. Every evidenced
+  GTA 6 amenity category gets an original Neon Harbor translation with an original venue
+  brand. This is what makes the game marketable: we own every name, logo, venue and
+  character; nothing to license, nothing to pull under trademark or trade-dress claims,
+  and a distinct identity (Jamaica / Virginia) instead of a Vice City clone.
+- **Close:** ADOPT → **ADR 0049 — GTA6 Amenity Parity Through Original Translation** +
+  `data/registries/amenities.json` (27 entries).
+
+## Row 62 — User re-affirmation of setting anchors
+
+- **Class:** POLICY
+- **Received:** "Remember, it's gta and jamaica, silver springs and alexandria, virginia."
+- **Interpretation:** genre = GTA-style open world; anchors = Kingston Jamaica, Silver
+  Springs, Alexandria VA. Standing ADR 0008 (four districts incl. Dubai) is **unchanged**;
+  the three named districts are the user-named anchors and receive the amenity density
+  emphasis in ADR 0049. Dubai district status flagged for the next user check-in, not
+  silently altered.
+- **Close:** POLICY → ADR 0008 note + ADR 0049 district weighting.
+
+## Open PENDING queue
+
+- **Row 54** — link, awaiting pasted content.
+- **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies
+  to any runtime/online interpretation.

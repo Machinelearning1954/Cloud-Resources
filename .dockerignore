@@ -6,3 +6,4 @@ Projects for Accenture Machine Learning Engineer Role
 __pycache__
 *.pyc
 .pytest_cache
+neon-harbor

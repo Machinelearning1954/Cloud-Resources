@@ -1,0 +1,8 @@
+{
+  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md.",
+  "services": [
+    { "id": "SV-TAXI-HARBOUR", "name": "Harbour Water Taxi", "district": "kingston", "consumes": ["VH-BOAT-01"], "notes": "kingston harbour transit loop" },
+    { "id": "SV-RENTAL-SPRAY", "name": "Spray Rentals desk", "district": "silver-springs", "consumes": ["NH-AM-12"] },
+    { "id": "SV-PROBATION", "name": "Municipal Probation Office", "district": "kingston", "consumes": ["NH-AM-23"], "notes": "sentence progress is save data (ADR 0048 boundary)" }
+  ]
+}

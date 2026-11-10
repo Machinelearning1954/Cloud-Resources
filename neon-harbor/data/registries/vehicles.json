@@ -1,0 +1,13 @@
+{
+  "$schema_note": "Vehicles registry — REBUILD STUB. The original table (17 vehicles, each with a NoiseRating spectrum entry) was lost with the tree; this registry restarts with the amenity-linked classes ADR 0049 requires and carries explicit rebuild slots. All names original.",
+  "rebuild_slots": "11 more rows to reach the recovered contract of 17",
+  "vehicles": [
+    { "id": "VH-JETSKI-01", "name": "Spray Board 500", "class": "watercraft_pwc", "noise_rating": "NR-4-loud", "consumed_by": ["NH-AM-12"] },
+    { "id": "VH-KAYAK-01", "name": "Mangrove One", "class": "watercraft_human", "noise_rating": "NR-0-silent", "consumed_by": ["NH-AM-11"] },
+    { "id": "VH-AIRBOAT-01", "name": "Glass Skimmer", "class": "watercraft_airboat", "noise_rating": "NR-5-very-loud", "consumed_by": ["NH-AM-13"] },
+    { "id": "VH-DIRTBIKE-01", "name": "Dutty Thumper 250", "class": "motorcycle_dirt", "noise_rating": "NR-4-loud", "consumed_by": ["NH-AM-15"] },
+    { "id": "VH-RALLY-01", "name": "Bauxite Runner", "class": "car_rally", "noise_rating": "NR-3-moderate", "consumed_by": ["NH-AM-16"] },
+    { "id": "VH-SCOOTER-01", "name": "Zippy Micro", "class": "micro_mobility", "noise_rating": "NR-1-quiet", "consumed_by": ["NH-AM-27"] },
+    { "id": "VH-BOAT-01", "name": "Cane Bay Skiff", "class": "watercraft_outboard", "noise_rating": "NR-2-low", "consumed_by": ["NH-AM-01", "NH-AM-25"] }
+  ]
+}

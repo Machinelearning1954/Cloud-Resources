@@ -1,0 +1,19 @@
+# Neon Harbor: Kingston
+# UE/Visual Studio build artifacts
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+*.sln
+*.suo
+# secrets
+.env
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+node_modules/
+__pycache__/
+*.log

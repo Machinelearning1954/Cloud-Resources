@@ -1,0 +1,7 @@
+{
+  "$schema_note": "Bounty registry — REBUILD STUB. Bounty economy pays in the single currency (ledger row 0057 guard). NH-AM-14 Backwood Bounty Board consumes invasive-species rows only.",
+  "bounties": [
+    { "id": "BO-INVA-01", "target_species": "SP-IGUANA-GREEN", "payout": 45, "currency": "single", "board": "NH-AM-14" },
+    { "id": "BO-INVA-02", "target_species": "SP-LIONFISH", "payout": 30, "currency": "single", "board": "NH-AM-14" }
+  ]
+}

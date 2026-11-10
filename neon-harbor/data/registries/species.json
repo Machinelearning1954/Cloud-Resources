@@ -1,0 +1,12 @@
+{
+  "$schema_note": "Species registry — recovered contract: UNKNOWN SPECIES = PROTECTED (fail-safe). Real fauna named for documentary accuracy; walls apply to brands and people, not biology. Feeds NH-AM-01 fishing, NH-AM-09 scuba, NH-AM-14 bounty board, NH-AM-22 field guide.",
+  "policy": "Any species id not present in this registry is treated as protected and untargetable.",
+  "species": [
+    { "id": "SP-IGUANA-GREEN", "name": "green iguana", "status": "invasive", "bounty_eligible": true, "consumed_by": ["NH-AM-14"] },
+    { "id": "SP-LIONFISH", "name": "lionfish", "status": "invasive", "bounty_eligible": true, "consumed_by": ["NH-AM-14", "NH-AM-01"] },
+    { "id": "SP-MANGROVE-SNAPPER", "name": "mangrove snapper", "status": "game_fish", "bounty_eligible": false, "consumed_by": ["NH-AM-01"] },
+    { "id": "SP-MANATEE", "name": "West Indian manatee", "status": "protected", "bounty_eligible": false, "consumed_by": ["NH-AM-22"] },
+    { "id": "SP-JAMAICAN-BOA", "name": "Jamaican boa", "status": "protected", "bounty_eligible": false, "consumed_by": ["NH-AM-22"] },
+    { "id": "SP-REEF-SHARK", "name": "Caribbean reef shark", "status": "protected", "bounty_eligible": false, "consumed_by": ["NH-AM-09", "NH-AM-22"] }
+  ]
+}

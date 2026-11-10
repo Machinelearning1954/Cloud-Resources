@@ -1,0 +1,7 @@
+{
+  "$schema_note": "Crew registry — REBUILD STUB. All characters fictional (canon-character wall). Crew members feed amenities NH-AM-04 and NH-AM-26 per ADR 0049.",
+  "crews": [
+    { "id": "CR-PERF-01", "name": "Marlene 'Zinc' Pryce", "role": "soundhall performer", "venue": "NH-AM-04", "four_walls": "clean" },
+    { "id": "CR-PERF-02", "name": "Delly Ranks (fictional)", "role": "managed artist", "venue": "NH-AM-26", "four_walls": "clean" }
+  ]
+}
