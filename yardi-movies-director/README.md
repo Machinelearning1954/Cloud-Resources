@@ -7,6 +7,17 @@ There are no accounts, no subscriptions, no paywalled models and no credit
 meter anywhere in the code. Generations run on **your own hardware** with
 open-weights models, so the number of takes is limited only by your GPU.
 
+## What you can do
+
+- **Text to image** and **text to video** with any of the five models below.
+- **Animate a picture**: press "Animate" on any image take, or upload your own
+  picture, and Wan 2.2 or LTX-2 uses it as the first frame of the clip.
+- **Direct the shot**: camera-direction chips and a "Look" preset are added to
+  your scene description.
+- **Work the reel**: filter by video or image, open stills full size, download,
+  reuse a scene with its seed, cancel queued takes, delete finished ones.
+- Ctrl + Enter in the scene box calls "Action!".
+
 ## Models
 
 | Use   | Model            | Licence (as listed) | Default weights                    |
@@ -75,7 +86,8 @@ authentication before exposing it to a network.
 | Method | Path               | Purpose                                             |
 |--------|--------------------|-----------------------------------------------------|
 | GET    | `/api/config`      | Models, aspect ratios, active engine                |
-| POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt}` |
+| POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt, start_take}` |
+| POST   | `/api/upload`      | Multipart `image`: adds a picture to the reel as a start frame (25 MB max) |
 | GET    | `/api/jobs`        | Every take, newest first                            |
 | GET    | `/api/jobs/<id>`   | One take with status and progress                   |
 | DELETE | `/api/jobs/<id>`   | Remove a take and its file                          |
@@ -87,6 +99,6 @@ pip install pytest && pytest -q
 ```
 
 The suite drives the full request → queue → render → library flow on the
-preview engine. The GPU path (`DiffusersEngine`) follows the pipeline
-signatures in diffusers 0.42 but has not been run in CI, since that needs a
-GPU and the model weights.
+preview engine. The GPU path (`DiffusersEngine`), including the
+image-to-video pipelines, follows the pipeline signatures in diffusers 0.42
+but has not been run, since that needs a GPU and the model weights.

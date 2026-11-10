@@ -26,6 +26,8 @@ class ModelSpec:
     frame_step: int = 0           # video only: num_frames must be k * frame_step + 1
     max_seconds: int = 0          # video only
     has_audio: bool = False
+    i2v_pipeline: str = ""        # video only: diffusers class used when a start frame is given
+    i2v_load: dict = field(default_factory=dict)   # extra from_pretrained kwargs for that class
 
     def frames_for(self, seconds: float) -> int:
         raw = int(round(seconds * self.fps))
@@ -34,8 +36,9 @@ class ModelSpec:
 
     def public(self) -> dict:
         d = asdict(self)
-        d.pop("guidance")
-        d.pop("pipeline")
+        for key in ("guidance", "pipeline", "i2v_pipeline", "i2v_load"):
+            d.pop(key)
+        d["supports_start_image"] = bool(self.i2v_pipeline)
         return d
 
 
@@ -87,13 +90,16 @@ MODELS: dict[str, ModelSpec] = {
             licence="Apache 2.0",
             repo=_repo("wan-2-2", "Wan-AI/Wan2.2-TI2V-5B-Diffusers"),
             pipeline="WanPipeline",
-            blurb="Text-to-video at 24 fps (5B variant). Cinematic motion.",
+            blurb="Text or start frame to video at 24 fps (5B variant). Cinematic motion.",
             steps=50,
             guidance={"guidance_scale": 5.0},
             supports_negative=True,
             fps=24,
             frame_step=4,
             max_seconds=5,
+            i2v_pipeline="WanImageToVideoPipeline",
+            # The 5B text+image model conditions on the first frame through expanded timesteps.
+            i2v_load={"expand_timesteps": True},
         ),
         ModelSpec(
             id="ltx-2",
@@ -102,7 +108,7 @@ MODELS: dict[str, ModelSpec] = {
             licence="Apache 2.0",
             repo=_repo("ltx-2", "Lightricks/LTX-2"),
             pipeline="LTX2Pipeline",
-            blurb="Video with synchronised audio in one pass.",
+            blurb="Text or start frame to video, with synchronised audio in one pass.",
             steps=40,
             guidance={"guidance_scale": 4.0},
             supports_negative=True,
@@ -110,6 +116,7 @@ MODELS: dict[str, ModelSpec] = {
             frame_step=8,
             max_seconds=10,
             has_audio=True,
+            i2v_pipeline="LTX2ImageToVideoPipeline",
         ),
     ]
 }

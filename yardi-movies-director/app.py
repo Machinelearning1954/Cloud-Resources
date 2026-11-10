@@ -21,6 +21,8 @@ from registry import ASPECTS, MODELS
 APP_NAME = "Yardi Movies Director"
 MAX_PROMPT = 2000
 MAX_BATCH = 4
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_UPLOAD_SIDE = 2048
 
 
 def create_app(out_dir: str | None = None, engine=None) -> Flask:
@@ -31,6 +33,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
     max_queue = int(os.environ.get("YARDI_MAX_QUEUE", "200"))
 
     app = Flask(__name__, static_folder=os.path.join(here, "static"), static_url_path="/static")
+    app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
     engine = engine or pick_engine()
     lock = threading.Lock()
     jobs: dict[str, dict] = {}
@@ -116,11 +119,17 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         except (TypeError, ValueError):
             return jsonify(error="count, seconds and seed must be numbers."), 400
         count = max(1, min(MAX_BATCH, count))
+        start_id = body.get("start_take")
+        if start_id and not spec.i2v_pipeline:
+            return jsonify(error=f"{spec.name} cannot start from an image."), 400
         if seed is not None and not 0 <= seed < 2**32:
             return jsonify(error="Seed must be between 0 and 4294967295."), 400
 
         created = []
         with lock:
+            start = jobs.get(start_id) if start_id else None
+            if start_id and not (start and start["status"] == "done" and start.get("media") == "image"):
+                return jsonify(error="That start frame is no longer in the reel."), 400
             waiting = sum(1 for j in jobs.values() if j["status"] in ("queued", "running"))
             if waiting + count > max_queue:
                 return jsonify(error="The render queue is full. Let a few takes finish first."), 429
@@ -142,11 +151,46 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 }
                 if spec.kind == "video":
                     job["seconds"] = max(1.0, min(float(spec.max_seconds), seconds))
+                if start:
+                    job["start_take"], job["start_file"] = start["id"], start["file"]
                 jobs[job["id"]] = job
                 created.append(dict(job))
         for job in created:
             pending.put(job["id"])
         return jsonify(jobs=created), 202
+
+    @app.post("/api/upload")
+    def upload():
+        """Add your own picture to the reel so it can be used as a start frame."""
+        from PIL import Image, UnidentifiedImageError
+
+        sent = request.files.get("image")
+        if sent is None:
+            return jsonify(error="Choose an image file."), 400
+        try:
+            with Image.open(sent.stream) as img:
+                img = img.convert("RGB")
+                img.thumbnail((MAX_UPLOAD_SIDE, MAX_UPLOAD_SIDE))
+                job_id = uuid.uuid4().hex
+                img.save(os.path.join(out_dir, job_id + ".png"))   # re-encoded: never store the raw upload
+                width, height = img.size
+        except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+            return jsonify(error="That file is not an image this studio can read."), 400
+        job = {
+            "id": job_id, "model": "upload", "model_name": "Your upload", "kind": "image",
+            "prompt": os.path.basename(sent.filename or "")[:120] or "Uploaded frame",
+            "aspect": f"{width}×{height}", "width": width, "height": height,
+            "status": "done", "progress": 1.0, "created": time.time(),
+            "file": job_id + ".png", "media": "image", "uploaded": True,
+        }
+        with lock:
+            jobs[job_id] = job
+            save_library()
+        return jsonify(dict(job)), 201
+
+    @app.errorhandler(413)
+    def too_large(_error):
+        return jsonify(error=f"Uploads are limited to {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."), 413
 
     @app.get("/api/jobs")
     def list_jobs():

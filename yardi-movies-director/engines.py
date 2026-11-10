@@ -19,6 +19,19 @@ from registry import ModelSpec
 Progress = Callable[[float], None]
 
 
+def start_frame(req: dict, out_dir: str, size: tuple[int, int]):
+    """Load the take chosen as the first frame, cropped to fill `size`. None for text-only jobs."""
+    if not req.get("start_file"):
+        return None
+    from PIL import Image, ImageOps
+
+    path = os.path.join(out_dir, req["start_file"])
+    if not os.path.exists(path):
+        raise RuntimeError("The start frame for this take was deleted before it rendered.")
+    with Image.open(path) as img:
+        return ImageOps.fit(img.convert("RGB"), size, Image.LANCZOS)
+
+
 class PreviewEngine:
     name = "preview"
     note = (
@@ -34,7 +47,7 @@ class PreviewEngine:
         w, h = int(w * scale) // 2 * 2, int(h * scale) // 2 * 2
         rng = random.Random(req["seed"])
         hue = int(hashlib.sha256(req["prompt"].encode()).hexdigest()[:4], 16) % 360
-        scene = _Scene(w, h, hue, rng)
+        scene = _Scene(w, h, hue, rng, start_frame(req, out_dir, (w, h)))
 
         if spec.kind == "image":
             for i in range(4):
@@ -61,10 +74,11 @@ class PreviewEngine:
 class _Scene:
     """A tiny procedural landscape: sky gradient, sun, hills, slate caption."""
 
-    def __init__(self, w: int, h: int, hue: int, rng: random.Random):
+    def __init__(self, w: int, h: int, hue: int, rng: random.Random, still=None):
         from PIL import Image
 
         self.w, self.h = w, h
+        self.still = still
         top, bottom = _hsl(hue, 45, 16), _hsl((hue + 40) % 360, 60, 46)
         sky = Image.new("RGB", (1, h))
         sky.putdata([tuple(int(top[c] + (bottom[c] - top[c]) * (y / h) ** 1.4) for c in range(3)) for y in range(h)])
@@ -83,12 +97,19 @@ class _Scene:
 
         w, h = self.w, self.h
         font = ImageFont.load_default(size=13)
-        img = self.sky.copy()
+        if self.still is not None:
+            # Start frame given: a slow push-in on the still stands in for real motion.
+            crop_w, crop_h = w * (1 - 0.16 * t), h * (1 - 0.16 * t)
+            left, top = (w - crop_w) / 2, (h - crop_h) / 2
+            img = self.still.resize((w, h), box=(left, top, left + crop_w, top + crop_h))
+        else:
+            img = self.sky.copy()
         d = ImageDraw.Draw(img)
         r = h * 0.11
         sx, sy = w * self.sun_x, h * (0.50 - 0.22 * t)
-        d.ellipse([sx - r, sy - r, sx + r, sy + r], fill=self.sun)
-        for base, amp, waves, colour, drift in self.hills:
+        if self.still is None:
+            d.ellipse([sx - r, sy - r, sx + r, sy + r], fill=self.sun)
+        for base, amp, waves, colour, drift in self.hills if self.still is None else ():
             pts = [(0, h)]
             for x in range(0, w + 8, 8):
                 u = (x + t * drift) / w
@@ -133,30 +154,33 @@ class DiffusersEngine:
         self._pipe = None
         self._loaded = None
 
-    def _load(self, spec: ModelSpec):
-        if self._loaded == spec.id:
+    def _load(self, spec: ModelSpec, from_image: bool = False):
+        key = (spec.id, from_image)
+        if self._loaded == key:
             return self._pipe
         self._pipe = None
         self._loaded = None
         gc.collect()
         if self.device == "cuda":
             self.torch.cuda.empty_cache()
-        cls = getattr(self.diffusers, spec.pipeline, None)
+        cls_name = spec.i2v_pipeline if from_image else spec.pipeline
+        cls = getattr(self.diffusers, cls_name, None)
         if cls is None:
             raise RuntimeError(
-                f"Your diffusers version has no {spec.pipeline}. Upgrade with: pip install -U diffusers"
+                f"Your diffusers version has no {cls_name}. Upgrade with: pip install -U diffusers"
             )
         dtype = self.torch.bfloat16 if self.device == "cuda" else self.torch.float32
-        pipe = cls.from_pretrained(spec.repo, torch_dtype=dtype)
+        pipe = cls.from_pretrained(spec.repo, torch_dtype=dtype, **(spec.i2v_load if from_image else {}))
         if self.device == "cuda" and self.offload:
             pipe.enable_model_cpu_offload()
         else:
             pipe.to(self.device)
-        self._pipe, self._loaded = pipe, spec.id
+        self._pipe, self._loaded = pipe, key
         return pipe
 
     def generate(self, spec: ModelSpec, req: dict, out_dir: str, stem: str, progress: Progress) -> dict:
-        pipe = self._load(spec)
+        first = start_frame(req, out_dir, (req["width"], req["height"]))
+        pipe = self._load(spec, from_image=first is not None)
         steps = spec.steps
 
         def on_step(_pipe, step, _timestep, kwargs):
@@ -185,6 +209,8 @@ class DiffusersEngine:
         name = stem + ".mp4"
         path = os.path.join(out_dir, name)
         kwargs["num_frames"] = spec.frames_for(req["seconds"])
+        if first is not None:
+            kwargs["image"] = first
         if spec.has_audio:
             from diffusers.utils import encode_video
 

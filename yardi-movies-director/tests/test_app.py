@@ -93,3 +93,56 @@ def test_frame_counts_fit_model_constraints():
     assert MODELS["wan-2-2"].frames_for(5) == 121      # 4k + 1
     assert MODELS["ltx-2"].frames_for(5) == 121        # 8k + 1
     assert (MODELS["ltx-2"].frames_for(3) - 1) % 8 == 0
+
+
+def png_bytes(size=(900, 500)):
+    import io
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", size, (200, 40, 40)).save(buf, "PNG")
+    buf.seek(0)
+    return buf
+
+
+def test_upload_then_animate_from_start_frame(client):
+    up = client.post("/api/upload", data={"image": (png_bytes(), "frame.png")}, content_type="multipart/form-data")
+    assert up.status_code == 201
+    frame = up.get_json()
+    assert frame["media"] == "image" and frame["uploaded"] and frame["prompt"] == "frame.png"
+    for model in ("wan-2-2", "ltx-2"):
+        job = client.post("/api/generate", json={"model": model, "prompt": "push in", "start_take": frame["id"]}).get_json()["jobs"][0]
+        assert job["start_take"] == frame["id"]
+        done = wait(client, job["id"])
+        assert done["status"] == "done", done
+
+
+def test_generated_image_can_be_a_start_frame(client):
+    still = client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "a harbour"}).get_json()["jobs"][0]
+    wait(client, still["id"])
+    res = client.post("/api/generate", json={"model": "wan-2-2", "prompt": "boats drift", "start_take": still["id"]})
+    assert wait(client, res.get_json()["jobs"][0]["id"])["status"] == "done"
+
+
+def test_start_frame_rules(client):
+    frame = client.post("/api/upload", data={"image": (png_bytes(), "f.png")}, content_type="multipart/form-data").get_json()
+    # image models cannot start from a frame; unknown or non-image takes are refused
+    assert client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "x", "start_take": frame["id"]}).status_code == 400
+    assert client.post("/api/generate", json={"model": "wan-2-2", "prompt": "x", "start_take": "missing"}).status_code == 400
+    clip = client.post("/api/generate", json={"model": "wan-2-2", "prompt": "x"}).get_json()["jobs"][0]
+    wait(client, clip["id"])
+    assert client.post("/api/generate", json={"model": "wan-2-2", "prompt": "x", "start_take": clip["id"]}).status_code == 400
+
+
+def test_upload_rejects_non_images(client):
+    import io
+
+    bad = client.post("/api/upload", data={"image": (io.BytesIO(b"<script>alert(1)</script>"), "x.png")}, content_type="multipart/form-data")
+    assert bad.status_code == 400
+    assert client.post("/api/upload", data={}, content_type="multipart/form-data").status_code == 400
+    assert client.get("/api/jobs").get_json()["jobs"] == []
+
+
+def test_config_marks_which_models_take_a_start_frame(client):
+    models = {m["id"]: m["supports_start_image"] for m in client.get("/api/config").get_json()["models"]}
+    assert models == {"z-image-turbo": False, "qwen-image-2512": False, "flux2-klein-4b": False, "wan-2-2": True, "ltx-2": True}

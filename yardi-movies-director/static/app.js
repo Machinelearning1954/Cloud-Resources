@@ -11,8 +11,20 @@ const DIRECTIONS = [
   "slow dolly in", "crane shot rising", "handheld", "aerial orbit", "rack focus",
   "golden hour light", "high-contrast noir lighting", "anamorphic wide shot", "shallow depth of field",
 ];
+const LOOKS = [
+  ["", "None"],
+  ["shot on 35mm film, natural grain", "35mm film"],
+  ["black-and-white film noir", "Film noir"],
+  ["documentary realism, natural light", "Documentary"],
+  ["hand-drawn animation", "Hand-drawn animation"],
+  ["neon-lit science fiction", "Neon sci-fi"],
+  ["sun-drenched Caribbean colour", "Caribbean sun"],
+];
 
-const state = { config: null, kind: "video", model: null, jobs: new Map(), directions: new Set() };
+const state = {
+  config: null, kind: "video", model: null, jobs: new Map(),
+  directions: new Set(), start: null, show: "all",
+};
 
 async function api(path, options) {
   const res = await fetch(path, options);
@@ -20,6 +32,8 @@ async function api(path, options) {
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
+
+const mediaUrl = (job) => `/media/${encodeURIComponent(job.file)}`;
 
 function fillSelect(select, options, keep) {
   const previous = keep ? select.value : null;
@@ -60,6 +74,19 @@ function renderControls() {
     if (!$("seconds").dataset.touched) $("seconds").value = String(Math.min(5, model.max_seconds));
   }
   $("negativeField").hidden = !model.supports_negative;
+
+  // Start frame: only for video models that can animate a picture.
+  const canStart = isVideo && model.supports_start_image;
+  if (state.start && !state.jobs.has(state.start)) state.start = null;
+  $("startField").hidden = !canStart;
+  const start = canStart && state.start ? state.jobs.get(state.start) : null;
+  $("startThumb").hidden = !start;
+  $("startClear").hidden = !start;
+  if (start) $("startThumb").src = mediaUrl(start);
+  $("startHint").textContent = start ? "This picture will be the first frame." : "Press “Animate” on an image take, or";
+  $("prompt").placeholder = start
+    ? "Describe what happens next: the camera pushes in as the lantern flickers and rain begins"
+    : "A lighthouse keeper climbs the spiral stairs at dusk, lantern swinging, storm clouds rolling in over the sea";
 }
 
 function renderChips() {
@@ -75,15 +102,26 @@ function renderChips() {
   }));
 }
 
+function animate(job) {
+  state.kind = "video";
+  state.start = job.id;
+  renderControls();
+  $("slate").scrollIntoView({ behavior: "smooth", block: "start" });
+  $("prompt").focus({ preventScroll: true });
+}
+
 function takeCard(job, number) {
   const stage = el("div", { className: "stage" });
   stage.style.aspectRatio = `${job.width} / ${job.height}`;
-  const src = job.file ? `/media/${encodeURIComponent(job.file)}` : null;
+  const src = job.file ? mediaUrl(job) : null;
+  const isStill = job.status === "done" && job.media === "image";
 
   if (job.status === "done" && job.media === "video") {
     stage.append(el("video", { src, controls: true, loop: true, playsInline: true, preload: "metadata" }));
   } else if (job.status === "done") {
-    stage.append(el("img", { src, alt: job.prompt, loading: "lazy" }));
+    const img = el("img", { src, alt: job.prompt, loading: "lazy", className: "zoomable", title: "View full size" });
+    img.onclick = () => { $("viewerImg").src = src; $("viewerImg").alt = job.prompt; $("viewer").showModal(); };
+    stage.append(img);
   } else if (job.status === "error") {
     stage.append(el("div", { className: "status bad", textContent: job.error || "This take failed." }));
   } else {
@@ -95,23 +133,28 @@ function takeCard(job, number) {
 
   const info = [`Take ${number}`, job.model_name, job.aspect];
   if (job.seconds) info.push(`${job.seconds} s`);
-  info.push(`seed ${job.seed}`);
+  if (job.start_take) info.push("from start frame");
+  if (job.seed !== undefined) info.push(`seed ${job.seed}`);
   if (job.elapsed) info.push(`${job.elapsed} s render`);
 
   const tools = el("div", { className: "tools" });
+  if (isStill) tools.append(el("button", { type: "button", textContent: "Animate", onclick: () => animate(job) }));
   if (src && job.status === "done") tools.append(el("a", { href: src, download: job.file, textContent: "Download" }));
-  tools.append(el("button", { type: "button", textContent: "Reuse scene", onclick: () => {
+  if (!job.uploaded) tools.append(el("button", { type: "button", textContent: "Reuse scene", onclick: () => {
     $("prompt").value = job.prompt;
     $("seed").value = job.seed;
     state.kind = job.kind; state.model = job.model;
+    state.start = job.start_take && state.jobs.has(job.start_take) ? job.start_take : null;
     renderControls();
     $("prompt").focus();
   } }));
-  if (job.status !== "running") tools.append(el("button", { type: "button", textContent: "Delete", onclick: async () => {
-    try { await api(`/api/jobs/${job.id}`, { method: "DELETE" }); } catch (e) { return showError(e.message); }
-    state.jobs.delete(job.id);
-    renderTakes();
-  } }));
+  if (job.status !== "running") tools.append(el("button", {
+    type: "button", textContent: job.status === "queued" ? "Cancel" : "Delete", onclick: async () => {
+      try { await api(`/api/jobs/${job.id}`, { method: "DELETE" }); } catch (e) { return showError(e.message); }
+      state.jobs.delete(job.id);
+      renderControls();
+      renderTakes();
+    } }));
 
   return el("article", { className: "take" }, stage,
     el("div", { className: "meta" },
@@ -124,12 +167,23 @@ let lastSignature = "";
 function renderTakes() {
   const jobs = [...state.jobs.values()].sort((a, b) => b.created - a.created);
   // Skip the rebuild when nothing changed, so playing videos are not reset by polling.
-  const signature = jobs.map((j) => `${j.id}:${j.status}:${j.progress}`).join("|");
+  const signature = state.show + "#" + jobs.map((j) => `${j.id}:${j.status}:${j.progress}`).join("|");
   if (signature === lastSignature) return;
   lastSignature = signature;
-  $("takes").replaceChildren(...jobs.map((job, i) => takeCard(job, jobs.length - i)));
-  $("empty").hidden = jobs.length > 0;
-  $("count-label").textContent = jobs.length ? `${jobs.length} take${jobs.length === 1 ? "" : "s"}` : "";
+  const cards = [];
+  jobs.forEach((job, i) => {
+    if (state.show === "all" || job.kind === state.show) cards.push(takeCard(job, jobs.length - i));
+  });
+  $("takes").replaceChildren(...cards);
+  $("empty").hidden = cards.length > 0;
+  $("empty").textContent = jobs.length
+    ? `No ${state.show} takes yet.`
+    : "No takes yet. Describe a scene and call “Action!”";
+  $("filter").hidden = jobs.length === 0;
+  const waiting = jobs.filter((j) => j.status === "queued" || j.status === "running").length;
+  $("count-label").textContent = jobs.length
+    ? `${jobs.length} take${jobs.length === 1 ? "" : "s"}${waiting ? ` · ${waiting} in the queue` : ""}`
+    : "";
 }
 
 function showError(message) {
@@ -154,14 +208,16 @@ $("slate").addEventListener("submit", async (event) => {
   showError("");
   const scene = $("prompt").value.trim();
   if (!scene) return showError("Write a scene first.");
+  const model = currentModel();
   const body = {
     model: state.model,
-    prompt: [scene, ...state.directions].join(", "),
+    prompt: [scene, $("look").value, ...state.directions].filter(Boolean).join(", "),
     aspect: $("aspect").value,
-    negative_prompt: currentModel().supports_negative ? $("negative").value : "",
+    negative_prompt: model.supports_negative ? $("negative").value : "",
     seed: $("seed").value,
     seconds: $("seconds").value,
     count: state.kind === "image" ? $("count").value : 1,
+    start_take: state.kind === "video" && model.supports_start_image ? state.start : null,
   };
   $("action").disabled = true;
   try {
@@ -177,10 +233,41 @@ $("slate").addEventListener("submit", async (event) => {
   }
 });
 
+$("prompt").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) $("slate").requestSubmit();
+});
+
+$("startUpload").addEventListener("change", async () => {
+  const file = $("startUpload").files[0];
+  $("startUpload").value = "";
+  if (!file) return;
+  showError("");
+  const form = new FormData();
+  form.append("image", file);
+  try {
+    const job = await api("/api/upload", { method: "POST", body: form });
+    state.jobs.set(job.id, job);
+    state.start = job.id;
+    renderControls();
+    renderTakes();
+  } catch (e) {
+    showError(e.message);
+  }
+});
+$("startClear").onclick = () => { state.start = null; renderControls(); };
+
 document.querySelectorAll(".seg button").forEach((b) => {
   b.onclick = () => { state.kind = b.dataset.kind; renderControls(); };
 });
+document.querySelectorAll("#filter button").forEach((b) => {
+  b.onclick = () => {
+    state.show = b.dataset.show;
+    document.querySelectorAll("#filter button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderTakes();
+  };
+});
 $("seconds").addEventListener("change", () => { $("seconds").dataset.touched = "1"; });
+$("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
 
 (async function start() {
   try {
@@ -196,6 +283,7 @@ $("seconds").addEventListener("change", () => { $("seconds").dataset.touched = "
     $("notice").hidden = false;
   }
   fillSelect($("count"), Array.from({ length: state.config.max_batch }, (_, i) => [i + 1, String(i + 1)]));
+  fillSelect($("look"), LOOKS);
   renderChips();
   renderControls();
   renderTakes();

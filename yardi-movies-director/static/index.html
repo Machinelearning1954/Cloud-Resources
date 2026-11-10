@@ -31,6 +31,16 @@
       <div class="models" id="models"></div>
     </fieldset>
 
+    <fieldset id="startField">
+      <legend>Start frame <small>optional: animate a picture</small></legend>
+      <div class="start">
+        <img id="startThumb" alt="" hidden>
+        <span id="startHint">Press “Animate” on an image take, or</span>
+        <label class="link">upload a picture<input id="startUpload" type="file" accept="image/*" hidden></label>
+        <button type="button" class="link" id="startClear" hidden>Remove</button>
+      </div>
+    </fieldset>
+
     <label class="field">
       <span>Scene</span>
       <textarea id="prompt" rows="5" maxlength="2000" required
@@ -41,6 +51,11 @@
       <legend>Direction <small>added to your scene</small></legend>
       <div class="chips" id="chips"></div>
     </fieldset>
+
+    <label class="field">
+      <span>Look</span>
+      <select id="look"></select>
+    </label>
 
     <div class="row">
       <label class="field">
@@ -69,19 +84,29 @@
       </label>
     </details>
 
-    <button class="action" id="action" type="submit">Action!</button>
+    <button class="action" id="action" type="submit" title="Ctrl + Enter">Action!</button>
     <p class="error" id="error" role="alert" hidden></p>
   </form>
 
   <section class="reel" aria-label="Your takes">
     <div class="reel-head">
       <h2>Reel</h2>
+      <div class="filter" id="filter" role="group" aria-label="Show">
+        <button type="button" data-show="all" aria-pressed="true">All</button>
+        <button type="button" data-show="video" aria-pressed="false">Video</button>
+        <button type="button" data-show="image" aria-pressed="false">Image</button>
+      </div>
       <span id="count-label"></span>
     </div>
     <div class="takes" id="takes"></div>
     <p class="empty" id="empty">No takes yet. Describe a scene and call “Action!”</p>
   </section>
 </main>
+
+<dialog id="viewer" aria-label="Full-size take">
+  <img id="viewerImg" alt="">
+  <form method="dialog"><button class="link">Close</button></form>
+</dialog>
 
 <footer>
   Runs on your own hardware with open-weights models. Nothing to buy, nothing to top up.
