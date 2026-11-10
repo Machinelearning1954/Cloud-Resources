@@ -115,6 +115,29 @@ at the same preset, so Ultra is not locked to one GPU brand.
 The reference screenshot shows another studio's game. It is evidence for the
 **settings class** only. No art, character or look is taken from it (rule 8, wall W3).
 
+## Where Neon Harbor aims to lead (added 2026-11-10, ledger row 71) — all PROPOSED
+
+The user asked the project to try to outdo the biggest title in the genre on
+graphics. Rule 8 bans any claim of that kind, and a small team cannot out-spend a
+studio of that size on overall asset volume. The ambition is kept, but restated as
+four areas where a focused game can be the best in its class. Each one is checked
+against **our own build**, never against another title.
+
+| Area | Why this game can lead here | Pass test (in our build) |
+| --- | --- | --- |
+| **Textured hair** | It is this game's identity (ADR 0051), and it is widely done poorly. | Every style in the hair library reads correctly at 2 m and at 20 m on all four tiers, signed off by the community stylists. On T0 and Ultra, hero characters use strand or mesh hair, not cards. |
+| **Skin under real light** | Dark skin tones are often lit badly by default exposure and bounce settings. | A lighting test scene with the full cast passes review in all seven districts' signature light, day and night, with no crushed or ashen skin tones. |
+| **District light identity** | Seven places with very different sun, haze and night light. | A blind test: reviewers shown unlabelled captures name the district from light and atmosphere alone, at 80% or better. |
+| **Density per block** | ADR 0044's falsifiable promise. | Interacting systems per km² counted from the registries and shown working in one block per district at the tier's frame-rate target. |
+
+**Order of work:** build one **vertical slice** first, a single Kingston block, at
+Ultra quality, with two characters, one vehicle and one venue. It is far cheaper to
+make one block look exceptional than a whole map look average, and the slice is
+what every later district is measured against.
+
+**What is not promised:** more total content, a bigger map, or higher overall
+fidelity than any named title.
+
 ## How a target becomes a fact
 
 1. Capture a profile in a packaged build (`stat unit`, `stat gpu`, Unreal Insights) on

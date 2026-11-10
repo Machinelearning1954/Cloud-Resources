@@ -331,6 +331,18 @@ binding.)
   own pages. Nothing has been opened in Unreal Engine.
 - **Close:** ADOPT → `Config/DefaultEngine.ini`, `tools/check_engine_config.py`, CI job.
 
+## Row 71 — User directive: "Try to out do gta 6 graphics"
+
+- **Class:** POLICY (rule 8 stands) + ADOPT (ambition restated as own-build tests)
+- **Received (2026-11-10, verbatim):** "Try to out do gta 6 graphics"
+- **Interpretation:** an ambition, not a request to copy. No comparison claim is made
+  or will be made (rule 8, ADR 0044). The ambition is restated as four areas where
+  this game can lead in its class: textured hair, skin under real light, district
+  light identity, and density per block. Each has a pass test run on our own build.
+- **Honest status:** no graphics exist yet, so nothing has been outdone or matched.
+- **Close:** ADOPT → ADR 0050 "Where Neon Harbor aims to lead" (PROPOSED), with a
+  one-block vertical slice as the first build target.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
