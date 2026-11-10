@@ -10,6 +10,10 @@
   --ok: #7fc98a;
   --bad: #ef7d6b;
   --radius: 10px;
+  --rasta-red: #d21f2b;
+  --rasta-gold: #f7c623;
+  --rasta-green: #0f9d47;
+  --glow: 34%;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -24,6 +28,7 @@
     --accent-ink: #fffaf0;
     --ok: #2f7d3c;
     --bad: #b93a26;
+    --glow: 26%;
     color-scheme: light;
   }
 }
@@ -31,7 +36,14 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: var(--bg);
+  min-height: 100vh;
+  /* Reggae wash: red, gold and green glows over the base colour. */
+  background:
+    radial-gradient(ellipse 70% 55% at 0% 0%, color-mix(in srgb, var(--rasta-red) var(--glow), transparent), transparent 70%),
+    radial-gradient(ellipse 65% 50% at 50% 45%, color-mix(in srgb, var(--rasta-gold) calc(var(--glow) * .6), transparent), transparent 70%),
+    radial-gradient(ellipse 75% 60% at 100% 100%, color-mix(in srgb, var(--rasta-green) var(--glow), transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -39,8 +51,8 @@ h1, h2, legend, .action, .seg button { font-family: ui-monospace, "SF Mono", Men
 
 .stripe {
   height: 10px;
-  background: repeating-linear-gradient(-55deg, var(--text) 0 22px, var(--bg) 22px 44px);
-  opacity: .85;
+  background: repeating-linear-gradient(-55deg,
+    var(--rasta-red) 0 22px, var(--rasta-gold) 22px 44px, var(--rasta-green) 44px 66px);
 }
 .top {
   display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between;
