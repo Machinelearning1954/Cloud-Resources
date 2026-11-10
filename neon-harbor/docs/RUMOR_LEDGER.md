@@ -135,8 +135,54 @@ binding.)
   changed.
 - **Close:** ADOPT → ADR 0051 + `data/registries/crews.json` (8 new rows, 1 rename).
 
+## Row 65 — User directive: seven places + top-tier satellite imagery
+
+- **Class:** ADOPT (districts) + POLICY (sensitivity, build-time geodata)
+- **Received (2026-11-10, verbatim):** "Silver springs va alexandria va washington d.c jamacia Ethiopia ERTRIEA AND DUBAI ADD ALL THESE PLACES USE SATILLITE IMAGERY TECH TOP TIER AS OF TODAY"
+- **Silver Springs, VA confirmed:** a populated place in Fairfax County, inside the
+  Rose Hill CDP, at about 38.784 N, 77.129 W. It is also a neighbourhood name in the
+  City of Alexandria.
+  - https://virginia.hometownlocator.com/va/fairfax/silver-springs.cfm
+  - https://nesbittrealty.com/guide/alexandria/s/silver-springs
+  - The row-64 question about Maryland is closed: the user meant Virginia.
+- **Ethiopia–Eritrea situation (latest found: mid-October 2026):**
+  - The two countries severed diplomatic ties, amid escalating fighting in northern
+    Ethiopia: https://www.aljazeera.com/news/2026/10/2/ethiopia-eritrea-break-ties-does-the-conflict-risk-becoming-regional-war
+  - Each side accused the other of launching war: https://www.aljazeera.com/news/2026/10/9/ethiopia-and-eritrea-accuse-one-another-of-launching-war
+  - Policy: civilian city life only, no conflict or cross-district hostility content
+    (ADR 0052).
+- **Satellite / geodata evidence (ADR 0053):**
+  - The 30 cm class is the finest commercial optical imagery; a 25 cm claim is
+    unverified: https://skyfi.com/en/blog/high-resolution-satellite-imagery ,
+    https://space-solutions.airbus.com/imagery/our-optical-and-radar-satellite-imagery/pleiades-neo/
+  - The 10 cm provider is not operating (lost contact, pivoted):
+    https://albedo.com/post/clarity-1-what-worked-and-where-we-go-next
+  - Streamed photorealistic 3D tiles: offline caching is barred per the provider's
+    policy, from forum and secondary sources, so **re-verify**:
+    https://mapsplatform.google.com/resources/blog/commonly-asked-questions-about-our-recently-launched-photorealistic-3d-tiles/
+  - US national lidar programme products are public domain:
+    https://www.usgs.gov/media/images/washington-dc-3dep-lidar-derived-dsm-time-daylight
+  - US agricultural aerial imagery is public domain at 60 cm GSD (2025 vintage shown
+    for one state; **Virginia/DC vintage PENDING**):
+    https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip-imagery
+  - Global 30 m DEM licence (the commercial-use clause still needs a re-read):
+    https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/DEM/resources/license/License-COPDEM-30.pdf
+  - Sentinel data is free, full and open, with a modified-data attribution notice:
+    https://ads.atmosphere.copernicus.eu/licences/ec-sentinel
+  - OSM / ODbL: a game is a produced work, and attribution plus data-on-request apply:
+    https://osmfoundation.org/wiki/Licence_and_Legal_FAQ
+  - Unreal offline import is more reliable through Landscape heightmaps than tile
+    streaming (community reports):
+    https://community.cesium.com/t/custom-heightmaps-in-unreal-engine-5/20043
+- **Close:**
+  - ADOPT → ADR 0052 + `districts.json` (7 rows; the 3 new rows have 0 amenities,
+    R5 is unchanged)
+  - POLICY → ADR 0053 (build-time only, imagery as reference, purchase PENDING)
+  - No imagery was acquired in this revision.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.
 - **Row 59** — Instagram video embed request, awaiting pasted content; §0 review applies
   to any runtime/online interpretation.

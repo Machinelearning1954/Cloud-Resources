@@ -25,3 +25,5 @@ Neon Harbor: Kingston uses **real place names with fictional depiction**:
 - Marketing can say "set in Kingston and Northern Virginia" — ownable, legal, distinctive.
 - Ledger row 62 (2026-11-10): user re-affirmed Jamaica / Silver Springs / Alexandria VA
   as the anchor districts; Dubai retained per standing decision.
+
+> **Amended 2026-11-10 by ADR 0052:** the world now has seven districts (Washington, Ethiopia and Eritrea added). This reconstructed text is kept as-is for history.

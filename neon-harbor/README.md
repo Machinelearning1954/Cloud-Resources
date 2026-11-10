@@ -19,6 +19,8 @@ marketable, trademark-scannable, and legally ownable. Real place names + fiction
 - **Silver Springs, Virginia** (wetlands, glass-bottom boat heritage, marina row)
 - **Alexandria, Virginia** (Old Town grid, industrial waterfront, metro corridor)
 - **Dubai** (fourth district per standing ADR 0008 — retained; see ledger row 62)
+- **Washington, D.C.**, **Addis Ababa (Ethiopia)** and **Asmara (Eritrea)** — added by ADR 0052
+  (seven districts in total; the Ethiopian and Eritrean districts are civilian-life only)
 
 Four-tier performance budgets (ADR 0013): RTX 5060 1080p60 → low-end laptop → iPhone 16 →
 Galaxy Fold 6. Every slice declares its tier in code with `static_assert` — budgets are
@@ -28,9 +30,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 10 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets) and ADR 0051 (character appearance), both PENDING** |
+| `docs/ADR/` | Architecture decision records (INDEX + 12 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets) and ADR 0051 (character appearance), both PENDING** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–64 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–65 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -72,3 +74,9 @@ density players expect from the genre while every brand, venue and character rem
   - every role is skilled and tied to a venue
   - hairstyles are identity-locked on every tier
 - **Rename:** `CR-PERF-02` was renamed because its rebuilt name matched a real artist.
+- **Seven districts (ADR 0052, ledger row 65)** — Washington, Ethiopia (Addis Ababa) and
+  Eritrea (Asmara) added, with 0 amenities each for now. Silver Springs, VA is confirmed
+  as a real place in Fairfax County.
+- **Geodata pipeline (ADR 0053)** — a build-time-only satellite and elevation plan: free
+  public lidar and aerial imagery for the US districts, and 30 cm commercial imagery as
+  a purchase for the rest. No imagery has been acquired yet.

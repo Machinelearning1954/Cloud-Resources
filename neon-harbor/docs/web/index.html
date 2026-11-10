@@ -72,7 +72,7 @@
 const BASE = "../../data/registries/";
 const FILES = {
   amenities: ["amenities.json", "amenities", ["id","name","category","district","milestone","gate","tiers","systems"]],
-  districts: ["districts.json", "districts", ["id","name","real_world_anchor","character","amenity_ids"]],
+  districts: ["districts.json", "districts", ["id","name","real_world_anchor","character","content_policy","geodata","amenity_ids"]],
   vehicles:  ["vehicles.json",  "vehicles",  ["id","name","class","noise_rating","consumed_by"]],
   species:   ["species.json",   "species",   ["id","name","status","bounty_eligible","consumed_by"]],
   services:  ["services.json",  "services",  ["id","name","district","consumes"]],
@@ -92,9 +92,12 @@ function el(tag, attrs = {}, ...kids) {
 function cell(key, val) {
   if (Array.isArray(val)) return el("td", {}, ...val.map((v) => el("span", { class: "tag" }, v)));
   if (key === "gate" && val) return el("td", {}, el("span", { class: "tag gate" }, val));
-  if (val && typeof val === "object") {
+  if (val && typeof val === "object" && "hair_style" in val) {
     const hair = state.hairById[val.hair_style] || val.hair_style;
     return el("td", {}, [val.heritage, hair].filter(Boolean).join(" · "));
+  }
+  if (val && typeof val === "object") {
+    return el("td", {}, ...Object.entries(val).map(([k, v]) => el("span", { class: "tag" }, `${k}: ${v}`)));
   }
   return el("td", {}, val === null || val === undefined ? "—" : val);
 }

@@ -1,26 +1,67 @@
 {
-  "$schema_note": "Districts registry — ADR 0008 (real place names + fictional depiction). Ledger row 62: kingston/silver-springs/alexandria are the user-named anchor districts.",
+  "$schema_note": "Districts registry — ADR 0008 (real place names + fictional depiction), expanded to seven districts by ADR 0052 (ledger row 65). Geodata class ids are defined in ADR 0053 (build-time pipeline only; nothing is fetched at runtime, rule §0). approx_center values are approximate and must be confirmed against a gazetteer before any bake.",
   "districts": [
     {
       "id": "kingston",
       "name": "Kingston",
-      "real_world_anchor": "Kingston, Jamaica",
+      "real_world_anchor": "Kingston, Jamaica (Jamaica district; user-confirmed, ledger row 65)",
       "character": "Harbour city, downtown grid, Blue Mountain fringe, sink-country interior, wetlands",
       "user_anchor": true,
       "amenity_ids": [
-        "NH-AM-01", "NH-AM-02", "NH-AM-03", "NH-AM-04", "NH-AM-05", "NH-AM-06",
-        "NH-AM-08", "NH-AM-09", "NH-AM-10", "NH-AM-11", "NH-AM-14", "NH-AM-15",
-        "NH-AM-16", "NH-AM-17", "NH-AM-20", "NH-AM-21", "NH-AM-22", "NH-AM-23",
-        "NH-AM-24", "NH-AM-25", "NH-AM-26"
-      ]
+        "NH-AM-01",
+        "NH-AM-02",
+        "NH-AM-03",
+        "NH-AM-04",
+        "NH-AM-05",
+        "NH-AM-06",
+        "NH-AM-08",
+        "NH-AM-09",
+        "NH-AM-10",
+        "NH-AM-11",
+        "NH-AM-14",
+        "NH-AM-15",
+        "NH-AM-16",
+        "NH-AM-17",
+        "NH-AM-20",
+        "NH-AM-21",
+        "NH-AM-22",
+        "NH-AM-23",
+        "NH-AM-24",
+        "NH-AM-25",
+        "NH-AM-26"
+      ],
+      "geodata": {
+        "elevation": "GEO-ELEV-30M-OPEN",
+        "imagery_primary": "GEO-IMG-SAT-30CM-PURCHASE",
+        "imagery_fallback": "GEO-IMG-SAT-10M-OPEN",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          17.97,
+          -76.79
+        ]
+      }
     },
     {
       "id": "silver-springs",
       "name": "Silver Springs",
-      "real_world_anchor": "Silver Springs, Virginia (user designation; fictional depiction per ADR 0008)",
+      "real_world_anchor": "Silver Springs, Fairfax County, Virginia (populated place near Alexandria; user-confirmed, ledger row 65)",
       "character": "Wetlands, glass-bottom boat heritage, marina row, family strip",
       "user_anchor": true,
-      "amenity_ids": ["NH-AM-07", "NH-AM-12", "NH-AM-13"]
+      "amenity_ids": [
+        "NH-AM-07",
+        "NH-AM-12",
+        "NH-AM-13"
+      ],
+      "geodata": {
+        "elevation": "GEO-ELEV-LIDAR-1M-PUBLIC",
+        "imagery_primary": "GEO-IMG-AERIAL-60CM-PUBLIC",
+        "imagery_fallback": "GEO-IMG-SAT-30CM-PURCHASE",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          38.784,
+          -77.129
+        ]
+      }
     },
     {
       "id": "alexandria",
@@ -28,15 +69,99 @@
       "real_world_anchor": "Alexandria, Virginia",
       "character": "Old Town grid, industrial waterfront, metro corridor, suburbs",
       "user_anchor": true,
-      "amenity_ids": ["NH-AM-18", "NH-AM-19", "NH-AM-27"]
+      "amenity_ids": [
+        "NH-AM-18",
+        "NH-AM-19",
+        "NH-AM-27"
+      ],
+      "geodata": {
+        "elevation": "GEO-ELEV-LIDAR-1M-PUBLIC",
+        "imagery_primary": "GEO-IMG-AERIAL-60CM-PUBLIC",
+        "imagery_fallback": "GEO-IMG-SAT-30CM-PURCHASE",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          38.8,
+          -77.05
+        ]
+      }
     },
     {
       "id": "dubai",
       "name": "Dubai",
-      "real_world_anchor": "Dubai (standing ADR 0008 district; retained — flagged for next user check-in, ledger row 62)",
+      "real_world_anchor": "Dubai, United Arab Emirates (ADR 0008 district, re-confirmed by the user in ledger row 65)",
       "character": "Gulf promenade, tower district, branch venues",
-      "user_anchor": false,
-      "amenity_ids": ["NH-AM-28", "NH-AM-29"]
+      "user_anchor": true,
+      "amenity_ids": [
+        "NH-AM-28",
+        "NH-AM-29"
+      ],
+      "geodata": {
+        "elevation": "GEO-ELEV-30M-OPEN",
+        "imagery_primary": "GEO-IMG-SAT-30CM-PURCHASE",
+        "imagery_fallback": "GEO-IMG-SAT-10M-OPEN",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          25.2,
+          55.27
+        ]
+      }
+    },
+    {
+      "id": "washington-dc",
+      "name": "Washington",
+      "real_world_anchor": "Washington, D.C., United States (ledger row 65)",
+      "character": "Rowhouse neighbourhoods, a U Street-style music corridor, Ethiopian-heritage restaurant blocks, Potomac and Anacostia riverfronts; the monumental core appears as skyline only",
+      "user_anchor": true,
+      "amenity_ids": [],
+      "content_policy": "no government building or federal site is a venue, mission target or interactive interior; fictional depiction per ADR 0052",
+      "geodata": {
+        "elevation": "GEO-ELEV-LIDAR-1M-PUBLIC",
+        "imagery_primary": "GEO-IMG-AERIAL-60CM-PUBLIC",
+        "imagery_fallback": "GEO-IMG-SAT-30CM-PURCHASE",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          38.9,
+          -77.04
+        ]
+      }
+    },
+    {
+      "id": "ethiopia",
+      "name": "Addis Ababa",
+      "real_world_anchor": "Addis Ababa, Ethiopia (city anchor PROPOSED, awaiting user confirmation; ledger row 65)",
+      "character": "Highland capital at altitude, open-air market streets, coffee-house culture, hillside neighbourhoods, ring-road traffic",
+      "user_anchor": true,
+      "amenity_ids": [],
+      "content_policy": "civilian city life only — no armed conflict, military, border, political or cross-district hostility content (ADR 0052)",
+      "geodata": {
+        "elevation": "GEO-ELEV-30M-OPEN",
+        "imagery_primary": "GEO-IMG-SAT-30CM-PURCHASE",
+        "imagery_fallback": "GEO-IMG-SAT-10M-OPEN",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          9.03,
+          38.74
+        ]
+      }
+    },
+    {
+      "id": "eritrea",
+      "name": "Asmara",
+      "real_world_anchor": "Asmara, Eritrea (city anchor PROPOSED, awaiting user confirmation; ledger row 65)",
+      "character": "Highland capital with modernist-era boulevards, cafe terraces, cycling streets, palm-lined avenues",
+      "user_anchor": true,
+      "amenity_ids": [],
+      "content_policy": "civilian city life only — no armed conflict, military, border, political or cross-district hostility content (ADR 0052)",
+      "geodata": {
+        "elevation": "GEO-ELEV-30M-OPEN",
+        "imagery_primary": "GEO-IMG-SAT-30CM-PURCHASE",
+        "imagery_fallback": "GEO-IMG-SAT-10M-OPEN",
+        "vectors": "GEO-VEC-OPEN-MAP",
+        "approx_center": [
+          15.33,
+          38.93
+        ]
+      }
     }
   ]
 }

@@ -7,7 +7,8 @@ repository. Read fully before the first edit.
 
 UE 5.5 C++ open-world action RPG in the GTA-style genre, on **original IP** built to be
 marketable. Real place names + fictional depiction (ADR 0008): **Kingston, Jamaica ·
-Silver Springs, VA · Alexandria, VA · Dubai**. Four-tier device budgets (ADR 0013):
+Silver Springs, VA · Alexandria, VA · Dubai** — expanded to seven districts by ADR 0052
+(+ Washington D.C., Addis Ababa, Asmara; Ethiopia/Eritrea are civilian-life only). Four-tier device budgets (ADR 0013):
 RTX 5060 → low-end laptop → iPhone 16 → Galaxy Fold 6, enforced as compile-time law.
 
 **Current state: NH-REBUILD-1.** The original merged C++ tree was lost in a sandbox
@@ -70,8 +71,9 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–64 full, 54/59 pending)
-docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–65 full, 54/59 pending)
+docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
+                            + ADR 0052 seven districts + ADR 0053 geodata pipeline)
 docs/web/index.html         world browser (ADR 0047), plain HTML/JS over registry JSON
 docs/ADR/ADR-0049-*.md      amenity parity matrix (29 original venues)
 data/registries/*.json      7 registries; amenities.json is authoritative
