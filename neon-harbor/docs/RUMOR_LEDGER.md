@@ -281,9 +281,29 @@ binding.)
 - **Close:** ADOPT → ADR 0050 "RTX Ultra mode" (optional PC preset above T0, all
   targets PENDING). No art or look is taken from the referenced game.
 
+## Row 69 — User directive: "Add the best graphics to my video game"
+
+- **Class:** ADOPT (engine config) + answer
+- **Received (2026-11-10, verbatim):** "Add the best graphics to my video game then explain the level of graphics you reached"
+- **What could honestly be added:** `Config/DefaultEngine.ini`, the Unreal renderer
+  settings file. Five lines are active (Lumen GI, Lumen reflections, hardware ray
+  tracing, Lumen on hardware ray tracing, Virtual Shadow Maps). They match a
+  community-posted working block:
+  https://forums.unrealengine.com/t/is-there-a-way-to-turn-on-ray-tracing/574192
+- **PENDING lines (commented out in the file):** Nanite, distance fields, skin cache,
+  TSR, MegaLights, hit lighting, DX12/SM6. Their names were not verified for UE 5.5.
+- **Known risk:** an engine bug report describes a memory leak in packaged builds
+  with ray tracing on under some settings:
+  https://issues.unrealengine.com/issue/UE-268241 . Test packaged builds.
+- **Level reached, stated plainly:** zero rendered pixels. The repo now holds a
+  graphics plan (ADR 0050) and an untested settings file. Visual quality comes from
+  art assets and a compiled build, and neither exists yet.
+- **Close:** ADOPT → `Config/DefaultEngine.ini` (UNTESTED).
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 69** — `Config/DefaultEngine.ini` is untested; seven settings await verification in UE 5.5.
 - **Row 68** — RTX Ultra: ray reconstruction plugin for UE 5.5 unverified; all Ultra targets unmeasured.
 - **Row 66** — radio music catalogue (0 of 72 track slots cleared); two hairstyles await stylist review; Silver Spring water venues (see ADR 0053 open items).
 - **Row 65** — Ethiopia/Eritrea city anchors (Addis Ababa, Asmara) await user confirmation; 30 cm imagery purchase and licence terms await quotes.

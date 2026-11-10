@@ -33,12 +33,13 @@ compile-time law, not documentation.
 | --- | --- | --- |
 | `docs/ADR/` | Architecture decision records (INDEX + 13 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–68 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–69 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
 | `CLAUDE.md` | Agent contract for Claude (Fable 5.2 / Claude Code) | current |
 | `tools/publish.sh` | GitHub publish script (ready; needs remote URL) | ready |
+| `Config/DefaultEngine.ini` | Unreal renderer settings (Lumen, hardware ray tracing, Virtual Shadow Maps) | **UNTESTED** — needs a UE 5.5 project |
 | `Source/` | **NOT RECOVERED** — honest marker only | empty |
 
 ## The three commands that still close the loop

@@ -83,7 +83,7 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–68 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–69 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations)
@@ -92,5 +92,6 @@ docs/ADR/ADR-0049-*.md      amenity parity matrix (29 original venues)
 data/registries/*.json      7 registries; amenities.json is authoritative
 tools/repo_doctor.sh        26-check policy scanner (walls, integrity, cross-refs)
 tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
+Config/DefaultEngine.ini    renderer settings, UNTESTED until opened in UE 5.5 (ledger row 69)
 Source/README.md            honest NOT-RECOVERED marker
 ```
