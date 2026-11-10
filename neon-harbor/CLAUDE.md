@@ -36,6 +36,16 @@ files that claim to be the original — that is fabrication.
 8. **Density promise** (ADR 0044): falsifiable claims only; never compare against
    R* numbers ("5× GTA 6" and friends are banned).
 
+## District content policies (ADR 0052, not doctor-enforced, so check by eye)
+
+- **Ethiopia (Addis Ababa) and Eritrea (Asmara):** civilian city life only. No armed
+  conflict, military, border, political figures, or anything that sets the two
+  districts against each other.
+- **Washington, D.C.:** no government building or federal site as a venue, interior or
+  mission target. The monumental core appears as skyline only.
+- **Geodata (ADR 0053):** build-time only. Real imagery is reference and never a
+  shipped texture. No raster data in git.
+
 ## Workflow (every change)
 
 1. Make the change.

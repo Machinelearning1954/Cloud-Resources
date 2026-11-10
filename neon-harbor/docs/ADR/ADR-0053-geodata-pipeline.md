@@ -40,7 +40,7 @@ new captures over areas of active conflict is out of scope (ADR 0052).
 | `GEO-ELEV-30M-OPEN` | Global 30 m DEM (European programme) | free worldwide licence with attribution; **commercial-use clause to re-read in the licence PDF** | terrain: Kingston, Dubai, Addis Ababa, Asmara |
 | `GEO-IMG-SAT-10M-OPEN` | European 10 m multispectral satellite imagery | free, full and open; the attribution notice "Contains modified Copernicus Sentinel data [year]" is required | land cover fallback: all districts |
 | `GEO-IMG-SAT-30CM-PURCHASE` | Commercial 30 cm class optical imagery | **purchase + licence PENDING** | layout reference where no public aerial imagery exists |
-| `GEO-VEC-OPEN-MAP` | Community open map data (roads, blocks, water) | ODbL. The game counts as a "produced work": attribution goes in credits or a splash screen, the source data is supplied on request, and raw data is never redistributed in bulk | road graph and block layout seed for all districts |
+| `GEO-VEC-OPEN-MAP` | Community open map data (roads, blocks, water) | ODbL. A game is *generally* a "produced work" (attribution in credits or on a splash screen, source data supplied on request). However, a shipped road graph or block layout extracted from the data **may count as a derivative database** under share-alike. **PENDING legal review** before any vector-derived layout ships | road graph and block layout seed for all districts |
 
 Names of vendors and agencies appear only here and in the ledger. `data/` uses only
 the neutral class ids, which keeps content files clean under wall W2.
@@ -75,6 +75,24 @@ the neutral class ids, which keeps content files clean under wall W2.
 
 The US districts get much better free data. The other four reach the same quality only
 if 30 cm imagery is bought, plus artist sculpting.
+
+## Open items
+
+- **Silver Springs terrain mismatch.**
+  - The district's registry character uses glass-bottom boat heritage, wetlands and
+    a marina, which are the hosts of NH-AM-07, NH-AM-12 and NH-AM-13.
+  - That glass-bottom boat heritage belongs to **Silver Springs, Florida** (ledger
+    row 65).
+  - The proposed Virginia pin is an inland Fairfax County suburb. Real terrain there
+    has no water body for those three venues.
+  - Options:
+    - (a) invent a fictional spring and wetland on the Virginia terrain, which
+      ADR 0008 allows;
+    - (b) move those venues to a district with water;
+    - (c) pick a different Virginia pin with water.
+  - Decision PENDING with the user.
+- **City anchors:** Addis Ababa, Asmara and the Fairfax pin are proposals.
+- **The 30 cm imagery purchase:** quotes and licence tier PENDING.
 
 ## Rejected
 

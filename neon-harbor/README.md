@@ -30,7 +30,7 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 12 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets) and ADR 0051 (character appearance), both PENDING** |
+| `docs/ADR/` | Architecture decision records (INDEX + 12 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
 | `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–65 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |

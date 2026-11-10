@@ -145,6 +145,18 @@ binding.)
   - https://virginia.hometownlocator.com/va/fairfax/silver-springs.cfm
   - https://nesbittrealty.com/guide/alexandria/s/silver-springs
   - The row-64 question about Maryland is closed: the user meant Virginia.
+- **Silver Springs pin and the glass-bottom boat heritage:** the glass-bottom boat
+  heritage in the district's character is from **Silver Springs, Florida**:
+  https://www.floridastateparks.org/park/Silver-Springs . The Virginia pin is
+  PROPOSED. Terrain mismatch is an open item in ADR 0053.
+- **District character lines (sourced):**
+  - Asmara: inscribed 2017 as "Asmara: A Modernist African City", with wide
+    boulevards and modernist cafes:
+    https://whc.unesco.org/en/urban-heritage-atlas/asmara
+  - Addis Ababa: about 2,355 m elevation, Merkato open-air market, coffee-ceremony
+    culture (travel-guide sources, so moderate confidence):
+    https://africamap.net/capitals/addis-ababa ,
+    https://www.globaltravelerusa.com/mercato-addis-ababa/
 - **Ethiopia–Eritrea situation (latest found: mid-October 2026):**
   - The two countries severed diplomatic ties, amid escalating fighting in northern
     Ethiopia: https://www.aljazeera.com/news/2026/10/2/ethiopia-eritrea-break-ties-does-the-conflict-risk-becoming-regional-war
