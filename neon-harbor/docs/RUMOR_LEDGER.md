@@ -401,6 +401,38 @@ binding.)
 - **Close:** ADOPT → ADR 0057, `services.json → multiplayer`, CI step. All budgets
   PENDING measurement.
 
+## Row 75 — User directive: "Train test and debug use red team tactics"
+
+- **Class:** ADOPT (adversarial testing of everything that exists)
+- **Received (2026-11-10, verbatim):** "Train test and debug use red team tactics"
+- **Scope:** only things that exist can be attacked: this repo's three checkers, the
+  registry data and the world browser page. No game build exists, so no game,
+  network or rendering attack was possible.
+- **Method:** copy the tree, sabotage the copy in one specific way, run every
+  checker, and count the attack as caught only if a checker fails cleanly.
+- **First run: 10 of 28 attacks caught, 18 holes.** Examples:
+  - A banned word got past the doctor when written as JSON escapes, with
+    look-alike letters, with an invisible character, in a non-JSON file, or in
+    `Config/`.
+  - The doctor did not notice an eighth registry file, a duplicate amenity id, or
+    crew and radio rows pointing at things that do not exist.
+  - The net budget check passed with negative counts, zero-byte updates, a deleted
+    class, a 1 Gbps budget or raised delay limits, and crashed on four bad inputs.
+  - The engine check ignored a second ini file.
+- **Fixes:**
+  - `check_net_budget.py`: input validation with hard ceilings (N0), no crashes;
+    14 checks.
+  - `check_engine_config.py`: no other files in `Config/` (E11); 11 checks.
+  - `tools/red_team.py`: 8 scans the doctor's text search cannot do, plus the
+    attack suite, grown to 40 attacks. The doctor is unchanged at 26 checks.
+- **Result: 40 of 40 attacks caught.** The suite runs in CI.
+- **World browser:** registry data filled with script-injection text rendered as
+  plain text; no script ran (headless browser test, one-off).
+- **Limits:** an attack suite only proves the attacks someone thought of. Look-alike
+  detection covers Greek, Cyrillic and full-width letters, not every script.
+- **"Train":** nothing in this repo is a trainable model.
+- **Close:** ADOPT → `tools/red_team.py`, hardened checkers, CI step.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

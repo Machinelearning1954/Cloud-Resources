@@ -56,6 +56,9 @@ files that claim to be the original — that is fabrication.
 2. `bash tools/repo_doctor.sh` — must be green (26 checks) before any commit.
    If `Config/` changed, also run `python3 tools/check_engine_config.py`.
    If the `multiplayer` block changed, also run `python3 tools/check_net_budget.py`.
+   Always run `python3 tools/red_team.py`: it covers holes the doctor's text search
+   cannot see (escaped or look-alike characters, files outside `*.json`, broken
+   crew/radio references). When you add a checker rule, add an attack for it there.
 3. Commit with an `NH-` prefixed message.
 4. Publish only via `NEON_REMOTE=git@github.com:<you>/neon-harbor.git bash tools/publish.sh`
    (it runs the doctor first; never publish red).
@@ -87,7 +90,7 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–74 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–75 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations + ADR 0055 near-future Dubai
@@ -98,7 +101,8 @@ data/registries/*.json      7 registries; amenities.json is authoritative
 tools/repo_doctor.sh        26-check policy scanner (walls, integrity, cross-refs)
 tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
-tools/check_engine_config.py  10-check static test for that file; run it after any edit
-tools/check_net_budget.py   13-check arithmetic test of the multiplayer budgets in services.json
+tools/check_engine_config.py  11-check static test for that file; run it after any edit
+tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
+tools/red_team.py           8 extra scans + 40 sabotage attacks on the checkers (ledger row 75)
 Source/README.md            honest NOT-RECOVERED marker
 ```

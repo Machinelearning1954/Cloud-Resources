@@ -78,8 +78,8 @@ and stops replicating ambient crowds.
 
 ## Decision 5 — Testing
 
-**Today (automated, in CI):** `tools/check_net_budget.py`, 13 arithmetic checks on
-the budgets above. It is not a network test.
+**Today (automated, in CI):** `tools/check_net_budget.py`, 14 checks on the budgets
+above (input validation with hard ceilings, then the arithmetic). It is not a network test.
 
 **When a build exists (PENDING, in this order):**
 

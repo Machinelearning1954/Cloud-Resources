@@ -120,6 +120,9 @@ def main():
                    and vals.get("r.SkinCache.CompileShaders") != "True")
     check("E9 ray tracing implies skin cache shaders", skin_ok)
     check("E10 status banner says rendering is untested", "RENDERING UNTESTED" in text)
+    cfg_dir = os.path.dirname(INI)
+    extra = sorted(f for f in os.listdir(cfg_dir) if f != "DefaultEngine.ini")
+    check("E11 no other files in Config/ (they would bypass this check)", not extra, ", ".join(extra))
 
     failed = 0
     for ok, name, detail in results:

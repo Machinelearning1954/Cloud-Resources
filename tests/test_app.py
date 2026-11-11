@@ -127,3 +127,68 @@ def test_predict_form_bad_input(client):
 
 def test_predict_get_not_allowed(client):
     assert client.get("/predict").status_code == 405
+
+
+# ---- Red-team regression tests (adversarial inputs found by fuzzing) ----
+
+def test_huge_integer_is_rejected_not_a_crash(client):
+    body = json.dumps({**SETOSA, "sepal_length": 10 ** 400})
+    r = client.post("/predict", data=body, content_type="application/json")
+    assert r.status_code == 400
+    assert "must be a number" in r.get_json()["error"]
+
+
+def test_oversized_body_is_rejected(client):
+    body = json.dumps({**SETOSA, "pad": "a" * 100_000})
+    r = client.post("/predict", data=body, content_type="application/json")
+    assert r.status_code == 413
+    assert "too large" in r.get_json()["error"]
+
+
+@pytest.mark.parametrize("body", ['"text"', "5", "null", "", "[" * 2000 + "]" * 2000, "{bad"])
+def test_non_object_bodies_get_400(client, body):
+    r = client.post("/predict", data=body, content_type="application/json")
+    assert r.status_code == 400
+
+
+def test_impossible_flower_is_flagged(client):
+    r = client.post("/predict", json={k: 49 for k in SETOSA})
+    assert r.status_code == 200
+    assert set(r.get_json()["out_of_training_range"]) == set(SETOSA)
+
+
+def test_normal_flower_is_not_flagged(client):
+    assert client.post("/predict", json=SETOSA).get_json()["out_of_training_range"] == []
+
+
+def test_training_range_matches_the_data():
+    import csv
+    rows = list(csv.reader(open(ROOT / "data" / "iris_features.csv")))[1:]
+    cols = list(zip(*[[float(v) for v in row] for row in rows]))
+    for name, col in zip(app_module.FEATURES, cols):
+        assert app_module.TRAINING_RANGE[name] == (min(col), max(col))
+
+
+def test_html_in_form_field_is_escaped(client):
+    payload = {**{k: str(v) for k, v in SETOSA.items()}, "sepal_width": '"><script>alert(1)</script>'}
+    r = client.post("/predict", data=payload)
+    assert r.status_code == 400
+    assert b"<script>alert(1)" not in r.data
+
+
+def test_security_headers_present(client):
+    h = client.get("/").headers
+    assert h["X-Content-Type-Options"] == "nosniff"
+    assert h["X-Frame-Options"] == "DENY"
+    assert "default-src 'none'" in h["Content-Security-Policy"]
+
+
+def test_unexpected_error_does_not_leak_details(trained):
+    class Boom:
+        def predict(self, _):
+            raise RuntimeError("secret internal detail")
+    app = app_module.create_app(model=Boom())
+    app.config["PROPAGATE_EXCEPTIONS"] = False
+    r = app.test_client().post("/predict", json=SETOSA)
+    assert r.status_code == 500
+    assert r.get_json() == {"error": "Internal server error."}

@@ -32,6 +32,15 @@ FEATURES = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
 TARGET_NAMES = ["setosa", "versicolor", "virginica"]
 # Generous sanity bounds (cm); real Iris measurements are 0.1-7.9.
 MIN_VALUE, MAX_VALUE = 0.0, 50.0
+# Min/max of each feature in the training data (data/iris_features.csv). Inputs
+# outside these are still answered, but flagged: the model has never seen them.
+TRAINING_RANGE = {
+    "sepal_length": (4.3, 7.9),
+    "sepal_width": (2.0, 4.4),
+    "petal_length": (1.0, 6.9),
+    "petal_width": (0.1, 2.5),
+}
+MAX_BODY_BYTES = 16 * 1024  # a valid request is under 200 bytes
 
 
 def _configure_logging() -> logging.Logger:
@@ -82,7 +91,7 @@ def parse_features(payload) -> np.ndarray:
             raise ValidationError(f"Field '{name}' must be a number.")
         try:
             value = float(raw)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             raise ValidationError(f"Field '{name}' must be a number.") from None
         if not math.isfinite(value) or not (MIN_VALUE < value <= MAX_VALUE):
             raise ValidationError(
@@ -99,11 +108,39 @@ def create_app(model=_UNSET) -> Flask:
     """Build the Flask app. Pass `model` to inject one (tests); None = no model."""
     app = Flask(__name__)
     app.config["MODEL"] = load_model() if model is _UNSET else model
+    app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
+
+    @app.after_request
+    def security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; "
+            "base-uri 'none'; frame-ancestors 'none'",
+        )
+        return response
+
+    @app.errorhandler(413)
+    def too_large(_error):
+        logger.warning("Rejected oversized request body")
+        return jsonify({"error": f"Request body too large (limit {MAX_BODY_BYTES} bytes)."}), 413
+
+    @app.errorhandler(500)
+    def server_error(_error):
+        # Never leak a stack trace or framework page to the client.
+        return jsonify({"error": "Internal server error."}), 500
 
     def _predict(features: np.ndarray) -> dict:
         clf = app.config["MODEL"]
         idx = int(clf.predict(features)[0])
         result = {"prediction": TARGET_NAMES[idx], "prediction_index": idx}
+        outside = [
+            name for name, value in zip(FEATURES, features[0])
+            if not TRAINING_RANGE[name][0] <= value <= TRAINING_RANGE[name][1]
+        ]
+        result["out_of_training_range"] = outside
         if hasattr(clf, "predict_proba"):
             probs = clf.predict_proba(features)[0]
             result["probabilities"] = {
@@ -138,14 +175,18 @@ def create_app(model=_UNSET) -> Flask:
         result = _predict(features)
         latency_ms = (time.perf_counter() - start) * 1000
         logger.info(
-            "prediction=%s features=%s latency_ms=%.2f",
-            result["prediction"], features.tolist()[0], latency_ms,
+            "prediction=%s features=%s out_of_range=%s latency_ms=%.2f",
+            result["prediction"], features.tolist()[0], result["out_of_training_range"], latency_ms,
         )
         if is_json:
             return jsonify(result)
         return render_template(
             "index.html",
-            prediction_text=f"Predicted Iris Species: {result['prediction']}",
+            prediction_text=f"Predicted Iris Species: {result['prediction']}" + (
+                " (warning: outside the range of flowers the model was trained on: "
+                + ", ".join(result["out_of_training_range"]) + ")"
+                if result["out_of_training_range"] else ""
+            ),
             **_form_echo(),
         )
 

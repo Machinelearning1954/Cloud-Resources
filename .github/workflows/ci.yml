@@ -34,3 +34,5 @@ jobs:
         run: python3 neon-harbor/tools/check_engine_config.py
       - name: Multiplayer net budget check
         run: python3 neon-harbor/tools/check_net_budget.py
+      - name: Red-team scan and attack suite
+        run: python3 neon-harbor/tools/red_team.py

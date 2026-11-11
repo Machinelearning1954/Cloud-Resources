@@ -32,7 +32,7 @@ neon-harbor/            Separate project: Neon Harbor game docs/data repo (see i
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 python train_iris_model.py          # optional: model/ is committed
-pytest -q                           # 20 tests
+pytest -q                           # 34 tests, incl. adversarial-input tests
 gunicorn -c gunicorn.conf.py app:app   # or: python app.py
 ```
 
@@ -63,7 +63,11 @@ curl -X POST http://localhost:5000/predict -H 'Content-Type: application/json' \
 
 Errors return `400` with `{"error": "..."}` for missing fields, non-numeric values,
 non-finite values, values outside (0, 50] cm, or a body that isn't a JSON object. A
-request without a loaded model returns `503`.
+body over 16 KB returns `413`. A request without a loaded model returns `503`.
+
+Every prediction includes `out_of_training_range`: the list of fields whose value is
+outside anything in the training data. The model still answers, but treat a flagged
+answer with caution.
 
 ## Model
 
