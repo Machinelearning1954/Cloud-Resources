@@ -101,6 +101,6 @@ density players expect from the genre while every brand, venue and character rem
   free-roam sessions (up to 16) on dedicated servers. Design and budgets only;
   `tools/check_net_budget.py` checks the arithmetic. Rule §0 is amended: single-player
   stays fully offline.
-- **Red team (ledger row 75)** — `tools/red_team.py` sabotages a copy of the repo in 40
-  ways and confirms a checker catches each one. The first run found 18 gaps; all are
+- **Red team (ledger row 75)** — `tools/red_team.py` sabotages a copy of the repo in 43
+  ways and confirms a checker catches each one. The first run found 18 gaps, and a later review found 3 more; all are
   closed. It also adds 8 scans the doctor's text search cannot do.

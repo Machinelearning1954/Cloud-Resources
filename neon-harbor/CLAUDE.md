@@ -103,6 +103,6 @@ tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
 tools/check_engine_config.py  11-check static test for that file; run it after any edit
 tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
-tools/red_team.py           8 extra scans + 40 sabotage attacks on the checkers (ledger row 75)
+tools/red_team.py           8 extra scans + 43 sabotage attacks on the checkers (ledger row 75)
 Source/README.md            honest NOT-RECOVERED marker
 ```

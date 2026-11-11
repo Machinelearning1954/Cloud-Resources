@@ -404,7 +404,7 @@ binding.)
 ## Row 75 — User directive: "Train test and debug use red team tactics"
 
 - **Class:** ADOPT (adversarial testing of everything that exists)
-- **Received (2026-11-10, verbatim):** "Train test and debug use red team tactics"
+- **Received (2026-11-11, verbatim):** "Train test and debug use red team tactics"
 - **Scope:** only things that exist can be attacked: this repo's three checkers, the
   registry data and the world browser page. No game build exists, so no game,
   network or rendering attack was possible.
@@ -424,13 +424,25 @@ binding.)
     14 checks.
   - `check_engine_config.py`: no other files in `Config/` (E11); 11 checks.
   - `tools/red_team.py`: 8 scans the doctor's text search cannot do, plus the
-    attack suite, grown to 40 attacks. The doctor is unchanged at 26 checks.
-- **Result: 40 of 40 attacks caught.** The suite runs in CI.
+    attack suite, grown to 43 attacks. The doctor is unchanged at 26 checks.
+- **Second pass (review):** the new scans had skipped `tools/` and `Source/`, which
+  rule 1 also protects. Three more attacks got through there, including a banned
+  word in a file merely *named* like the doctor. The scans now cover all four
+  content folders and exempt only the doctor's exact path.
+- **Result: 43 of 43 attacks caught.** The suite runs in CI.
 - **World browser:** registry data filled with script-injection text rendered as
   plain text; no script ran (headless browser test, one-off).
 - **Limits:** an attack suite only proves the attacks someone thought of. Look-alike
   detection covers Greek, Cyrillic and full-width letters, not every script.
-- **"Train":** nothing in this repo is a trainable model.
+- **"Train":** nothing in `neon-harbor/` is a trainable model. The Iris classifier in
+  the parent repository was probed with out-of-range inputs and now flags them; it
+  was not retrained.
+- **Iris API (parent repo):** fuzzing found one crash (a huge integer gave a 500)
+  and three weaknesses (5 MB bodies accepted, impossible flowers answered without
+  warning, no security headers). All fixed, with 14 regression tests.
+- **Structural limits:** the checkers live in the repo they guard, so anyone who can
+  edit the data can also weaken a checker; and `tools/publish.sh` still runs only
+  the doctor.
 - **Close:** ADOPT → `tools/red_team.py`, hardened checkers, CI step.
 
 ## Open PENDING queue

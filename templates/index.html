@@ -121,7 +121,7 @@ curl -X POST -H "Content-Type: application/json" \
 -d "{\"sepal_length\": 5.1, \"sepal_width\": 3.5, \"petal_length\": 1.4, \"petal_width\": 0.2}" \
 http://&lt;your-app-url&gt;/predict
             </code></pre>
-            <p>The JSON response includes <code>prediction</code>, <code>prediction_index</code> and per-class <code>probabilities</code>. Send a GET request to <code>/health</code> to check service status.</p>
+            <p>The JSON response includes <code>prediction</code>, <code>prediction_index</code>, per-class <code>probabilities</code>, and <code>out_of_training_range</code> (fields whose value is outside anything the model was trained on). Send a GET request to <code>/health</code> to check service status.</p>
         </div>
     </div>
 </body>

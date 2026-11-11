@@ -101,19 +101,26 @@ def scan(root):
     check("RT3 walls hold on decoded JSON text (escapes cannot hide a term)", not hits, "; ".join(sorted(set(hits))))
 
     raw_hits, odd = [], []
-    for base in ("data", "Config"):
-        for dirpath, _, files in os.walk(os.path.join(root, base)):
+    doctor_rel = os.path.join("tools", "repo_doctor.sh")
+    for base in ("data", "Config", "tools", "Source"):
+        for dirpath, dirs, files in os.walk(os.path.join(root, base)):
+            dirs[:] = [d for d in dirs if d != "__pycache__"]
             for name in files:
                 p = os.path.join(dirpath, name)
                 rel = os.path.relpath(p, root)
+                if name.endswith(".pyc"):
+                    continue
                 try:
                     text = open(p, encoding="utf-8").read()
                 except (OSError, UnicodeDecodeError):
                     odd.append(f"{rel}: not readable as UTF-8 text")
                     continue
-                for label, rx in walls:
-                    if rx.search(text):
-                        raw_hits.append(f"{rel}: {label}")
+                # Only the doctor itself may hold the wall terms: exempt that exact
+                # path, never a filename (a look-alike name elsewhere is not exempt).
+                if rel != doctor_rel:
+                    for label, rx in walls:
+                        if rx.search(text):
+                            raw_hits.append(f"{rel}: {label}")
                 for ch in set(text):
                     cp = ord(ch)
                     if cp in INVISIBLE or any(lo <= cp <= hi for lo, hi in LOOKALIKE_BLOCKS):
@@ -126,9 +133,9 @@ def scan(root):
                 cp = ord(ch)
                 if cp in INVISIBLE or any(lo <= cp <= hi for lo, hi in LOOKALIKE_BLOCKS):
                     odd.append(f"data/registries/{f}: U+{cp:04X} (decoded)")
-    check("RT4 walls hold on every file in data/ and Config/, whatever its type", not raw_hits,
+    check("RT4 walls hold on every file in data/, Config/, tools/ and Source/, whatever its type", not raw_hits,
           "; ".join(sorted(set(raw_hits))))
-    check("RT5 no invisible or look-alike characters in data/ and Config/", not odd, "; ".join(sorted(set(odd))))
+    check("RT5 no invisible or look-alike characters in any content folder", not odd, "; ".join(sorted(set(odd))))
 
     extra = sorted(set(os.listdir(regdir)) - set(REG))
     check("RT6 registries folder holds exactly the seven known files", not extra, ", ".join(extra))
@@ -209,9 +216,9 @@ def build_attacks(term):
     mp = lambda d: d["multiplayer"]                     # noqa: E731
     veh0 = lambda d: d["vehicles"][0]                   # noqa: E731
     escaped = "".join(f"\\u{ord(c):04x}" for c in term)
-    lookalike = term.replace("o", "о").replace("e", "е").replace("a", "а")
+    lookalike = term.replace("o", chr(0x043E)).replace("e", chr(0x0435)).replace("a", chr(0x0430))
     if lookalike == term:
-        lookalike = "а" + term
+        lookalike = chr(0x0430) + term
     ini = os.path.join("Config", "DefaultEngine.ini")
     veh = os.path.join("data", "registries", "vehicles.json")
 
@@ -235,7 +242,7 @@ def build_attacks(term):
         ("walls", "banned word in a vehicle name", lambda t: edit_json(t, "vehicles.json", lambda d: veh0(d).update(name=term.title() + " GT"))),
         ("walls", "banned word hidden as JSON unicode escapes", lambda t: edit_text(t, veh, lambda s: s.replace('"Spray Board 500"', '"' + escaped + '"'))),
         ("walls", "banned word spelled with look-alike letters", lambda t: edit_json(t, "vehicles.json", lambda d: veh0(d).update(name=lookalike))),
-        ("walls", "banned word split by an invisible character", lambda t: edit_json(t, "vehicles.json", lambda d: veh0(d).update(name=term[:2] + "​" + term[2:]))),
+        ("walls", "banned word split by an invisible character", lambda t: edit_json(t, "vehicles.json", lambda d: veh0(d).update(name=term[:2] + chr(0x200B) + term[2:]))),
         ("walls", "banned word in a non-JSON file under data/", lambda t: write(t, os.path.join("data", "registries", "notes.txt"), term)),
         ("walls", "banned word in Config/", lambda t: edit_text(t, ini, lambda s: s + f"; partner: {term}\n")),
         ("walls", "banned word used as a JSON key", lambda t: edit_json(t, "vehicles.json", lambda d: veh0(d).update({term: 1}))),
@@ -250,6 +257,9 @@ def build_attacks(term):
         ("registry", "amenity moved to an unknown district", lambda t: edit_json(t, "amenities.json", lambda d: d["amenities"][0].update(district="atlantis"))),
         ("registry", "thirtieth amenity added", lambda t: edit_json(t, "amenities.json", lambda d: d["amenities"].append(dict(d["amenities"][0], id="NH-AM-30", name="Extra")))),
         ("registry", "source code faked into Source/", lambda t: write(t, os.path.join("Source", "Fake.cpp"), "// original\n")),
+        ("walls", "look-alike banned word in Source/README.md", lambda t: edit_text(t, os.path.join("Source", "README.md"), lambda s: s + lookalike + "\n")),
+        ("walls", "banned word in Source/ in a file named like the doctor", lambda t: write(t, os.path.join("Source", "repo_doctor.sh"), term + "\n")),
+        ("walls", "invisible-split banned word in a tools/ file", lambda t: write(t, os.path.join("tools", "notes.txt"), term[:2] + "\u200b" + term[2:] + "\n")),
         # --- multiplayer budget ---
         ("net", "negative object count to hide bandwidth", lambda t: edit_json(t, "services.json", lambda d: mp(d)["replication_classes"][0]["relevant_count"].update(T0=-500))),
         ("net", "zero-byte updates", lambda t: edit_json(t, "services.json", lambda d: [c.update(bytes_per_update=0) for c in mp(d)["replication_classes"]])),
