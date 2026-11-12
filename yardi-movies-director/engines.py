@@ -198,7 +198,7 @@ class DiffusersEngine:
         )
         if spec.supports_negative:
             # Qwen-Image only applies true CFG when a negative prompt is present.
-            kwargs["negative_prompt"] = req.get("negative_prompt") or " "
+            kwargs["negative_prompt"] = req.get("negative_prompt") or spec.default_negative
 
         if spec.kind == "image":
             image = pipe(**kwargs).images[0]

@@ -9,9 +9,9 @@ open-weights models, so the number of takes is limited only by your GPU.
 
 ## What you can do
 
-- **Text to image** and **text to video** with any of the five models below.
+- **Text to image** and **text to video** with any of the six models below.
 - **Animate a picture**: press "Animate" on any image take, or upload your own
-  picture, and Wan 2.2 or LTX-2 uses it as the first frame of the clip.
+  picture, and Wan 2.2, LTX-2 or LTX-Video uses it as the first frame of the clip.
 - **Direct the shot**: camera-direction chips and a "Look" preset are added to
   your scene description.
 - **Work the reel**: filter by video or image, open stills full size, download,
@@ -26,18 +26,32 @@ open-weights models, so the number of takes is limited only by your GPU.
 | Image | Qwen-Image-2512  | Apache 2.0          | `Qwen/Qwen-Image-2512`             |
 | Image | FLUX.2 klein 4B  | Apache 2.0          | `black-forest-labs/FLUX.2-klein-4B`|
 | Video | Wan 2.2          | Apache 2.0          | `Wan-AI/Wan2.2-TI2V-5B-Diffusers`  |
-| Video | LTX-2 (with audio)| Apache 2.0         | `Lightricks/LTX-2`                 |
+| Video | LTX-2 (with audio)| LTX-2 Community License | `Lightricks/LTX-2`            |
+| Video | LTX-Video (v0.9.x)| Code Apache 2.0; weights licensed separately | `Lightricks/LTX-Video` |
 
-> **Check each licence on the model card before commercial use.** The licences
-> above are the ones this project was specified with; they were not
-> re-verified against the model cards when this was written. LTX-2 in
-> particular has been distributed under Lightricks' own community licence,
-> which carries terms Apache 2.0 does not.
+> **Check each licence on the model card before commercial use.** The Apache
+> 2.0 entries are the ones this project was specified with and were not
+> re-verified against the model cards. The two Lightricks entries follow the
+> [LTX-Video README](https://github.com/Lightricks/LTX-Video#license): the
+> repository's code is Apache 2.0, the model weights are licensed separately,
+> and LTX-2's weights are under the LTX-2 Community License. The app itself
+> charges nothing for any of them.
+
+### About LTX-Video
+
+[LTX-Video](https://github.com/Lightricks/LTX-Video) is Lightricks' original
+v0.9.x model. Its maker has retired it in favour of LTX-2.5 and no longer
+develops the repository, but it remains a light, fast option. It is integrated
+the way its README recommends, through the diffusers `LTXPipeline` (text to
+video) and `LTXImageToVideoPipeline` (start frame to video), at 24 fps, up to
+10 seconds, at 1024x576, 704x704 or 576x1024. It produces no audio.
 
 Any repo id can be swapped for a local path or mirror with an environment
 variable, e.g. `YARDI_REPO_LTX_2=/models/ltx-2`
 (`YARDI_REPO_Z_IMAGE_TURBO`, `YARDI_REPO_QWEN_IMAGE_2512`,
-`YARDI_REPO_FLUX2_KLEIN_4B`, `YARDI_REPO_WAN_2_2`).
+`YARDI_REPO_FLUX2_KLEIN_4B`, `YARDI_REPO_WAN_2_2`, `YARDI_REPO_LTX_VIDEO`).
+Point `YARDI_REPO_LTX_VIDEO` at a newer diffusers-format LTX-Video checkpoint
+to use that instead of the default.
 
 ## Run it
 

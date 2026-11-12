@@ -27,11 +27,11 @@ def wait(client, job_id, timeout=30):
     raise AssertionError("job did not finish")
 
 
-def test_config_lists_five_free_models(client):
+def test_config_lists_all_free_models(client):
     cfg = client.get("/api/config").get_json()
     assert cfg["name"] == "Yardi Movies Director"
     assert [m["name"] for m in cfg["models"]] == [
-        "Z-Image Turbo", "Qwen-Image-2512", "FLUX.2 klein 4B", "Wan 2.2", "LTX-2",
+        "Z-Image Turbo", "Qwen-Image-2512", "FLUX.2 klein 4B", "Wan 2.2", "LTX-2", "LTX-Video",
     ]
     assert cfg["plan"] == {"price": 0, "credits": "unlimited", "subscription": None}
 
@@ -110,7 +110,7 @@ def test_upload_then_animate_from_start_frame(client):
     assert up.status_code == 201
     frame = up.get_json()
     assert frame["media"] == "image" and frame["uploaded"] and frame["prompt"] == "frame.png"
-    for model in ("wan-2-2", "ltx-2"):
+    for model in ("wan-2-2", "ltx-2", "ltx-video"):
         job = client.post("/api/generate", json={"model": model, "prompt": "push in", "start_take": frame["id"]}).get_json()["jobs"][0]
         assert job["start_take"] == frame["id"]
         done = wait(client, job["id"])
@@ -145,4 +145,27 @@ def test_upload_rejects_non_images(client):
 
 def test_config_marks_which_models_take_a_start_frame(client):
     models = {m["id"]: m["supports_start_image"] for m in client.get("/api/config").get_json()["models"]}
-    assert models == {"z-image-turbo": False, "qwen-image-2512": False, "flux2-klein-4b": False, "wan-2-2": True, "ltx-2": True}
+    assert models == {"z-image-turbo": False, "qwen-image-2512": False, "flux2-klein-4b": False, "wan-2-2": True, "ltx-2": True, "ltx-video": True}
+
+
+def test_ltx_video_uses_its_own_sizes_and_frame_rule(client):
+    spec = MODELS["ltx-video"]
+    assert (spec.pipeline, spec.i2v_pipeline) == ("LTXPipeline", "LTXImageToVideoPipeline")
+    for aspect, size in {"16:9": (1024, 576), "1:1": (704, 704), "9:16": (576, 1024)}.items():
+        job = client.post("/api/generate", json={"model": "ltx-video", "prompt": "x", "aspect": aspect}).get_json()["jobs"][0]
+        assert (job["width"], job["height"]) == size and size[0] % 32 == 0 and size[1] % 32 == 0
+    frames = spec.frames_for(10)
+    assert (frames - 1) % 8 == 0 and frames <= 257
+
+
+def test_every_pipeline_class_exists_in_diffusers_source():
+    """Guards against typos in class names without needing torch installed."""
+    import importlib.util
+
+    found = importlib.util.find_spec("diffusers")
+    if found is None:
+        pytest.skip("diffusers is not installed")
+    init = open(found.origin).read()
+    for spec in MODELS.values():
+        for name in filter(None, (spec.pipeline, spec.i2v_pipeline)):
+            assert f'"{name}"' in init, name

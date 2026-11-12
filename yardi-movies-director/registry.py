@@ -28,6 +28,8 @@ class ModelSpec:
     has_audio: bool = False
     i2v_pipeline: str = ""        # video only: diffusers class used when a start frame is given
     i2v_load: dict = field(default_factory=dict)   # extra from_pretrained kwargs for that class
+    default_negative: str = " "   # used when the user leaves "keep out of frame" empty
+    sizes: dict = field(default_factory=dict)      # per-model (width, height) overrides by aspect
 
     def frames_for(self, seconds: float) -> int:
         raw = int(round(seconds * self.fps))
@@ -36,7 +38,7 @@ class ModelSpec:
 
     def public(self) -> dict:
         d = asdict(self)
-        for key in ("guidance", "pipeline", "i2v_pipeline", "i2v_load"):
+        for key in ("guidance", "pipeline", "i2v_pipeline", "i2v_load", "default_negative", "sizes"):
             d.pop(key)
         d["supports_start_image"] = bool(self.i2v_pipeline)
         return d
@@ -45,6 +47,8 @@ class ModelSpec:
 def _repo(model_id: str, default: str) -> str:
     return os.environ.get("YARDI_REPO_" + model_id.upper().replace("-", "_"), default)
 
+
+_LTX_NEGATIVE = "worst quality, inconsistent motion, blurry, jittery, distorted"
 
 MODELS: dict[str, ModelSpec] = {
     m.id: m
@@ -105,7 +109,7 @@ MODELS: dict[str, ModelSpec] = {
             id="ltx-2",
             name="LTX-2",
             kind="video",
-            licence="Apache 2.0",
+            licence="LTX-2 Community License",
             repo=_repo("ltx-2", "Lightricks/LTX-2"),
             pipeline="LTX2Pipeline",
             blurb="Text or start frame to video, with synchronised audio in one pass.",
@@ -117,6 +121,27 @@ MODELS: dict[str, ModelSpec] = {
             max_seconds=10,
             has_audio=True,
             i2v_pipeline="LTX2ImageToVideoPipeline",
+            default_negative=_LTX_NEGATIVE,
+        ),
+        ModelSpec(
+            # github.com/Lightricks/LTX-Video, the original v0.9.x model, through its diffusers pipelines.
+            id="ltx-video",
+            name="LTX-Video",
+            kind="video",
+            licence="Weights licensed separately",
+            repo=_repo("ltx-video", "Lightricks/LTX-Video"),
+            pipeline="LTXPipeline",
+            blurb="The original LTX model (v0.9.x). Light and fast, silent clips up to 10 s. Retired by its maker.",
+            steps=50,
+            guidance={"guidance_scale": 3.0},
+            supports_negative=True,
+            fps=24,
+            frame_step=8,
+            max_seconds=10,
+            i2v_pipeline="LTXImageToVideoPipeline",
+            default_negative=_LTX_NEGATIVE,
+            # Works best below 720 x 1280; sides must be multiples of 32.
+            sizes={"16:9": (1024, 576), "1:1": (704, 704), "9:16": (576, 1024)},
         ),
     ]
 }

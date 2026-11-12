@@ -110,7 +110,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         aspect = body.get("aspect") or "16:9"
         if aspect not in ASPECTS[spec.kind]:
             return jsonify(error=f"Aspect {aspect} is not available for {spec.kind}."), 400
-        width, height = ASPECTS[spec.kind][aspect]
+        width, height = spec.sizes.get(aspect) or ASPECTS[spec.kind][aspect]
         try:
             count = int(body.get("count") or 1)
             seconds = float(body.get("seconds") or 5)
