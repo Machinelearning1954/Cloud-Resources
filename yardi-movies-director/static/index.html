@@ -12,7 +12,7 @@
 <header class="top">
   <h1><span aria-hidden="true">🎬</span> Yardi Movies Director</h1>
   <div class="pills">
-    <span class="pill free" title="No accounts, no subscriptions, no metering">Free · ∞ credits</span>
+    <span class="pill free" title="No accounts, no subscriptions, no credits, no metering">Free · no credits needed</span>
     <span class="pill" id="engine">…</span>
   </div>
 </header>
@@ -24,6 +24,8 @@
     <div class="seg" role="tablist" aria-label="What to make">
       <button type="button" role="tab" data-kind="video" aria-selected="true">Video</button>
       <button type="button" role="tab" data-kind="image" aria-selected="false">Image</button>
+      <button type="button" role="tab" data-kind="music" aria-selected="false">Music</button>
+      <button type="button" role="tab" data-kind="voice" aria-selected="false">Voice</button>
     </div>
 
     <fieldset>
@@ -42,23 +44,28 @@
     </fieldset>
 
     <label class="field">
-      <span>Scene</span>
+      <span id="promptLabel">Scene</span>
       <textarea id="prompt" rows="5" maxlength="2000" required
         placeholder="A lighthouse keeper climbs the spiral stairs at dusk, lantern swinging, storm clouds rolling in over the sea"></textarea>
     </label>
 
-    <fieldset>
+    <label class="field" id="lyricsField">
+      <span>Lyrics <small>leave blank for an instrumental</small></span>
+      <textarea id="lyrics" rows="4" maxlength="5000" placeholder="[verse]&#10;Sun come up on the harbour wall&#10;[chorus]&#10;Roll, camera, roll"></textarea>
+    </label>
+
+    <fieldset id="dirField">
       <legend>Direction <small>added to your scene</small></legend>
       <div class="chips" id="chips"></div>
     </fieldset>
 
-    <label class="field">
+    <label class="field" id="lookField">
       <span>Look</span>
       <select id="look"></select>
     </label>
 
     <div class="row">
-      <label class="field">
+      <label class="field" id="aspectField">
         <span>Frame</span>
         <select id="aspect"></select>
       </label>
@@ -66,13 +73,25 @@
         <span>Length</span>
         <select id="seconds"></select>
       </label>
+      <label class="field" id="musicSecondsField">
+        <span>Length</span>
+        <select id="musicSeconds"></select>
+      </label>
+      <label class="field" id="voiceField">
+        <span>Voice</span>
+        <select id="voice"></select>
+      </label>
+      <label class="field" id="speedField">
+        <span>Pace</span>
+        <select id="speed"></select>
+      </label>
       <label class="field" id="countField">
         <span>Takes</span>
         <select id="count"></select>
       </label>
     </div>
 
-    <details>
+    <details id="more">
       <summary>More controls</summary>
       <label class="field" id="negativeField">
         <span>Keep out of frame</span>
@@ -95,9 +114,23 @@
         <button type="button" data-show="all" aria-pressed="true">All</button>
         <button type="button" data-show="video" aria-pressed="false">Video</button>
         <button type="button" data-show="image" aria-pressed="false">Image</button>
+        <button type="button" data-show="sound" aria-pressed="false">Sound</button>
+        <button type="button" data-show="movie" aria-pressed="false">Movies</button>
       </div>
       <span id="count-label"></span>
     </div>
+    <section class="cut" id="cut" aria-label="Movie cut" hidden>
+      <div class="cut-head">
+        <h3>Movie cut</h3>
+        <span id="cutHint"></span>
+      </div>
+      <ol class="cut-clips" id="cutClips"></ol>
+      <div class="cut-tracks" id="cutTracks"></div>
+      <div class="cut-row">
+        <input id="cutTitle" type="text" maxlength="120" placeholder="Movie title (optional)" aria-label="Movie title">
+        <button type="button" class="action small" id="cutGo">Cut movie</button>
+      </div>
+    </section>
     <div class="takes" id="takes"></div>
     <p class="empty" id="empty">No takes yet. Describe a scene and call “Action!”</p>
   </section>
@@ -109,7 +142,8 @@
 </dialog>
 
 <footer>
-  Runs on your own hardware with open-weights models. Nothing to buy, nothing to top up.
+  Movies, videos, pictures, music and voiceovers run on your own hardware with open-weights models.
+  No credits, no subscription, nothing to buy or top up.
 </footer>
 <script src="/static/app.js"></script>
 </body>

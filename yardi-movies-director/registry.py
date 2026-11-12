@@ -14,7 +14,7 @@ from dataclasses import dataclass, field, asdict
 class ModelSpec:
     id: str
     name: str
-    kind: str                     # "image" | "video"
+    kind: str                     # "image" | "video" | "music" | "voice"
     licence: str
     repo: str
     pipeline: str                 # class name inside `diffusers`
@@ -30,6 +30,7 @@ class ModelSpec:
     i2v_load: dict = field(default_factory=dict)   # extra from_pretrained kwargs for that class
     default_negative: str = " "   # used when the user leaves "keep out of frame" empty
     sizes: dict = field(default_factory=dict)      # per-model (width, height) overrides by aspect
+    voices: tuple = ()            # voice only: (voice id, label) pairs
 
     def frames_for(self, seconds: float) -> int:
         raw = int(round(seconds * self.fps))
@@ -122,6 +123,35 @@ MODELS: dict[str, ModelSpec] = {
             has_audio=True,
             i2v_pipeline="LTX2ImageToVideoPipeline",
             default_negative=_LTX_NEGATIVE,
+        ),
+        ModelSpec(
+            id="ace-step",
+            name="ACE-Step 1.5",
+            kind="music",
+            licence="Open weights, see model card",
+            repo=_repo("ace-step", "ACE-Step/acestep-v15-xl-turbo-diffusers"),
+            pipeline="AceStepPipeline",
+            blurb="Songs and scores from a description, with optional sung lyrics. Up to 2 minutes.",
+            steps=8,
+            max_seconds=120,
+        ),
+        ModelSpec(
+            id="kokoro",
+            name="Kokoro",
+            kind="voice",
+            licence="Apache 2.0",
+            repo=_repo("kokoro", "hexgrad/Kokoro-82M"),
+            pipeline="",            # runs through the `kokoro` package, not diffusers
+            blurb="Natural narration from your script. Small enough to run without a GPU.",
+            steps=0,
+            voices=(
+                ("af_heart", "Heart, American woman"),
+                ("af_bella", "Bella, American woman"),
+                ("am_michael", "Michael, American man"),
+                ("am_puck", "Puck, American man"),
+                ("bf_emma", "Emma, British woman"),
+                ("bm_george", "George, British man"),
+            ),
         ),
         ModelSpec(
             # github.com/Lightricks/LTX-Video, the original v0.9.x model, through its diffusers pipelines.

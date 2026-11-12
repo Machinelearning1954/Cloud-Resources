@@ -14,6 +14,7 @@ import random
 import time
 from typing import Callable
 
+import audio
 from registry import ModelSpec
 
 Progress = Callable[[float], None]
@@ -42,6 +43,13 @@ class PreviewEngine:
     def generate(self, spec: ModelSpec, req: dict, out_dir: str, stem: str, progress: Progress) -> dict:
         from PIL import Image
 
+        if spec.kind == "voice":
+            return audio.voiceover(req, out_dir, stem, progress)
+        if spec.kind == "music":
+            name = stem + ".wav"
+            audio.placeholder_music(os.path.join(out_dir, name), req["seconds"], req["seed"])
+            return {"file": name, "media": "audio", "placeholder": True}
+
         w, h = req["width"], req["height"]
         scale = 640 / max(w, h)
         w, h = int(w * scale) // 2 * 2, int(h * scale) // 2 * 2
@@ -56,7 +64,7 @@ class PreviewEngine:
             img = scene.frame(0.35, spec, req)
             name = stem + ".png"
             img.save(os.path.join(out_dir, name))
-            return {"file": name, "media": "image"}
+            return {"file": name, "media": "image", "placeholder": True}
 
         n = 24
         frames = []
@@ -68,7 +76,7 @@ class PreviewEngine:
             os.path.join(out_dir, name), save_all=True, append_images=frames[1:],
             duration=83, loop=0, quality=70,
         )
-        return {"file": name, "media": "animation"}
+        return {"file": name, "media": "animation", "placeholder": True}
 
 
 class _Scene:
@@ -179,13 +187,30 @@ class DiffusersEngine:
         return pipe
 
     def generate(self, spec: ModelSpec, req: dict, out_dir: str, stem: str, progress: Progress) -> dict:
-        first = start_frame(req, out_dir, (req["width"], req["height"]))
-        pipe = self._load(spec, from_image=first is not None)
+        if spec.kind == "voice":
+            return audio.voiceover(req, out_dir, stem, progress)
         steps = spec.steps
 
         def on_step(_pipe, step, _timestep, kwargs):
             progress(min(0.97, (step + 1) / steps))
             return kwargs
+
+        if spec.kind == "music":
+            pipe = self._load(spec)
+            output = pipe(
+                prompt=req["prompt"],
+                lyrics=req.get("lyrics") or "[Instrumental]",
+                audio_duration=float(req["seconds"]),
+                num_inference_steps=steps,
+                generator=self.torch.Generator("cpu").manual_seed(req["seed"]),
+                callback_on_step_end=on_step,
+            )
+            name = stem + ".wav"
+            audio.write_tensor(os.path.join(out_dir, name), output.audios[0], getattr(pipe, "sample_rate", 48000))
+            return {"file": name, "media": "audio"}
+
+        first = start_frame(req, out_dir, (req["width"], req["height"]))
+        pipe = self._load(spec, from_image=first is not None)
 
         kwargs = dict(
             prompt=req["prompt"],

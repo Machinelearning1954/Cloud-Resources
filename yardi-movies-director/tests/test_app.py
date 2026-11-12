@@ -31,8 +31,10 @@ def test_config_lists_all_free_models(client):
     cfg = client.get("/api/config").get_json()
     assert cfg["name"] == "Yardi Movies Director"
     assert [m["name"] for m in cfg["models"]] == [
-        "Z-Image Turbo", "Qwen-Image-2512", "FLUX.2 klein 4B", "Wan 2.2", "LTX-2", "LTX-Video",
+        "Z-Image Turbo", "Qwen-Image-2512", "FLUX.2 klein 4B", "Wan 2.2", "LTX-2",
+        "ACE-Step 1.5", "Kokoro", "LTX-Video",
     ]
+    assert {m["kind"] for m in cfg["models"]} == {"image", "video", "music", "voice"}
     assert cfg["plan"] == {"price": 0, "credits": "unlimited", "subscription": None}
 
 
@@ -145,7 +147,7 @@ def test_upload_rejects_non_images(client):
 
 def test_config_marks_which_models_take_a_start_frame(client):
     models = {m["id"]: m["supports_start_image"] for m in client.get("/api/config").get_json()["models"]}
-    assert models == {"z-image-turbo": False, "qwen-image-2512": False, "flux2-klein-4b": False, "wan-2-2": True, "ltx-2": True, "ltx-video": True}
+    assert models == {"z-image-turbo": False, "qwen-image-2512": False, "flux2-klein-4b": False, "wan-2-2": True, "ltx-2": True, "ltx-video": True, "ace-step": False, "kokoro": False}
 
 
 def test_ltx_video_uses_its_own_sizes_and_frame_rule(client):
@@ -169,3 +171,104 @@ def test_every_pipeline_class_exists_in_diffusers_source():
     for spec in MODELS.values():
         for name in filter(None, (spec.pipeline, spec.i2v_pipeline)):
             assert f'"{name}"' in init, name
+
+
+def wav_info(data):
+    import io
+    import wave
+
+    with wave.open(io.BytesIO(data)) as f:
+        return f.getnframes() / f.getframerate(), f.getnchannels()
+
+
+def test_music_take(client):
+    res = client.post("/api/generate", json={"model": "ace-step", "prompt": "roots reggae", "seconds": 999, "lyrics": " la la ", "seed": 3})
+    job = res.get_json()["jobs"][0]
+    assert job["seconds"] == 120 and job["lyrics"] == "la la" and job["width"] is None
+    short = client.post("/api/generate", json={"model": "ace-step", "prompt": "roots reggae", "seconds": 6}).get_json()["jobs"][0]
+    done = wait(client, short["id"])
+    assert done["status"] == "done" and done["media"] == "audio" and done["placeholder"] is True
+    seconds, _ = wav_info(client.get(f"/media/{done['file']}").data)
+    assert abs(seconds - 6) < 0.1
+
+
+def test_voiceover_take(client):
+    script = "Once upon a time. " * 200                     # longer than the 2000-character scene limit
+    job = client.post("/api/generate", json={"model": "kokoro", "prompt": script, "voice": "bm_george", "speed": 9}).get_json()["jobs"][0]
+    assert job["voice"] == "bm_george" and job["speed"] == 2.0
+    done = wait(client, job["id"])
+    assert done["status"] == "done" and done["media"] == "audio"
+    assert wav_info(client.get(f"/media/{done['file']}").data)[0] > 1
+    assert client.post("/api/generate", json={"model": "kokoro", "prompt": "hi", "voice": "nobody"}).status_code == 400
+    assert client.post("/api/generate", json={"model": "kokoro", "prompt": "x" * 5001}).status_code == 400
+
+
+def make(client, **body):
+    return wait(client, client.post("/api/generate", json=body).get_json()["jobs"][0]["id"])
+
+
+@pytest.fixture
+def ffmpeg():
+    import movie
+
+    path = movie.ffmpeg_path()
+    if not path:
+        pytest.skip("ffmpeg is not installed")
+    return path
+
+
+def test_movie_cut_joins_takes_and_mixes_sound(client, tmp_path, ffmpeg):
+    import movie
+
+    still = make(client, model="z-image-turbo", prompt="a harbour")
+    clip = make(client, model="wan-2-2", prompt="boats drift")
+    voice = make(client, model="kokoro", prompt="The tide was rising. Nobody on the quay had noticed yet.")
+    music = make(client, model="ace-step", prompt="slow dub", seconds=5)
+    res = client.post("/api/movie", json={
+        "clips": [still["id"], clip["id"], still["id"]], "voice": voice["id"], "music": music["id"],
+        "still_seconds": 2, "music_volume": 0.3, "title": "Harbour",
+    })
+    assert res.status_code == 202
+    done = wait(client, res.get_json()["id"], timeout=120)
+    assert done["status"] == "done", done
+    assert done["kind"] == "movie" and done["media"] == "video" and done["prompt"] == "Harbour"
+    assert done["placeholder"] is True                       # built from placeholder takes
+    seconds, has_audio = movie.probe(ffmpeg, str(tmp_path / done["file"]))
+    assert has_audio and abs(seconds - 6) < 0.5              # 2 s still + 2 s clip + 2 s still
+    assert not [p for p in tmp_path.iterdir() if p.name.startswith(".cut-")]   # work folder cleaned up
+
+
+def test_silent_movie_and_long_voiceover_note(client, tmp_path, ffmpeg):
+    import movie
+
+    still = make(client, model="z-image-turbo", prompt="x")
+    silent = wait(client, client.post("/api/movie", json={"clips": [still["id"]], "still_seconds": 1}).get_json()["id"], timeout=60)
+    assert silent["status"] == "done" and "note" not in silent
+    assert abs(movie.probe(ffmpeg, str(tmp_path / silent["file"]))[0] - 1) < 0.3
+    voice = make(client, model="kokoro", prompt="word " * 40)
+    cut = wait(client, client.post("/api/movie", json={"clips": [still["id"]], "voice": voice["id"], "still_seconds": 1}).get_json()["id"], timeout=60)
+    assert cut["status"] == "done" and "longer than the picture" in cut["note"]
+
+
+def test_movie_rules(client, ffmpeg):
+    still = make(client, model="z-image-turbo", prompt="x")
+    music = make(client, model="ace-step", prompt="x", seconds=5)
+    post = lambda **body: client.post("/api/movie", json=body).status_code
+    assert post(clips=[]) == 400
+    assert post(clips=["missing"]) == 400
+    assert post(clips=[music["id"]]) == 400                               # sound is not a picture
+    assert post(clips=[still["id"]], voice=still["id"]) == 400            # a picture is not a voiceover
+    assert post(clips=[still["id"]], music_volume="loud") == 400
+    assert post(clips=[still["id"]] * 61) == 400
+
+
+def test_stereo_wav_writer(tmp_path):
+    import numpy as np
+
+    import audio
+
+    path = str(tmp_path / "t.wav")
+    audio.write_tensor(path, np.stack([np.ones(4800), -np.ones(4800)]) * 2, 48000)   # out of range on purpose
+    data = open(path, "rb").read()
+    assert wav_info(data) == (0.1, 2)
+    assert np.frombuffer(data[-4:], dtype="<i2").tolist() == [32767, -32767]         # clipped and interleaved

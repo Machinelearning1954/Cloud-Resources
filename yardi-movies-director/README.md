@@ -1,15 +1,25 @@
 # 🎬 Yardi Movies Director
 
-A free, self-hosted AI image and video studio. Describe a scene, pick a model,
-call "Action!" and collect your takes on the reel.
+A free, self-hosted AI studio for movies, videos, pictures, music and
+voiceovers. Describe a scene, a song or a script, call "Action!", collect your
+takes on the reel, then cut them into one finished movie.
 
-There are no accounts, no subscriptions, no paywalled models and no credit
-meter anywhere in the code. Generations run on **your own hardware** with
-open-weights models, so the number of takes is limited only by your GPU.
+**No credits are needed for anything.** There are no accounts, no
+subscriptions, no paywalled models and no credit meter anywhere in the code,
+and the app never calls a paid service. Everything runs on **your own
+hardware** with open-weights models, so the only limits are your machine and
+your electricity.
 
 ## What you can do
 
-- **Text to image** and **text to video** with any of the six models below.
+- **Text to image** and **text to video** with any of the picture and video models below.
+- **Music**: describe a style and get a track of up to 2 minutes, with
+  optional sung lyrics, from ACE-Step.
+- **Voiceovers**: type a script, pick one of six voices and a pace, and Kokoro
+  narrates it. This one needs no GPU.
+- **Movies**: press "Add to movie" on stills and clips, choose a voiceover and
+  a soundtrack, set the music volume and press "Cut movie". You get one MP4
+  with the takes in order and the sound mixed in. Stills hold for 3 seconds.
 - **Animate a picture**: press "Animate" on any image take, or upload your own
   picture, and Wan 2.2, LTX-2 or LTX-Video uses it as the first frame of the clip.
 - **Direct the shot**: camera-direction chips and a "Look" preset are added to
@@ -28,6 +38,8 @@ open-weights models, so the number of takes is limited only by your GPU.
 | Video | Wan 2.2          | Apache 2.0          | `Wan-AI/Wan2.2-TI2V-5B-Diffusers`  |
 | Video | LTX-2 (with audio)| LTX-2 Community License | `Lightricks/LTX-2`            |
 | Video | LTX-Video (v0.9.x)| Code Apache 2.0; weights licensed separately | `Lightricks/LTX-Video` |
+| Music | ACE-Step 1.5      | Open weights; see model card | `ACE-Step/acestep-v15-xl-turbo-diffusers` |
+| Voice | Kokoro            | Apache 2.0          | `hexgrad/Kokoro-82M`               |
 
 > **Check each licence on the model card before commercial use.** The Apache
 > 2.0 entries are the ones this project was specified with and were not
@@ -49,7 +61,8 @@ video) and `LTXImageToVideoPipeline` (start frame to video), at 24 fps, up to
 Any repo id can be swapped for a local path or mirror with an environment
 variable, e.g. `YARDI_REPO_LTX_2=/models/ltx-2`
 (`YARDI_REPO_Z_IMAGE_TURBO`, `YARDI_REPO_QWEN_IMAGE_2512`,
-`YARDI_REPO_FLUX2_KLEIN_4B`, `YARDI_REPO_WAN_2_2`, `YARDI_REPO_LTX_VIDEO`).
+`YARDI_REPO_FLUX2_KLEIN_4B`, `YARDI_REPO_WAN_2_2`, `YARDI_REPO_LTX_VIDEO`,
+`YARDI_REPO_ACE_STEP`).
 Point `YARDI_REPO_LTX_VIDEO` at a newer diffusers-format LTX-Video checkpoint
 to use that instead of the default.
 
@@ -62,9 +75,22 @@ pip install -r requirements.txt
 python app.py            # http://127.0.0.1:7860
 ```
 
-Without a GPU stack the app starts its **preview engine**: every take is a
-clearly labelled placeholder storyboard, not model output. It exists so the
-studio can be explored and tested anywhere.
+Without a GPU stack the app starts its **preview engine**: pictures, video and
+music takes are clearly labelled placeholders, not model output. It exists so
+the studio can be explored and tested anywhere. Cutting movies is real in
+every mode, since it only needs ffmpeg (a copy is installed with
+`requirements.txt` if your machine has none).
+
+**Real voiceovers (any machine, no GPU):**
+
+```bash
+pip install -r requirements-voice.txt
+python app.py
+```
+
+Until this is installed, voice takes are placeholder tones that mark timing
+only. The offered voices are English; the voice weights (a few hundred MB)
+download from Hugging Face on first use.
 
 **Generate for real (NVIDIA GPU):**
 
@@ -91,6 +117,7 @@ CPU offload on; LTX-2 wants more.
 | `YARDI_OUTPUT_DIR`  | `./outputs`   | Where takes and `library.json` are stored            |
 | `YARDI_CPU_OFFLOAD` | `1`           | `0` keeps the whole pipeline on the GPU (more VRAM)  |
 | `YARDI_MAX_QUEUE`   | `200`         | Takes allowed to wait at once (protects the machine; not a usage cap) |
+| `YARDI_FFMPEG`      | auto          | Path to a specific ffmpeg binary for movie cuts      |
 
 The app has no login. It binds to localhost by default; put it behind your own
 authentication before exposing it to a network.
@@ -100,7 +127,8 @@ authentication before exposing it to a network.
 | Method | Path               | Purpose                                             |
 |--------|--------------------|-----------------------------------------------------|
 | GET    | `/api/config`      | Models, aspect ratios, active engine                |
-| POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt, start_take}` |
+| POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt, start_take}`; music adds `lyrics`, voice adds `voice` and `speed` |
+| POST   | `/api/movie`       | `{clips: [take ids], voice, music, music_volume, still_seconds, title}` → one MP4 |
 | POST   | `/api/upload`      | Multipart `image`: adds a picture to the reel as a start frame (25 MB max) |
 | GET    | `/api/jobs`        | Every take, newest first                            |
 | GET    | `/api/jobs/<id>`   | One take with status and progress                   |
@@ -113,6 +141,7 @@ pip install pytest && pytest -q
 ```
 
 The suite drives the full request → queue → render → library flow on the
-preview engine. The GPU path (`DiffusersEngine`), including the
-image-to-video pipelines, follows the pipeline signatures in diffusers 0.42
-but has not been run, since that needs a GPU and the model weights.
+preview engine, and cuts real movies with ffmpeg. The model paths have not
+been run, since they need the weights (and, except for Kokoro, a GPU): the
+picture, video and music pipelines follow the signatures in diffusers 0.42,
+and the voice path follows the `kokoro` 0.7 package.

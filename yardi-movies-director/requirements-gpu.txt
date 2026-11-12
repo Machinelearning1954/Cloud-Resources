@@ -10,3 +10,4 @@ protobuf
 ftfy
 imageio[ffmpeg]
 av
+numpy

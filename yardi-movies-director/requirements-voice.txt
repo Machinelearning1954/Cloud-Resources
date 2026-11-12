@@ -1,0 +1,6 @@
+# Voiceovers with Kokoro. Runs on an ordinary CPU; no GPU needed.
+# Voice weights download from Hugging Face on first use.
+-r requirements.txt
+torch
+numpy
+kokoro>=0.7

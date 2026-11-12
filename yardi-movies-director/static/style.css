@@ -177,3 +177,35 @@ dialog#viewer { border: 1px solid var(--line); border-radius: var(--radius); bac
 dialog#viewer::backdrop { background: rgb(0 0 0 / .8); }
 dialog#viewer img { display: block; max-width: 92vw; max-height: 84vh; }
 dialog#viewer form { margin-top: 8px; text-align: right; }
+
+/* Four-way mode switch, sound takes, movie cut */
+.seg { grid-template-columns: repeat(4, 1fr); }
+.stage.sound { aspect-ratio: auto; padding: 14px 10px; min-height: 76px; }
+.stage.sound audio { width: 100%; }
+.tag {
+  justify-self: start; font-size: 11.5px; border: 1px dashed var(--accent); color: var(--accent);
+  border-radius: 999px; padding: 0 8px;
+}
+.meta .note { color: var(--bad); font-size: 12.5px; -webkit-line-clamp: unset; }
+.cut {
+  background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 14px; display: grid; gap: 10px;
+}
+.cut-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cut-head h3 { margin: 0; font: 700 13px ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .09em; text-transform: uppercase; }
+.cut-head span { color: var(--muted); font-size: 12.5px; }
+.cut-clips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.cut-clips li {
+  display: grid; gap: 3px; justify-items: center; background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; padding: 5px; font-size: 11.5px; color: var(--muted);
+}
+.cut-clips :is(img, .clip-video) { width: 84px; height: 50px; object-fit: cover; border-radius: 5px; background: #0b0a09; }
+.cut-clips .clip-video { display: grid; place-items: center; color: #cfc6b8; }
+.cut-clips .ctl { display: flex; gap: 8px; }
+.cut-tracks { display: grid; gap: 6px; font-size: 13px; }
+.cut-tracks div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.cut-tracks b { font-weight: 600; }
+.cut-tracks input[type=range] { width: 110px; padding: 0; accent-color: var(--accent); }
+.cut-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.cut-row input { flex: 1 1 160px; }
+.action.small { font-size: 13px; padding: 9px 14px; }
