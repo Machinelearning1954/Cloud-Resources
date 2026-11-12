@@ -22,6 +22,10 @@ your electricity.
   with the takes in order and the sound mixed in. Stills hold for 3 seconds.
 - **Animate a picture**: press "Animate" on any image take, or upload your own
   picture, and Wan 2.2, LTX-2 or LTX-Video uses it as the first frame of the clip.
+- **Arena battles**: tick "Arena battle" in Video or Image mode and two of your
+  models, picked at random, make the same scene with the same seed. Their
+  names stay hidden until you vote A, B or tie, and your votes build your own
+  leaderboard. See [Arena](#arena).
 - **Direct the shot**: camera-direction chips and a "Look" preset are added to
   your scene description.
 - **Work the reel**: filter by video or image, open stills full size, download,
@@ -65,6 +69,23 @@ variable, e.g. `YARDI_REPO_LTX_2=/models/ltx-2`
 `YARDI_REPO_ACE_STEP`).
 Point `YARDI_REPO_LTX_VIDEO` at a newer diffusers-format LTX-Video checkpoint
 to use that instead of the default.
+
+## Arena
+
+The arena is a blind test between the models installed on your machine, in the
+style of public model arenas such as [Video Arena](https://arena.ai/video). It
+is built into this app and does not connect to that service, which needs a
+login, limits free generations per day and offers no free public API. Here
+there is no limit on battles.
+
+- Both takes use the same prompt, seed, frame and length (the shorter of the
+  two models' limits), so the comparison is like for like.
+- Model names are withheld by the server, not just hidden on the page, until
+  the battle is voted or discarded.
+- Ratings are Elo (start 1000, K = 32), replayed from your stored votes in
+  `battles.json`. One vote per battle.
+- Votes on placeholder takes are practice rounds and never reach the
+  leaderboard, since placeholders say nothing about the models.
 
 ## Run it
 
@@ -128,6 +149,10 @@ authentication before exposing it to a network.
 |--------|--------------------|-----------------------------------------------------|
 | GET    | `/api/config`      | Models, aspect ratios, active engine                |
 | POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt, start_take}`; music adds `lyrics`, voice adds `voice` and `speed` |
+| POST   | `/api/battle`      | `{kind: "video" or "image", prompt, aspect, seconds, seed, start_take}` → two blind takes |
+| GET    | `/api/arena`       | Battles, newest first, and the leaderboard            |
+| POST   | `/api/battles/<id>/vote` | `{winner: "a", "b" or "tie"}`; reveals the models |
+| DELETE | `/api/battles/<id>` | Discard an unvoted battle; its takes stay            |
 | POST   | `/api/movie`       | `{clips: [take ids], voice, music, music_volume, still_seconds, title}` → one MP4 |
 | POST   | `/api/upload`      | Multipart `image`: adds a picture to the reel as a start frame (25 MB max) |
 | GET    | `/api/jobs`        | Every take, newest first                            |

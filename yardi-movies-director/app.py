@@ -15,6 +15,7 @@ import uuid
 
 from flask import Flask, jsonify, request, send_from_directory
 
+import arena
 import audio
 import movie
 from engines import pick_engine
@@ -50,6 +51,38 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                     jobs[job["id"]] = job
         except (OSError, ValueError):
             app.logger.warning("Could not read %s; starting with an empty library", library_path)
+
+    battles_path = os.path.join(out_dir, "battles.json")
+    battles: dict[str, dict] = {}
+    if os.path.exists(battles_path):
+        try:
+            with open(battles_path) as f:
+                for battle in json.load(f):
+                    # An unvoted battle is only useful while both of its takes still exist.
+                    if battle.get("winner") or (battle["a"] in jobs and battle["b"] in jobs):
+                        battles[battle["id"]] = battle
+        except (OSError, ValueError, KeyError):
+            app.logger.warning("Could not read %s; starting with no battles", battles_path)
+
+    def save_battles():
+        tmp = battles_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(list(battles.values()), f)
+        os.replace(tmp, battles_path)
+
+    def shown(job: dict) -> dict:
+        """A take as the browser may see it: the model stays hidden while its battle is unvoted."""
+        view = dict(job)
+        battle = battles.get(job.get("battle"))
+        if battle and not battle.get("winner"):
+            view.update(model=None, model_name="Hidden until you vote", masked=True)
+        return view
+
+    def battle_view(battle: dict) -> dict:
+        view = {k: battle.get(k) for k in ("id", "kind", "prompt", "a", "b", "winner", "counts", "created")}
+        if battle.get("winner"):
+            view["models"] = {s: MODELS[battle[s + "_model"]].name for s in ("a", "b")}
+        return view
 
     def save_library():
         done = [j for j in jobs.values() if j["status"] == "done"]
@@ -191,6 +224,109 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
             pending.put(job["id"])
         return jsonify(jobs=created), 202
 
+    @app.post("/api/battle")
+    def start_battle():
+        """Same prompt and seed on two different models, picked at random, names hidden."""
+        body = request.get_json(silent=True) or {}
+        kind = body.get("kind")
+        if kind not in ASPECTS:
+            return jsonify(error="Battles are for image or video models."), 400
+        prompt = str(body.get("prompt") or "").strip()
+        if not prompt:
+            return jsonify(error="Write a prompt first."), 400
+        if len(prompt) > MAX_PROMPT:
+            return jsonify(error=f"That is longer than {MAX_PROMPT} characters."), 400
+        aspect = body.get("aspect") or "16:9"
+        if aspect not in ASPECTS[kind]:
+            return jsonify(error=f"Aspect {aspect} is not available for {kind}."), 400
+        try:
+            seconds = float(body.get("seconds") or 5)
+            seed = body.get("seed")
+            seed = int(seed) if seed not in (None, "") else random.randrange(2**32)
+        except (TypeError, ValueError):
+            return jsonify(error="seconds and seed must be numbers."), 400
+        if not 0 <= seed < 2**32:
+            return jsonify(error="Seed must be between 0 and 4294967295."), 400
+        start_id = body.get("start_take")
+        pool = [m for m in MODELS.values() if m.kind == kind and (not start_id or m.i2v_pipeline)]
+        if len(pool) < 2:
+            return jsonify(error="A battle needs two models that can do this."), 400
+        pair = random.sample(pool, 2)
+
+        with lock:
+            start = jobs.get(start_id) if start_id else None
+            if start_id and not (start and start["status"] == "done" and start.get("media") == "image"):
+                return jsonify(error="That start frame is no longer in the reel."), 400
+            if sum(1 for j in jobs.values() if j["status"] in ("queued", "running")) + 2 > max_queue:
+                return jsonify(error="The render queue is full. Let a few takes finish first."), 429
+            battle_id = uuid.uuid4().hex
+            now = time.time()
+            takes = []
+            for offset, spec in enumerate(pair):
+                width, height = spec.sizes.get(aspect) or ASPECTS[kind][aspect]
+                job = {
+                    "id": uuid.uuid4().hex, "model": spec.id, "model_name": spec.name, "kind": kind,
+                    "prompt": prompt, "negative_prompt": "", "aspect": aspect, "width": width, "height": height,
+                    "seed": seed, "battle": battle_id,
+                    "status": "queued", "progress": 0.0, "created": now + offset / 1000,
+                }
+                if kind == "video":
+                    # Both sides get the same length: the shorter of the two models' limits.
+                    job["seconds"] = max(1.0, min(seconds, *(float(m.max_seconds) for m in pair)))
+                if start:
+                    job["start_take"], job["start_file"] = start["id"], start["file"]
+                jobs[job["id"]] = job
+                takes.append(job)
+            battle = {
+                "id": battle_id, "kind": kind, "prompt": prompt, "created": now, "winner": None,
+                "a": takes[0]["id"], "b": takes[1]["id"], "a_model": pair[0].id, "b_model": pair[1].id,
+            }
+            battles[battle_id] = battle
+            save_battles()
+            reply = jsonify(battle=battle_view(battle), jobs=[shown(j) for j in takes])
+        for job in takes:
+            pending.put(job["id"])
+        return reply, 202
+
+    @app.get("/api/arena")
+    def arena_state():
+        with lock:
+            ordered = sorted(battles.values(), key=lambda b: b["created"], reverse=True)
+            board = arena.leaderboard(ordered, {m.id: m.name for m in MODELS.values()})
+            return jsonify(battles=[battle_view(b) for b in ordered], leaderboard=board)
+
+    @app.post("/api/battles/<battle_id>/vote")
+    def vote(battle_id):
+        winner = (request.get_json(silent=True) or {}).get("winner")
+        if winner not in arena.SCORES:
+            return jsonify(error="Vote a, b or tie."), 400
+        with lock:
+            battle = battles.get(battle_id)
+            if battle is None:
+                return jsonify(error="No such battle."), 404
+            if battle["winner"]:
+                return jsonify(error="This battle already has a vote."), 409
+            sides = [jobs.get(battle["a"]), jobs.get(battle["b"])]
+            if not all(j and j["status"] == "done" for j in sides):
+                return jsonify(error="Both takes have to finish before you can vote."), 409
+            # Placeholder takes are not model output, so a vote on them says nothing about the models.
+            battle.update(winner=winner, voted_at=time.time(), counts=not any(j.get("placeholder") for j in sides))
+            save_battles()
+            return jsonify(battle_view(battle))
+
+    @app.delete("/api/battles/<battle_id>")
+    def discard_battle(battle_id):
+        """Drop an unvoted battle. Its takes stay in the reel with their models revealed."""
+        with lock:
+            battle = battles.get(battle_id)
+            if battle is None:
+                return jsonify(error="No such battle."), 404
+            if battle["winner"]:
+                return jsonify(error="A voted battle is part of the leaderboard and cannot be discarded."), 409
+            del battles[battle_id]
+            save_battles()
+        return jsonify(ok=True)
+
     @app.post("/api/movie")
     def make_movie():
         """Join takes, in order, into one MP4 with an optional voiceover and soundtrack."""
@@ -278,13 +414,13 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
     def list_jobs():
         with lock:
             items = sorted(jobs.values(), key=lambda j: j["created"], reverse=True)
-            return jsonify(jobs=[dict(j) for j in items])
+            return jsonify(jobs=[shown(j) for j in items])
 
     @app.get("/api/jobs/<job_id>")
     def get_job(job_id):
         with lock:
             job = jobs.get(job_id)
-            return (jsonify(dict(job)), 200) if job else (jsonify(error="No such take."), 404)
+            return (jsonify(shown(job)), 200) if job else (jsonify(error="No such take."), 404)
 
     @app.delete("/api/jobs/<job_id>")
     def delete_job(job_id):
@@ -296,6 +432,10 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 return jsonify(error="This take is rendering. Delete it once it finishes."), 409
             del jobs[job_id]
             save_library()
+            battle = battles.get(job.get("battle"))
+            if battle and not battle["winner"]:      # a battle cannot be judged with one side missing
+                del battles[battle["id"]]
+                save_battles()
         if job.get("file"):
             try:
                 os.remove(os.path.join(out_dir, job["file"]))

@@ -32,6 +32,8 @@ const state = {
   config: null, kind: "video", model: null, jobs: new Map(),
   directions: new Set(), start: null, show: "all",
   cut: { clips: [], voice: null, music: null, volume: 0.35 },
+  battles: [], leaderboard: {}, dismissed: new Set(),
+  justVoted: new Set(),   // battles voted in this visit stay on screen so the reveal can be read
 };
 
 async function api(path, options) {
@@ -76,30 +78,37 @@ function renderControls() {
   const model = currentModel();
   const kind = state.kind;
   const visual = VISUAL.has(kind);
+  const battle = visual && $("battle").checked;
+  $("battleField").hidden = !visual;
+  $("modelField").hidden = battle;
+  $("action").textContent = battle ? "Start battle" : "Action!";
 
   $("aspectField").hidden = !visual;
   $("dirField").hidden = !visual;
   $("lookField").hidden = !visual;
   $("secondsField").hidden = kind !== "video";
-  $("countField").hidden = kind !== "image";
+  $("countField").hidden = kind !== "image" || battle;
   $("lyricsField").hidden = kind !== "music";
   $("musicSecondsField").hidden = kind !== "music";
   $("voiceField").hidden = kind !== "voice";
   $("speedField").hidden = kind !== "voice";
-  $("more").hidden = kind === "voice";
+  $("more").hidden = kind === "voice" || battle;
   $("negativeField").hidden = !model.supports_negative;
 
   if (visual) fillSelect($("aspect"), state.config.aspects[kind].map((a) => [a, a]), true);
   if (kind === "video") {
+    const longest = battle
+      ? Math.min(...models.map((m) => m.max_seconds))   // both sides must be able to run the same length
+      : model.max_seconds;
     const lengths = [];
-    for (let s = 2; s <= model.max_seconds; s += s < 6 ? 1 : 2) lengths.push([s, `${s} s`]);
+    for (let s = 2; s <= longest; s += s < 6 ? 1 : 2) lengths.push([s, `${s} s`]);
     fillSelect($("seconds"), lengths, true);
-    if (!$("seconds").dataset.touched) $("seconds").value = String(Math.min(5, model.max_seconds));
+    if (!$("seconds").dataset.touched) $("seconds").value = String(Math.min(5, longest));
   }
   if (kind === "voice") fillSelect($("voice"), model.voices, true);
 
   // Start frame: only for video models that can animate a picture.
-  const canStart = kind === "video" && model.supports_start_image;
+  const canStart = kind === "video" && (battle || model.supports_start_image);
   if (state.start && !state.jobs.has(state.start)) state.start = null;
   $("startField").hidden = !canStart;
   const start = canStart && state.start ? state.jobs.get(state.start) : null;
@@ -216,6 +225,104 @@ $("cutGo").onclick = async () => {
   }
 };
 
+/* ---------- Arena ---------- */
+
+async function loadArena() {
+  try {
+    const data = await api("/api/arena");
+    state.battles = data.battles;
+    state.leaderboard = data.leaderboard;
+  } catch { /* keep what we have */ }
+  renderArena(true);
+}
+
+function sideStage(job) {
+  const stage = el("div", { className: "stage" });
+  if (!job) {
+    stage.append(el("div", { className: "status bad", textContent: "This take was deleted." }));
+    return stage;
+  }
+  stage.style.aspectRatio = `${job.width} / ${job.height}`;
+  if (job.status === "done" && job.media === "video") {
+    stage.append(el("video", { src: mediaUrl(job), controls: true, loop: true, muted: true, playsInline: true, preload: "metadata" }));
+  } else if (job.status === "done") {
+    stage.append(el("img", { src: mediaUrl(job), alt: "", loading: "lazy" }));
+  } else if (job.status === "error") {
+    stage.append(el("div", { className: "status bad", textContent: job.error || "This take failed." }));
+  } else {
+    const bar = el("div", { className: "bar" });
+    bar.style.width = `${job.progress * 100}%`;
+    const label = job.status === "queued" ? "Waiting…" : `Rolling… ${Math.round(job.progress * 100)}%`;
+    stage.append(el("div", { className: "status", textContent: label }), bar);
+  }
+  return stage;
+}
+
+let arenaSignature = "";
+function renderArena(force) {
+  const list = state.battles.filter((b) => !state.dismissed.has(b.id) && (!b.winner || state.justVoted.has(b.id)));
+  const signature = list.map((b) => [b.id, b.winner, ...["a", "b"].map((s) => {
+    const job = state.jobs.get(b[s]);
+    return job ? `${job.status}:${job.progress}` : "gone";
+  })].join(":")).join("|");
+  if (!force && signature === arenaSignature) return;
+  arenaSignature = signature;
+
+  const hasBoard = Object.keys(state.leaderboard).length > 0;
+  $("arena").hidden = list.length === 0 && !hasBoard;
+
+  $("battles").replaceChildren(...list.map((b) => {
+    const takes = { a: state.jobs.get(b.a), b: state.jobs.get(b.b) };
+    const ready = takes.a?.status === "done" && takes.b?.status === "done";
+    const sides = el("div", { className: "sides" }, ...["a", "b"].map((s) => {
+      const name = b.winner ? `${s.toUpperCase()} · ${b.models[s]}` : `Take ${s.toUpperCase()}`;
+      const side = el("div", { className: b.winner === s ? "side won" : "side" }, el("span", { textContent: name }), sideStage(takes[s]));
+      return side;
+    }));
+    const votes = el("div", { className: "votes" });
+    if (b.winner) {
+      const verdict = b.winner === "tie" ? "You called it a tie." : `You picked ${b.winner.toUpperCase()}: ${b.models[b.winner]}.`;
+      votes.append(verdict + (b.counts ? "" : " Practice round: placeholder takes do not count on the leaderboard."));
+      votes.append(el("button", { type: "button", className: "link", textContent: "Dismiss", onclick: () => {
+        state.dismissed.add(b.id);
+        renderArena(true);
+      } }));
+    } else {
+      for (const [value, text] of [["a", "A is better"], ["tie", "Tie"], ["b", "B is better"]]) {
+        votes.append(el("button", { type: "button", className: "pick", textContent: text, disabled: !ready, onclick: async () => {
+          try {
+            await postJson(`/api/battles/${b.id}/vote`, { winner: value });
+          } catch (e) { return showError(e.message); }
+          state.justVoted.add(b.id);
+          const { jobs } = await api("/api/jobs");          // model names are revealed now
+          state.jobs = new Map(jobs.map((j) => [j.id, j]));
+          lastSignature = "";
+          renderTakes();
+          await loadArena();
+        } }));
+      }
+      if (!ready) votes.append("Voting opens when both takes finish.");
+      votes.append(el("button", { type: "button", className: "link", textContent: "Discard", onclick: async () => {
+        try { await api(`/api/battles/${b.id}`, { method: "DELETE" }); } catch (e) { return showError(e.message); }
+        const { jobs } = await api("/api/jobs");
+        state.jobs = new Map(jobs.map((j) => [j.id, j]));
+        lastSignature = "";
+        renderTakes();
+        await loadArena();
+      } }));
+    }
+    return el("div", { className: "duel" }, el("p", { textContent: b.prompt }), sides, votes);
+  }));
+
+  const tables = Object.entries(state.leaderboard).map(([kind, rows]) => el("table", {},
+    el("caption", { textContent: `${kind} models` }),
+    el("thead", {}, el("tr", {}, ...["#", "Model", "Rating", "Won", "Lost", "Tied"].map((h) => el("th", { textContent: h })))),
+    el("tbody", {}, ...rows.map((r, i) => el("tr", {}, ...[i + 1, r.name, r.rating, r.wins, r.losses, r.ties]
+      .map((v) => el("td", { textContent: String(v) })))))));
+  $("boardBody").replaceChildren(...(tables.length ? tables
+    : [el("p", { textContent: "No counted votes yet. Votes count once the takes are real model output." })]));
+}
+
 /* ---------- Reel ---------- */
 
 function takeCard(job, number) {
@@ -263,7 +370,7 @@ function takeCard(job, number) {
   if (done && job.kind === "voice") button("Use as voiceover", () => { state.cut.voice = job.id; renderCut(); });
   if (done && job.kind === "music") button("Use as soundtrack", () => { state.cut.music = job.id; renderCut(); });
   if (src && done) tools.append(el("a", { href: src, download: job.file, textContent: "Download" }));
-  if (!job.uploaded && job.kind !== "movie") button("Reuse", () => {
+  if (!job.uploaded && job.kind !== "movie" && !job.masked) button("Reuse", () => {
     $("prompt").value = job.prompt;
     if (job.seed !== undefined) $("seed").value = job.seed;
     state.kind = job.kind; state.model = job.model;
@@ -279,6 +386,7 @@ function takeCard(job, number) {
     renderControls();
     renderCut();
     renderTakes();
+    if (job.battle) loadArena();
   });
 
   const meta = el("div", { className: "meta" }, el("p", { textContent: job.prompt }));
@@ -324,6 +432,7 @@ async function poll() {
       const { jobs } = await api("/api/jobs");
       state.jobs = new Map(jobs.map((j) => [j.id, j]));
       renderTakes();
+      renderArena();
     } catch { /* server briefly unreachable; try again on the next tick */ }
   }
   setTimeout(poll, 1000);
@@ -349,11 +458,14 @@ $("slate").addEventListener("submit", async (event) => {
   if (state.kind === "voice") { body.voice = $("voice").value; body.speed = $("speed").value; }
   if (state.kind !== "voice") body.seed = $("seed").value;
 
+  const battle = visual && $("battle").checked;
+  if (battle) body.kind = state.kind;
   $("action").disabled = true;
   try {
-    const { jobs } = await postJson("/api/generate", body);
+    const { jobs } = await postJson(battle ? "/api/battle" : "/api/generate", body);
     jobs.forEach((j) => state.jobs.set(j.id, j));
     renderTakes();
+    if (battle) await loadArena();
   } catch (e) {
     showError(e.message);
   } finally {
@@ -395,6 +507,7 @@ document.querySelectorAll("#filter button").forEach((b) => {
   };
 });
 $("seconds").addEventListener("change", () => { $("seconds").dataset.touched = "1"; });
+$("battle").addEventListener("change", renderControls);
 $("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
 
 (async function start() {
@@ -420,5 +533,6 @@ $("viewer").addEventListener("click", (event) => { if (event.target === $("viewe
   renderControls();
   renderCut();
   renderTakes();
+  await loadArena();
   poll();
 })();

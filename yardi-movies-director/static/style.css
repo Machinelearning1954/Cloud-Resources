@@ -209,3 +209,33 @@ dialog#viewer form { margin-top: 8px; text-align: right; }
 .cut-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .cut-row input { flex: 1 1 160px; }
 .action.small { font-size: 13px; padding: 9px 14px; }
+
+/* Arena */
+.battle { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); cursor: pointer; }
+.battle input { width: auto; margin-top: 3px; accent-color: var(--accent); }
+.battle b { color: var(--text); margin-right: 4px; }
+.arena {
+  background: var(--panel); border: 1px solid var(--rasta-green); border-radius: var(--radius);
+  padding: 12px; margin-bottom: 14px; display: grid; gap: 12px;
+}
+.duel { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.duel:first-child { border-top: 0; padding-top: 0; }
+.duel > p { margin: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .sides { grid-template-columns: 1fr; } }
+.side { display: grid; gap: 4px; min-width: 0; }
+.side > span { font: 700 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; color: var(--muted); }
+.side.won > span { color: var(--ok); }
+.side .stage { border-radius: 8px; overflow: hidden; }
+.votes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.votes button.pick {
+  border: 1px solid var(--accent); background: none; color: var(--accent); font: inherit; font-size: 13px;
+  border-radius: 8px; padding: 5px 12px; cursor: pointer;
+}
+.votes button.pick:disabled { opacity: .45; cursor: not-allowed; }
+#board summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+#board table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+#board :is(th, td) { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
+#board th { color: var(--muted); font-weight: 500; }
+#board caption { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; padding-bottom: 2px; }
+#board p { color: var(--muted); font-size: 13px; margin: 8px 0 0; }

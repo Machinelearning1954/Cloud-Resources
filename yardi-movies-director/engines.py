@@ -128,7 +128,7 @@ class _Scene:
         bar = max(26, h // 11)
         d.rectangle([0, 0, w, bar], fill=(12, 11, 10))
         d.rectangle([0, h - bar, w, h], fill=(12, 11, 10))
-        d.text((10, bar // 2), f"PREVIEW · {spec.name} · not model output", fill=(232, 178, 84), font=font, anchor="lm")
+        d.text((10, bar // 2), f"PREVIEW · {'arena take' if req.get('battle') else spec.name} · not model output", fill=(232, 178, 84), font=font, anchor="lm")
         limit = max(12, (w - 20) // 7)
         caption = req["prompt"] if len(req["prompt"]) <= limit else req["prompt"][: limit - 1] + "…"
         d.text((10, h - bar // 2), caption, fill=(236, 230, 220), font=font, anchor="lm")

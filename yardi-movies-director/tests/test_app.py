@@ -272,3 +272,80 @@ def test_stereo_wav_writer(tmp_path):
     data = open(path, "rb").read()
     assert wav_info(data) == (0.1, 2)
     assert np.frombuffer(data[-4:], dtype="<i2").tolist() == [32767, -32767]         # clipped and interleaved
+
+
+def start_battle(client, **body):
+    res = client.post("/api/battle", json={"kind": "video", "prompt": "waves", **body})
+    assert res.status_code == 202, res.get_json()
+    data = res.get_json()
+    for job in data["jobs"]:
+        wait(client, job["id"])
+    return data["battle"]
+
+
+def test_battle_is_blind_until_voted(client):
+    res = client.post("/api/battle", json={"kind": "video", "prompt": "waves", "seconds": 9, "seed": 5})
+    data = res.get_json()
+    a, b = data["jobs"]
+    assert a["masked"] and a["model"] is None and "models" not in data["battle"]
+    assert a["seed"] == b["seed"] == 5 and a["seconds"] == b["seconds"] <= 5      # same seed, shared length limit
+    assert client.post(f"/api/battles/{data['battle']['id']}/vote", json={"winner": "a"}).status_code in (200, 409)
+
+    battle = start_battle(client)
+    listed = {j["id"]: j for j in client.get("/api/jobs").get_json()["jobs"]}
+    assert listed[battle["a"]]["model_name"] == "Hidden until you vote"
+    assert client.get(f"/api/jobs/{battle['a']}").get_json()["model"] is None
+    assert client.post(f"/api/battles/{battle['id']}/vote", json={"winner": "maybe"}).status_code == 400
+    voted = client.post(f"/api/battles/{battle['id']}/vote", json={"winner": "b"}).get_json()
+    names = {m.name for m in MODELS.values() if m.kind == "video"}
+    assert voted["winner"] == "b" and voted["models"]["a"] != voted["models"]["b"]
+    assert set(voted["models"].values()) <= names
+    assert client.get(f"/api/jobs/{battle['a']}").get_json()["model_name"] == voted["models"]["a"]
+    assert client.post(f"/api/battles/{battle['id']}/vote", json={"winner": "a"}).status_code == 409   # one vote only
+
+
+def test_placeholder_battles_do_not_reach_the_leaderboard(client):
+    battle = start_battle(client, kind="image")
+    voted = client.post(f"/api/battles/{battle['id']}/vote", json={"winner": "tie"}).get_json()
+    assert voted["counts"] is False
+    assert client.get("/api/arena").get_json()["leaderboard"] == {}
+
+
+def test_battle_rules_and_cleanup(client, tmp_path):
+    post = lambda **body: client.post("/api/battle", json=body).status_code
+    assert post(kind="music", prompt="x") == 400
+    assert post(kind="video", prompt="") == 400
+    assert post(kind="video", prompt="x", aspect="4:3") == 400
+    assert post(kind="image", prompt="x", start_take="nope") == 400      # image models cannot start from a frame
+    battle = start_battle(client)
+    assert client.delete(f"/api/jobs/{battle['a']}").status_code == 200  # one side gone: the battle goes too
+    assert client.get("/api/arena").get_json()["battles"] == []
+    assert client.get(f"/api/jobs/{battle['b']}").get_json().get("masked") is None
+    other = start_battle(client)
+    assert client.delete(f"/api/battles/{other['id']}").status_code == 200
+    assert client.get(f"/api/jobs/{other['a']}").get_json()["model"] is not None   # takes kept, names revealed
+    kept = start_battle(client)
+    client.post(f"/api/battles/{kept['id']}/vote", json={"winner": "a"})
+    assert client.delete(f"/api/battles/{kept['id']}").status_code == 409
+    again = create_app(out_dir=str(tmp_path), engine=PreviewEngine()).test_client()
+    assert [b["id"] for b in again.get("/api/arena").get_json()["battles"]] == [kept["id"]]
+
+
+def test_elo_leaderboard():
+    import arena
+
+    def battle(a, b, winner, t, counts=True, kind="video"):
+        return {"kind": kind, "a_model": a, "b_model": b, "winner": winner, "voted_at": t, "counts": counts}
+
+    names = {"x": "X", "y": "Y", "z": "Z"}
+    board = arena.leaderboard([
+        battle("x", "y", "a", 1), battle("y", "x", "b", 2), battle("x", "z", "tie", 3),
+        battle("y", "x", "a", 4, counts=False),          # placeholder round: ignored
+        battle("y", "z", None, 5),                       # unvoted: ignored
+    ], names)
+    rows = board["video"]
+    assert [r["name"] for r in rows] == ["X", "Z", "Y"]
+    x = rows[0]
+    assert (x["wins"], x["losses"], x["ties"]) == (2, 0, 1) and x["rating"] > 1000 > rows[2]["rating"]
+    assert sum(r["rating"] for r in rows) in range(2998, 3003)       # Elo is zero-sum, up to rounding
+    assert arena.leaderboard([battle("x", "y", "a", 1)], names)["video"][0]["rating"] == 1016

@@ -28,7 +28,12 @@
       <button type="button" role="tab" data-kind="voice" aria-selected="false">Voice</button>
     </div>
 
-    <fieldset>
+    <label class="battle" id="battleField">
+      <input type="checkbox" id="battle">
+      <span><b>Arena battle</b> Two of your models make this, names hidden. You pick the winner.</span>
+    </label>
+
+    <fieldset id="modelField">
       <legend>Model</legend>
       <div class="models" id="models"></div>
     </fieldset>
@@ -119,6 +124,17 @@
       </div>
       <span id="count-label"></span>
     </div>
+    <section class="arena" id="arena" aria-label="Arena" hidden>
+      <div class="cut-head">
+        <h3>Arena</h3>
+        <span>Blind battles between your own models</span>
+      </div>
+      <div id="battles"></div>
+      <details id="board">
+        <summary>Your leaderboard</summary>
+        <div id="boardBody"></div>
+      </details>
+    </section>
     <section class="cut" id="cut" aria-label="Movie cut" hidden>
       <div class="cut-head">
         <h3>Movie cut</h3>
