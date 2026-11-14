@@ -474,8 +474,11 @@ binding.)
   (ADR 0056).
   - Opened from the file at phone and desktop sizes: no errors; touch and keyboard
     move the player; a scripted run delivers a crate; win and both lose screens reached.
-  - Two bugs found and fixed by the checks: overlays that never hid, and a crate that
-    jumped back into the player's hands.
+  - Four bugs found and fixed by the checks: overlays that never hid, a crate that
+    jumped back into the player's hands, the Space key dying after a HUD click, and
+    view cones too dim at night.
+  - Also checked: a foldable-size screen, roofs blocking sight, patrol speed ramp,
+    pause and restart, and the 6:45 PM look with five patrols.
   - Sound and difficulty are **not assessed**. **Not yet played by a person.**
 - **Rule 8:** no comparison to any other title is made. This is a flat 2D prototype
   of one mechanic, not the game's graphics.
