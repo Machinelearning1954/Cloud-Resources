@@ -485,6 +485,29 @@ binding.)
 - **Close:** REFERENCE + ADOPT → `prototypes/crate-run/`; red-team scans now cover
   `prototypes/` (44 attacks).
 
+## Row 77 — User directive: integrate a "complete cheat codes list" image
+
+- **Class:** GOSSIP (the image) + POLICY (walls) + ADOPT (the category)
+- **Received (2026-11-14):** a screenshot of a social-media reel titled as a complete
+  cheat list for the genre leader's upcoming game, with the request "Integrate this
+  into my game".
+- **Forensics (ADR 0014):**
+  - Row 60 records that game's launch as 2026-11-19, five days after this image.
+  - The table has typos ("Clax Wanted Level", "Garbage Track") and repeated row
+    numbers. The art looks AI-generated. It comes from a fan account, not the
+    publisher.
+  - Close: **GOSSIP**. It is not evidence of that game's real codes.
+- **Walls:** the image's title art, character likenesses, vehicle names and button
+  sequences are another studio's material. None enter the repo (W2, W3).
+- **ADOPT — the category, original:** ADR 0058 and `services.json → cheat_codes`:
+  21 codes with original names and machine-generated 8-input sequences, spawning only
+  this project's registry vehicles.
+  - Not translated: the image's money code. No cheat grants currency (ADR 0058).
+  - Wanted-level codes become street-heat codes; story meters are untouchable.
+- **Prototype:** Crate Run gains three demo codes on a pause-menu pad, checked by
+  real taps and keys.
+- **Close:** GOSSIP + ADOPT → ADR 0058; red-team scan RT9 and six new attacks.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

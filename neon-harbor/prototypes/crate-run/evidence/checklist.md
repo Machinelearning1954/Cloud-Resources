@@ -31,3 +31,16 @@ at night.
 **Guessed (not in any ADR):** every number in `config`, Imani's hairstyle (locs pinned
 up), the block's street layout, the patrol routes, and the look of the patrol car.
 **No frame rate is claimed.** A headless test machine is not a phone.
+
+## Change 1 — demo cheat codes (2026-11-14, ledger row 77)
+
+| Line | Status | How it was checked |
+| --- | --- | --- |
+| Code pad in the pause menu, six directions | built | real taps on a phone-size screen entered Cool Breeze; heat went 60 → 0 |
+| Arrow keys enter codes while paused | built | real key presses |
+| Codes do nothing during play | built | same six arrow keys while playing: no effect |
+| A wrong sequence does nothing | built | scripted |
+| Slow Riddim halves patrol speed | built | a patrol covered 95 px in a second before, 48 after |
+| Late Doors winds the clock back 30 s | built | clock 100 → 70 |
+| Using a code marks the run; restart clears it | built | win card shows the note; restart resets the flag |
+| The codes are fun or fair | not assessed | needs a person |

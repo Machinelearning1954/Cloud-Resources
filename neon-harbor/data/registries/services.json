@@ -1,5 +1,5 @@
 {
-  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md. Radio stations (ADR 0054) live here under radio_stations: offline, world-time scheduled, never streamed (rule 0). Multiplayer budgets (ADR 0057) live under multiplayer; tools/check_net_budget.py verifies the arithmetic.",
+  "$schema_note": "Services registry — REBUILD STUB. Cross-references world services to amenities and registries; the original 10-registry set is being regenerated per RECOVERY_LOG.md. Radio stations (ADR 0054) live here under radio_stations: offline, world-time scheduled, never streamed (rule 0). Multiplayer budgets (ADR 0057) live under multiplayer; tools/check_net_budget.py verifies the arithmetic. Cheat codes (ADR 0058) live under cheat_codes.",
   "services": [
     {
       "id": "SV-TAXI-HARBOUR",
@@ -251,5 +251,439 @@
     "economy": "single currency only; nothing in multiplayer is sold for real money",
     "offline_guarantee": "single-player never connects to anything (rule 0)",
     "design_history": "Draft 1 (30 Hz players, 60 replicated NPCs) needed 397 kbps on T0 against a 256 kbps budget and failed check N2. Draft 2 lowers update rates, shrinks payloads and stops replicating ambient crowds."
+  },
+  "cheat_codes": {
+    "status": "PROPOSED design (ADR 0058). Nothing is built. Sequences are original and machine-generated; they copy no other game's codes.",
+    "input_tokens": [
+      "UP",
+      "DOWN",
+      "LEFT",
+      "RIGHT",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "NORTH",
+      "LB",
+      "RB",
+      "LT",
+      "RT"
+    ],
+    "token_note": "Platform-neutral names: SOUTH/EAST/WEST/NORTH are the four face buttons by position; LB/RB are bumpers, LT/RT triggers. Each platform shows its own glyphs.",
+    "sequence_length": 8,
+    "rules": [
+      "single-player only: every cheat is refused in multiplayer",
+      "no cheat grants currency",
+      "no cheat changes a story meter (Clean, Loyal, Heat in ADR 0056); street heat is a separate, transient value",
+      "any cheat marks the save as cheated: achievements and leaderboards off for that save",
+      "flight cheats stay locked until the M3.5 flight gate opens"
+    ],
+    "codes": [
+      {
+        "id": "CH-KIT-01",
+        "name": "Yard Kit",
+        "category": "player",
+        "effect": "basic gear set",
+        "sequence": [
+          "DOWN",
+          "RIGHT",
+          "LB",
+          "RB",
+          "NORTH",
+          "LB",
+          "LEFT",
+          "NORTH"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-KIT-02",
+        "name": "Pro Kit",
+        "category": "player",
+        "effect": "mid-tier gear set",
+        "sequence": [
+          "UP",
+          "NORTH",
+          "RIGHT",
+          "WEST",
+          "RT",
+          "LEFT",
+          "UP",
+          "WEST"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-KIT-03",
+        "name": "Loud Kit",
+        "category": "player",
+        "effect": "heavy gear set",
+        "sequence": [
+          "RB",
+          "LT",
+          "LB",
+          "WEST",
+          "WEST",
+          "RT",
+          "SOUTH",
+          "RIGHT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-HEAL-01",
+        "name": "Second Wind",
+        "category": "player",
+        "effect": "full health and armour",
+        "sequence": [
+          "RIGHT",
+          "NORTH",
+          "LEFT",
+          "LT",
+          "LB",
+          "RB",
+          "RIGHT",
+          "EAST"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-AMMO-01",
+        "name": "Deep Pockets",
+        "category": "player",
+        "effect": "no ammunition limit until the session ends",
+        "sequence": [
+          "RIGHT",
+          "WEST",
+          "NORTH",
+          "SOUTH",
+          "RT",
+          "DOWN",
+          "LT",
+          "LEFT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-HEAT-01",
+        "name": "Bring Them",
+        "category": "street_heat",
+        "effect": "raise street heat one level",
+        "sequence": [
+          "RB",
+          "EAST",
+          "LEFT",
+          "NORTH",
+          "LT",
+          "WEST",
+          "LT",
+          "LT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-HEAT-02",
+        "name": "Cool Breeze",
+        "category": "street_heat",
+        "effect": "lower street heat one level",
+        "sequence": [
+          "LEFT",
+          "RB",
+          "DOWN",
+          "RIGHT",
+          "LEFT",
+          "DOWN",
+          "EAST",
+          "LB"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-HEAT-03",
+        "name": "Clean Slate",
+        "category": "street_heat",
+        "effect": "clear street heat",
+        "sequence": [
+          "LEFT",
+          "LT",
+          "EAST",
+          "LT",
+          "LEFT",
+          "NORTH",
+          "SOUTH",
+          "LEFT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-VEH-01",
+        "name": "Call the Streak",
+        "category": "vehicle",
+        "effect": "spawn vehicle",
+        "sequence": [
+          "LEFT",
+          "WEST",
+          "RT",
+          "SOUTH",
+          "LEFT",
+          "RIGHT",
+          "LEFT",
+          "UP"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-SPORT-01"
+      },
+      {
+        "id": "CH-VEH-02",
+        "name": "Call the Courier",
+        "category": "vehicle",
+        "effect": "spawn vehicle",
+        "sequence": [
+          "LEFT",
+          "WEST",
+          "NORTH",
+          "LB",
+          "WEST",
+          "EAST",
+          "WEST",
+          "RB"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-MOTO-01"
+      },
+      {
+        "id": "CH-VEH-03",
+        "name": "Call the Thumper",
+        "category": "vehicle",
+        "effect": "spawn vehicle",
+        "sequence": [
+          "LEFT",
+          "EAST",
+          "RB",
+          "EAST",
+          "RB",
+          "EAST",
+          "LB",
+          "RIGHT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-DIRTBIKE-01"
+      },
+      {
+        "id": "CH-VEH-04",
+        "name": "Call the Hauler",
+        "category": "vehicle",
+        "effect": "spawn vehicle",
+        "sequence": [
+          "NORTH",
+          "NORTH",
+          "LEFT",
+          "EAST",
+          "NORTH",
+          "DOWN",
+          "RT",
+          "LB"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-PICKUP-01"
+      },
+      {
+        "id": "CH-VEH-05",
+        "name": "Call the Skiff",
+        "category": "vehicle",
+        "effect": "spawn vehicle (on water only)",
+        "sequence": [
+          "LT",
+          "RT",
+          "NORTH",
+          "RIGHT",
+          "NORTH",
+          "LB",
+          "EAST",
+          "SOUTH"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-BOAT-01"
+      },
+      {
+        "id": "CH-VEH-06",
+        "name": "Call the Spray Board",
+        "category": "vehicle",
+        "effect": "spawn vehicle (on water only)",
+        "sequence": [
+          "RIGHT",
+          "RB",
+          "RB",
+          "NORTH",
+          "NORTH",
+          "RB",
+          "LT",
+          "RIGHT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-JETSKI-01"
+      },
+      {
+        "id": "CH-VEH-07",
+        "name": "Call the Zippy",
+        "category": "vehicle",
+        "effect": "spawn vehicle",
+        "sequence": [
+          "LT",
+          "UP",
+          "RT",
+          "RT",
+          "WEST",
+          "EAST",
+          "RIGHT",
+          "WEST"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true,
+        "vehicle": "VH-SCOOTER-01"
+      },
+      {
+        "id": "CH-WX-01",
+        "name": "Blue Sky",
+        "category": "world",
+        "effect": "clear weather",
+        "sequence": [
+          "LT",
+          "WEST",
+          "LEFT",
+          "LB",
+          "SOUTH",
+          "LB",
+          "EAST",
+          "EAST"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-WX-02",
+        "name": "Squall Line",
+        "category": "world",
+        "effect": "tropical squall",
+        "sequence": [
+          "LEFT",
+          "UP",
+          "DOWN",
+          "WEST",
+          "LEFT",
+          "LT",
+          "NORTH",
+          "WEST"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-TIME-01",
+        "name": "Slow Riddim",
+        "category": "world",
+        "effect": "slow motion, toggles",
+        "sequence": [
+          "DOWN",
+          "DOWN",
+          "RT",
+          "RIGHT",
+          "NORTH",
+          "LEFT",
+          "LB",
+          "RIGHT"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-MOVE-01",
+        "name": "Flying Fish",
+        "category": "player",
+        "effect": "fast swimming, toggles",
+        "sequence": [
+          "RT",
+          "LEFT",
+          "LB",
+          "RB",
+          "RT",
+          "SOUTH",
+          "RT",
+          "SOUTH"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-MOVE-02",
+        "name": "Moon Step",
+        "category": "player",
+        "effect": "high jump, toggles",
+        "sequence": [
+          "NORTH",
+          "DOWN",
+          "LT",
+          "UP",
+          "UP",
+          "SOUTH",
+          "EAST",
+          "DOWN"
+        ],
+        "gate": null,
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      },
+      {
+        "id": "CH-FLY-01",
+        "name": "Sky Lane Pass",
+        "category": "vehicle",
+        "effect": "spawn a personal flyer",
+        "sequence": [
+          "NORTH",
+          "EAST",
+          "LEFT",
+          "UP",
+          "LT",
+          "LEFT",
+          "SOUTH",
+          "UP"
+        ],
+        "gate": "flight-streaming",
+        "state": "transient_adr0048",
+        "marks_save_as_cheated": true
+      }
+    ]
   }
 }

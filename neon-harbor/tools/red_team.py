@@ -187,6 +187,39 @@ def scan(root):
     except (KeyError, TypeError, AttributeError) as exc:
         refs.append(f"registry shape is wrong: {exc!r}")
     check("RT8 crew, radio, service and geodata references all resolve", not refs, "; ".join(refs))
+
+    bad = []
+    try:
+        cc = data["services.json"]["cheat_codes"]
+        tokens, length, codes = set(cc["input_tokens"]), cc["sequence_length"], cc["codes"]
+        vehicles = {v["id"] for v in data["vehicles.json"]["vehicles"]}
+        seen = {}
+        for c in codes:
+            seq = c.get("sequence")
+            if not isinstance(seq, list) or len(seq) != length or not set(seq) <= tokens:
+                bad.append(f"{c.get('id')}: sequence must be {length} known input tokens")
+                continue
+            if tuple(seq) in seen:
+                bad.append(f"{c['id']}: same sequence as {seen[tuple(seq)]}")
+            seen[tuple(seq)] = c["id"]
+            if c.get("category") == "vehicle" and "vehicle" in c and c["vehicle"] not in vehicles:
+                bad.append(f"{c['id']}: unknown vehicle {c['vehicle']}")
+            if "FLY" in c["id"] and c.get("gate") != "flight-streaming":
+                bad.append(f"{c['id']}: flight cheat must carry the flight gate")
+            if c.get("marks_save_as_cheated") is not True:
+                bad.append(f"{c['id']}: must mark the save as cheated")
+            text = (str(c.get("name", "")) + " " + str(c.get("effect", ""))).lower()
+            if any(w in text for w in ("currency", "money", "cash", "$")):
+                bad.append(f"{c['id']}: a cheat may not grant currency")
+            if c.get("category") == "story_meter":
+                bad.append(f"{c['id']}: a cheat may not change a story meter")
+        rules = " ".join(cc.get("rules", []))
+        for needle in ("single-player only", "no cheat grants currency", "story meter"):
+            if needle not in rules:
+                bad.append(f"rule missing: {needle}")
+    except (KeyError, TypeError, AttributeError) as exc:
+        bad.append(f"cheat_codes block is missing or malformed: {exc!r}")
+    check("RT9 cheat codes are original-format, unique, gated and currency-free", not bad, "; ".join(bad))
     return out
 
 
@@ -261,6 +294,13 @@ def build_attacks(term):
         ("walls", "banned word in Source/ in a file named like the doctor", lambda t: write(t, os.path.join("Source", "repo_doctor.sh"), term + "\n")),
         ("walls", "banned word in a prototype", lambda t: edit_text(t, os.path.join("prototypes", "crate-run", "index.html"), lambda s: s.replace("ZINC ROOF SOUNDHALL", term.upper() + " SOUNDHALL"))),
         ("walls", "invisible-split banned word in a tools/ file", lambda t: write(t, os.path.join("tools", "notes.txt"), term[:2] + "\u200b" + term[2:] + "\n")),
+        # --- cheat codes ---
+        ("cheats", "two cheats share one sequence", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][1].update(sequence=d["cheat_codes"]["codes"][0]["sequence"]))),
+        ("cheats", "cheat that grants currency", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][3].update(effect="full health, armour and money"))),
+        ("cheats", "cheat spawning a vehicle that does not exist", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][8].update(vehicle="VH-TANK-99"))),
+        ("cheats", "flight cheat with its gate removed", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][-1].update(gate=None))),
+        ("cheats", "single-player rule deleted", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"].update(rules=d["cheat_codes"]["rules"][1:]))),
+        ("cheats", "cheat that edits a story meter", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][5].update(category="story_meter"))),
         # --- multiplayer budget ---
         ("net", "negative object count to hide bandwidth", lambda t: edit_json(t, "services.json", lambda d: mp(d)["replication_classes"][0]["relevant_count"].update(T0=-500))),
         ("net", "zero-byte updates", lambda t: edit_json(t, "services.json", lambda d: [c.update(bytes_per_update=0) for c in mp(d)["replication_classes"]])),

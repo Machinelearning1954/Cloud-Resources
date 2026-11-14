@@ -22,3 +22,4 @@
 | [0055](ADR-0055-dubai-smart-city.md) | Dubai as a Near-Future Smart City + Four Systems from Reference Videos | PROPOSED |
 | [0056](ADR-0056-story.md) | Story — "Two Tides" (5 acts, 48 missions outlined) | PROPOSED |
 | [0057](ADR-0057-multiplayer.md) | Multiplayer — Opt-In, Server-Authoritative, Budgeted | PROPOSED (amends rule §0) |
+| [0058](ADR-0058-cheat-codes.md) | Cheat Codes — Original Sequences, Single-Player Only | PROPOSED |

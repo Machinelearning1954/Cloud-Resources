@@ -48,7 +48,7 @@
   #drop:disabled { opacity: .35; border-color: var(--line); }
   #toast { position: absolute; left: 50%; transform: translateX(-50%); top: 54px; max-width: min(92%, 520px);
            background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px;
-           font-size: 14px; text-align: center; }
+           font-size: 14px; text-align: center; z-index: 5; }
   #card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
           background: rgba(6, 12, 20, .78); padding-block: 16px;
           padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -64,6 +64,11 @@
   .big { background: var(--sodium); color: #1b1206; border: 0; border-radius: 6px; padding: 10px 16px;
          font: 700 16px var(--display); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
   .big.alt { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .pad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; margin-top: 8px; }
+  .key { height: 44px; background: var(--night); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+         font: 600 12px var(--body); cursor: pointer; }
+  .key:focus-visible { outline: 2px solid var(--sodium); outline-offset: 2px; }
+  #code { font: 700 18px var(--display); letter-spacing: 4px; min-height: 24px; color: var(--sodium); }
 </style>
 
 <div id="stage">
@@ -97,6 +102,8 @@ const config = {
   patrolRamp:   { value: 7,   min: 0,   max: 40,  step: 1 },    // extra px/s per crate delivered
   maxPatrols:   { value: 5,   min: 1,   max: 5,   step: 1 },
   pickRadius:   { value: 34,  min: 16,  max: 80,  step: 2 },
+  slowSeconds:  { value: 30,  min: 5,   max: 120, step: 5 },    // how long the Slow Riddim code lasts
+  bonusSeconds: { value: 30,  min: 5,   max: 120, step: 5 },    // clock time the Late Doors code gives back
 };
 const tune = new Proxy({}, { get: (_, k) => config[k].value });
 
@@ -135,6 +142,21 @@ const CAST = [ // every figure, drawn in code; hair ids are from the project's h
   { name: "Foot patrol",        hair: "cap", skin: "#7a4a2b", shirt: "#2c3f66", note: "sees you carrying" },
 ];
 
+// Demo cheat codes for this prototype only (ADR 0058): six directions, entered on the pause pad.
+const CODES = [
+  { seq: "UUDLRD", name: "Cool Breeze", does: "heat cleared",            run: () => { S.heat = 0; } },
+  { seq: "LRLRDD", name: "Slow Riddim", does: "patrols at half speed",   run: () => { S.slowUntil = S.t + tune.slowSeconds; } },
+  { seq: "DDURLU", name: "Late Doors",  does: "clock wound back",        run: () => { S.t = Math.max(0, S.t - tune.bonusSeconds); S.slowUntil = Math.max(0, S.slowUntil - tune.bonusSeconds); } },
+];
+let typed = "";
+function enterCode(d) {
+  if (scene !== "pause") return;
+  typed = (typed + d).slice(-6);
+  const hit = CODES.find((c) => c.seq === typed);
+  if (hit) { hit.run(); S.cheated = true; typed = ""; say(`Code: ${hit.name} — ${hit.does}. This run no longer counts.`); say.until = S.t + 6; }
+  const el = document.getElementById("code"); if (el) el.textContent = typed.split("").join(" ");
+}
+
 /* ---------------- deterministic helpers ---------------- */
 let seed = 20261114;
 const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
@@ -164,7 +186,7 @@ function newPatrol(i) {
 }
 function reset() {
   seed = 20261114;
-  S = { t: 0, heat: 0, delivered: 0, carrying: false, stash: null, cool: 0, seen: false, result: "",
+  S = { t: 0, heat: 0, delivered: 0, carrying: false, stash: null, cool: 0, seen: false, result: "", cheated: false, slowUntil: 0,
         player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0 },
         patrols: [newPatrol(0)],
         peds: Array.from({ length: 8 }, (_, i) => {
@@ -209,7 +231,7 @@ function step() {
   // patrols follow their loops and look ahead
   const cosHalf = Math.cos(tune.seeHalfAngle * Math.PI / 180); S.seen = false;
   for (const g of S.patrols) {
-    const pts = g.route.pts, speed = (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1);
+    const pts = g.route.pts, speed = (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
     let next = g.foot ? g.leg + g.dir : (g.leg + 1) % pts.length;
     if (g.foot && (next < 0 || next >= pts.length)) { g.dir = -g.dir; next = g.leg + g.dir; }
     const tx = pts[next][0], ty = pts[next][1], d = Math.hypot(tx - g.x, ty - g.y);
@@ -433,12 +455,17 @@ function showCard() {
     <p class="sub">Phone: drag anywhere to move, tap Drop. Keyboard: arrows or WASD, Space to drop or pick up, P pause, M sound.</p>
     <div class="row">${btn("go", "Start")}${btn("cast", "Cast", true)}</div>`;
   else if (scene === "figures") box.innerHTML = "";
-  else if (scene === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>`;
-  else if (scene === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><div class="row">${btn("again", "Play again")}</div>`;
+  else if (scene === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>
+    <p class="sub">Codes: tap six directions (or use the arrow keys). Try Up Up Down Left Right Down.</p>
+    <div id="code" aria-live="polite"></div>
+    <div class="pad"><span></span><button class="key" data-d="U" type="button">Up</button><span></span>
+      <button class="key" data-d="L" type="button">Left</button><button class="key" data-d="D" type="button">Down</button><button class="key" data-d="R" type="button">Right</button></div>`;
+  else if (scene === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ''}<div class="row">${btn("again", "Play again")}</div>`;
   else box.innerHTML = `<h1>${S.result === "lost-heat" ? "Too much <span>heat</span>" : "Doors <span>stayed shut</span>"}</h1>
-    <p>${S.result === "lost-heat" ? "A patrol watched you carry for too long." : "Seven o'clock came with the stack unfinished."} You delivered ${S.delivered} of ${tune.cratesToWin}.</p><div class="row">${btn("again", "Try again")}</div>`;
+    <p>${S.result === "lost-heat" ? "A patrol watched you carry for too long." : "Seven o'clock came with the stack unfinished."} You delivered ${S.delivered} of ${tune.cratesToWin}.</p>${S.cheated ? '<p class="sub">Codes were used on this run.</p>' : ''}<div class="row">${btn("again", "Try again")}</div>`;
   if (scene === "figures") { $("card").hidden = true; $("hud").hidden = true; say("Tap or press any key to go back"); return; }
-  const go = $("go"), again = $("again"), cast = $("cast");
+  const go = $("go"), again = $("again"), cast = $("cast"); typed = "";
+  for (const k of box.querySelectorAll(".key")) k.onclick = () => enterCode(k.dataset.d);
   if (go) go.onclick = () => { if (scene === "title") reset(); scene = "play"; sound(); showCard(); say(S.t ? "" : "Walk into the crate pile to pick one up."); };
   if (again) again.onclick = () => { reset(); beat.layers = 0; scene = "play"; sound(); showCard(); say("Walk into the crate pile to pick one up."); };
   if (cast) cast.onclick = () => { scene = "figures"; showCard(); };
@@ -450,6 +477,7 @@ function setMute() { muted = !muted; $("mute").textContent = muted ? "Muted" : "
 function leaveFigures() { if (scene === "figures") { scene = "title"; say(""); showCard(); return true; } return false; }
 function press(k) {
   if (leaveFigures()) return;
+  if (scene === "pause" && k.indexOf("Arrow") === 0) return enterCode(k[5]);
   if (k === " " || k === "Space") toggleCrate(); else if (k === "p" || k === "Escape") pause(); else if (k === "m") setMute();
   else if (k === "Enter" && scene !== "play") { const b = $("go") || $("again"); if (b) b.click(); }
 }
@@ -477,6 +505,7 @@ window.game = {
   press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
   step(n) { manual = true; for (let i = 0; i < (n || 1); i++) step(); hud(); draw(); },
   start() { reset(); beat.layers = 0; scene = "play"; showCard(); },
+  code(seq) { if (scene === "play") pause(); for (const d of seq) enterCode(d); },
 };
 reset(); fit(); showCard(); requestAnimationFrame(frame);
 </script>

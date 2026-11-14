@@ -31,9 +31,9 @@ compile-time law, not documentation.
 
 | Path | Contents | State |
 | --- | --- | --- |
-| `docs/ADR/` | Architecture decision records (INDEX + 16 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio), 0055 (near-future Dubai), 0056 (story), 0057 (multiplayer)** |
+| `docs/ADR/` | Architecture decision records (INDEX + 17 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio), 0055 (near-future Dubai), 0056 (story), 0057 (multiplayer), 0058 (cheat codes)** |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–76 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–77 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -102,9 +102,11 @@ density players expect from the genre while every brand, venue and character rem
   free-roam sessions (up to 16) on dedicated servers. Design and budgets only;
   `tools/check_net_budget.py` checks the arithmetic. Rule §0 is amended: single-player
   stays fully offline.
-- **Red team (ledger row 75)** — `tools/red_team.py` sabotages a copy of the repo in 44
+- **Red team (ledger row 75)** — `tools/red_team.py` sabotages a copy of the repo in 50
   ways and confirms a checker catches each one. The first run found 18 gaps, and a later review found 3 more; all are
-  closed. It also adds 8 scans the doctor's text search cannot do.
+  closed. It also adds 9 scans the doctor's text search cannot do.
 - **First playable (ledger row 76)** — `prototypes/crate-run/`: one Kingston block, carry
   speaker crates past patrols that only notice you while you carry. A prototype of one
   mechanic in the browser, not the game and not Unreal.
+- **Cheat codes (ADR 0058, ledger row 77)** — 21 original codes in `services.json`, single-player
+  only, none granting currency. Crate Run has three demo codes on its pause-menu pad.
