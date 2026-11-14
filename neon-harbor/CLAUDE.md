@@ -90,7 +90,7 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–75 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–76 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations + ADR 0055 near-future Dubai
@@ -103,6 +103,8 @@ tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
 tools/check_engine_config.py  11-check static test for that file; run it after any edit
 tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
-tools/red_team.py           8 extra scans + 43 sabotage attacks on the checkers (ledger row 75)
+tools/red_team.py           8 extra scans + 44 sabotage attacks on the checkers (ledger row 75)
+prototypes/crate-run/       playable browser prototype of one mechanic (ledger row 76); throwaway,
+                            never imported by game code; walls apply here too
 Source/README.md            honest NOT-RECOVERED marker
 ```

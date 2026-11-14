@@ -1,0 +1,1 @@
+Nearest game: top-down stealth-delivery arcade games in general (vision-cone patrols, carry an item home); this one differs in that patrols only react while you are carrying, the item can be put down and recovered, and each delivery builds the music and adds a patrol.

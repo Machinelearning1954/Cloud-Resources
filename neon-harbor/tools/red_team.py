@@ -102,7 +102,7 @@ def scan(root):
 
     raw_hits, odd = [], []
     doctor_rel = os.path.join("tools", "repo_doctor.sh")
-    for base in ("data", "Config", "tools", "Source"):
+    for base in ("data", "Config", "tools", "Source", "prototypes"):
         for dirpath, dirs, files in os.walk(os.path.join(root, base)):
             dirs[:] = [d for d in dirs if d != "__pycache__"]
             for name in files:
@@ -133,7 +133,7 @@ def scan(root):
                 cp = ord(ch)
                 if cp in INVISIBLE or any(lo <= cp <= hi for lo, hi in LOOKALIKE_BLOCKS):
                     odd.append(f"data/registries/{f}: U+{cp:04X} (decoded)")
-    check("RT4 walls hold on every file in data/, Config/, tools/ and Source/, whatever its type", not raw_hits,
+    check("RT4 walls hold on every file in data/, Config/, tools/, Source/ and prototypes/", not raw_hits,
           "; ".join(sorted(set(raw_hits))))
     check("RT5 no invisible or look-alike characters in any content folder", not odd, "; ".join(sorted(set(odd))))
 
@@ -259,6 +259,7 @@ def build_attacks(term):
         ("registry", "source code faked into Source/", lambda t: write(t, os.path.join("Source", "Fake.cpp"), "// original\n")),
         ("walls", "look-alike banned word in Source/README.md", lambda t: edit_text(t, os.path.join("Source", "README.md"), lambda s: s + lookalike + "\n")),
         ("walls", "banned word in Source/ in a file named like the doctor", lambda t: write(t, os.path.join("Source", "repo_doctor.sh"), term + "\n")),
+        ("walls", "banned word in a prototype", lambda t: edit_text(t, os.path.join("prototypes", "crate-run", "index.html"), lambda s: s.replace("ZINC ROOF SOUNDHALL", term.upper() + " SOUNDHALL"))),
         ("walls", "invisible-split banned word in a tools/ file", lambda t: write(t, os.path.join("tools", "notes.txt"), term[:2] + "\u200b" + term[2:] + "\n")),
         # --- multiplayer budget ---
         ("net", "negative object count to hide bandwidth", lambda t: edit_json(t, "services.json", lambda d: mp(d)["replication_classes"][0]["relevant_count"].update(T0=-500))),

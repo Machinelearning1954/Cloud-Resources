@@ -445,9 +445,47 @@ binding.)
   the doctor.
 - **Close:** ADOPT → `tools/red_team.py`, hardened checkers, CI step.
 
+## Row 76 — User directive: use the Claude Code Game Studios repository
+
+- **Class:** REFERENCE (method) + ADOPT (one prototype) + DEFER (full install)
+- **Received (2026-11-14):** https://github.com/Donchitos/Claude-Code-Game-Studios with
+  a request to use it to finish the game.
+- **What it is (read at release 1.3.0, commit abc0de7, MIT licence):** a template that
+  sets Claude Code up as a game studio: 49 agent definitions, about 70 skills, 15
+  hooks and 54 helper scripts.
+  - Its own README says what has been shown to work: building a small playable
+    **browser** game from a one-page brief, and growing one such game.
+  - The same README says the engine route (including Unreal) is **not yet shown**.
+- **Audit before use:**
+  - The hooks and scripts were searched for network and code-execution calls. The
+    only network use found is a daily check of its own release page and an optional
+    download of a 3D library.
+  - That was a search, not a full read of every script. Nothing from the clone was
+    executed.
+- **DEFER — installing the template:**
+  - It must sit at a repository's root, and the root here is the Iris capstone.
+  - Its 15 hooks would run in every session and intercept every commit and push.
+  - Its collaboration rules (ask before every write) conflict with this repo's.
+  - Revisit once Neon Harbor has its own repository.
+- **ADOPT — its method, by hand:** one-page brief → one playable prototype → check it
+  in a headless browser → mark each brief line built or not assessed. No file was
+  copied from the template.
+- **Result:** `prototypes/crate-run/` — "Crate Run", one Kingston block from Act 1
+  (ADR 0056).
+  - Opened from the file at phone and desktop sizes: no errors; touch and keyboard
+    move the player; a scripted run delivers a crate; win and both lose screens reached.
+  - Two bugs found and fixed by the checks: overlays that never hid, and a crate that
+    jumped back into the player's hands.
+  - Sound and difficulty are **not assessed**. **Not yet played by a person.**
+- **Rule 8:** no comparison to any other title is made. This is a flat 2D prototype
+  of one mechanic, not the game's graphics.
+- **Close:** REFERENCE + ADOPT → `prototypes/crate-run/`; red-team scans now cover
+  `prototypes/` (44 attacks).
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 76** — Crate Run awaits a person's play verdict: proceed, pivot or kill.
 - **Row 74** — multiplayer: all budgets unmeasured; hosting provider, cost, moderation and privacy review to do.
 - **Row 73** — story: writers' room pass and the 48 mission rows are still to do.
 - **Row 70** — `Config/DefaultEngine.ini`: names verified from community sources, rendering untested; hit-lighting value unsettled.
