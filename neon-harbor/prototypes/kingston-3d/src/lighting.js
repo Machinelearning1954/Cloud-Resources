@@ -31,7 +31,7 @@
     [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
     [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
     [0.50, 0xffbe76, 4.80, 0xb6c4f0, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
-    [0.62, 0xff8e4a, 7.60, 0x98a8ee, 0xb4704c, 1.60, 0xf2a874, 0x5a78c0, 1.05, 125],   // the sun is strong here because tod.sun is already under a half: golden hour holds, then the sun goes quickly
+    [0.62, 0xff9a52, 7.60, 0x9cb4ea, 0xb87a4c, 1.60, 0xf2a874, 0x5a78c0, 1.05, 125],   // the sun is strong here because tod.sun is already under a half: golden hour holds, then the sun goes quickly
     [0.72, 0xff6a3c, 7.60, 0x8ea2f0, 0x5c5684, 1.85, 0xa87c98, 0x3c4f9c, 1.08, 130],
     [0.84, 0xff6a3c, 7.60, 0x7890dc, 0x4a5880, 1.62, 0x4c5ea2, 0x1d2c6a, 1.10, 145],
     [1.00, 0xff6a3c, 7.60, 0x6e86d2, 0x525f8a, 1.30, 0x263a72, 0x0f1a44, 1.10, 155],
