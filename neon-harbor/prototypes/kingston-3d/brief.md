@@ -43,7 +43,7 @@ src/main.js       renderer, camera, input, screens, sound, the loop, test hooks
 src/shell.html    page shell and styles
 build.js          joins all of the above and the library into index.html (generated)
 vendor/           three.min.js r160, its licence, checksums
-dev/baseline/     the first crude version of each visual module, kept for --solo builds
+dev/baseline/     the last integrated version of each visual module, used by --solo builds
 dev/              check.js (browser checks), sheet.js and shot.js (screenshots), lock-check.js
 test/             Node tests: rules, saved-run counting, lock crypto. These run in CI.
 ```

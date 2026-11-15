@@ -3,7 +3,8 @@
      node build.js                       -> index.html
      node build.js --check               -> exit 1 if index.html is not what the sources produce
      node build.js --solo people --out dev/out/people.html
-                                         -> that one real module from src/, the other three from dev/baseline/
+                                         -> that one module from src/, the other three from dev/baseline/, which holds
+                                            the last integrated version of each visual module
                                             (so a module can be worked on without the others' unfinished changes) */
 "use strict";
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
