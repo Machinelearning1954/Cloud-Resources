@@ -709,6 +709,27 @@ binding.)
   and no prompt names or imitates another game (rules 1 and 8).
 - **Close:** ADOPT + REFERENCE + POLICY. No clip was generated.
 
+## Row 83 — User directive: "https://arena.ai/video use this to boost the graphics to gta 6 level or better"
+
+- **Class:** REFERENCE + POLICY (DEDUPE of rows 81 and 82)
+- **Received (2026-11-15, verbatim):** "https://arena.ai/video use this to boost the
+  graphics to gta 6 level or better"
+- **The link could not be opened:** the host is outside this session's network allowance,
+  so nothing is recorded about what the site offers today beyond the title the user
+  pasted in row 82 ("Video Arena: Compare the Best AI Video Generators"). PENDING if the
+  user wants its terms read: paste them, or allow the host.
+- **What such a tool can and cannot do for this project:** an AI video generator returns
+  a fixed clip. A game draws new pictures many times a second in answer to the player, so
+  a clip cannot be, or improve, a game's graphics. It can make concept footage from a
+  still.
+- **Not done:** the site was not used by automation. It is a public site meant for people,
+  it would need the user's own session, and no account is created on the user's behalf.
+- **Offered instead, free:** the user can upload one of the ray-traced stills from row 82
+  there themselves with a prompt supplied in the session. Any clip is concept footage
+  under the row 82 policy and is never shown as gameplay.
+- **Refused, as before:** any claim of matching or beating another title's graphics.
+- **Close:** REFERENCE + POLICY. No clip was generated and nothing was spent.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

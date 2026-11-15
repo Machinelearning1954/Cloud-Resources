@@ -1482,24 +1482,24 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const mesh = (geo, mat, shadow) => { const m = new THREE.Mesh(geo, mat); if (shadow) m.castShadow = m.receiveShadow = true; return m; };
 
   /* ---------------- patrol car ---------------- */
-  const XF = 2.14, XR = -2.2, WX = 1.32;   // nose, tail, axles
+  const XF = 2.13, XR = -2.17, WX = 1.32;   // nose, tail, axles
   function carShell() {
     const b = bag(), BODY = lin(P.patrolBody), BAND = lin(P.patrolBand), TRIM = lin(0x22262d), TYRE = lin(0x131417), STEEL = lin(0xaab1b7), UNDER = lin(0x090a0c), G0 = lin(0x0e1620), G1 = lin(0x3a546c);
-    const keys = [[XR, 0.82], [-2.0, 0.93], [-1.48, 0.965], [0.98, 0.955], [1.85, 0.87], [XF, 0.78]];
+    const keys = [[XR, 0.82], [XR + 0.2, 0.93], [-1.48, 0.965], [0.98, 0.955], [1.85, 0.87], [XF, 0.78]];
     const deck = (x) => { for (let k = 1; k < keys.length; k++) if (x <= keys[k][0]) return lerp(keys[k - 1][1], keys[k][1], ease(clamp01((x - keys[k - 1][0]) / (keys[k][0] - keys[k - 1][0])))); return 0.78; };
     const tip = (x) => clamp01(x > 0 ? (x - XF + 0.42) / 0.42 : (XR + 0.42 - x) / 0.42), half = (x) => 0.9 - 0.25 * (1 - sqrt(1 - 0.96 * tip(x) * tip(x)));
     const st = [], flat = (x) => st.push([x, 0.25 + 0.07 * tip(x)]), arch = (xc) => { for (let k = 0; k <= 10; k++) { const a = PI + 0.2 - k * (PI + 0.4) / 10; st.push([xc + 0.4 * cos(a), 0.33 + 0.4 * sin(a)]); } };
-    [XR, -2.185, -2.15, -2.09, -2.0, -1.9, -1.78].forEach(flat); arch(-WX); [-0.8, -0.3, 0.3, 0.8].forEach(flat); arch(WX); [1.78, 1.86, 1.95, 2.03, 2.09, 2.125, XF].forEach(flat);
+    [XR, XR + 0.015, XR + 0.05, XR + 0.11, XR + 0.2, XR + 0.3, XR + 0.42].forEach(flat); arch(-WX); [-0.8, -0.3, 0.3, 0.8].forEach(flat); arch(WX); [XF - 0.36, XF - 0.28, XF - 0.19, XF - 0.11, XF - 0.05, XF - 0.015, XF].forEach(flat);
     // body: an upside-down U at every station, from the sill up over the deck and down again; the sill rises into the wheel arches
     const rings = st.map(([x, yb]) => { const w = half(x), d = deck(x), R = [[yb, w - 0.03], [max(yb, 0.47), w], [max(yb, 0.7), w], [d - 0.1, w - 0.015], [d, w - 0.11], [d + 0.03, (w - 0.11) * 0.5]], ring = R.map(([y, z]) => [x, y, z]);
       ring.push([x, d + 0.04, 0]); for (let k = R.length - 1; k >= 0; k--) ring.push([x, R[k][0], -R[k][1]]); return ring; });
-    loft(b, rings, (i, j) => { const s = min(j, 11 - j), x = (st[i][0] + st[i + 1][0]) / 2; return s === 0 ? (tip(x) > 0.02 ? TRIM : BODY) : s === 1 && x < 1.78 ? BAND : BODY; }, (i, j) => min(j, 11 - j) === 0 && tip((st[i][0] + st[i + 1][0]) / 2) > 0.02 ? SATIN : PAINT);
+    loft(b, rings, (i, j) => { const s = min(j, 11 - j), x = (st[i][0] + st[i + 1][0]) / 2; return s === 0 ? (tip(x) > 0.02 ? TRIM : BODY) : s === 1 && x < 1.78 || s > 3 && x < -1.53 ? BAND : BODY; }, (i, j) => min(j, 11 - j) === 0 && tip((st[i][0] + st[i + 1][0]) / 2) > 0.02 ? SATIN : PAINT);
     cap(b, rings[rings.length - 1], [1, 0, 0], BODY, PAINT); cap(b, rings[0], [-1, 0, 0], BODY, PAINT);
     solid(b, BOX, at(-0.03, 0.5, 0, 4.05, 0.6, 1.3), UNDER, MATTE);
     // cabin: glass all round, pillars and roof in body colour, a navy hoop over the roof under the light bar
     const cab = [[0.98, 0, 0.8], [0.22, 1, 0.63], [-0.02, 1, 0.63], [-0.14, 1, 0.63], [-0.24, 1, 0.63], [-0.36, 1, 0.63], [-0.8, 1, 0.63], [-1.48, 0, 0.79]];
-    const cabin = cab.map(([x, up, wr]) => { const yb = deck(x) - 0.004, yr = up ? 1.4 : yb, wb = up ? 0.81 : wr, R = [[yb, wb], [yr, wr], [yr + (up ? 0.006 : 0), wr - 0.07]], ring = R.map(([y, z]) => [x, y, z]);
-      ring.push([x, yr + (up ? 0.03 : 0.012), 0]); for (let k = 2; k >= 0; k--) ring.push([x, R[k][0], -R[k][1]]); return ring; });
+    const cabin = cab.map(([x, up, wr]) => { const d = deck(x), R = up ? [[d - 0.03, 0.81], [1.4, wr], [1.406, wr - 0.07]] : [[d - 0.006, wr], [d - 0.006, wr], [d + 0.014, wr - 0.07]], ring = R.map(([y, z]) => [x, y, z]);   // the two flat ends follow the crown of the bonnet and the boot
+      ring.push([x, up ? 1.43 : d + 0.05, 0]); for (let k = 2; k >= 0; k--) ring.push([x, R[k][0], -R[k][1]]); return ring; });
     const glassAt = (i, s) => s === 0 ? i !== 3 && i !== 6 : s === 2 && (i === 0 || i === 6);
     loft(b, cabin, (i, j) => { const s = min(j, 5 - j);
       if (!glassAt(i, s)) return i >= 2 && i <= 4 && (s > 0 || i === 3) ? BAND : BODY;
@@ -1510,7 +1510,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     solid(b, BOX, at(XF + 0.004, 0.61, 0, 0.02, 0.17, 0.8), UNDER, SATIN);                                                // grille
     for (const s of [-1, 1]) {
       solid(b, BOX, at(XF + 0.07, 0.56, s * 0.27, 0.05, 0.46, 0.05), TRIM, SATIN);                                         // push bar
-      solid(b, BOX, at(0.84, 0.99, s * 0.935, 0.1, 0.075, 0.14), TRIM, SATIN);                                              // mirror
+      solid(b, BOX, at(0.84, 0.99, s * 0.925, 0.1, 0.075, 0.14), TRIM, SATIN);                                              // mirror
       for (const x of [0.8, -0.19]) solid(b, BOX, at(x, 0.57, s * 0.9, 0.014, 0.48, 0.012), TRIM, SATIN);                  // door seams
       for (const x of [-0.06, -0.8]) solid(b, BOX, at(x, 0.77, s * 0.9, 0.14, 0.028, 0.03), TRIM, SATIN);                  // door handles
       for (const x of [WX, -WX]) {
@@ -1519,6 +1519,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       }
     }
     for (const y of [0.45, 0.67]) solid(b, BOX, at(XF + 0.07, y, 0, 0.05, 0.05, 0.9), TRIM, SATIN);
+    solid(b, BOX, at(XR - 0.006, 0.55, 0, 0.012, 0.12, 0.44), lin(0xe6e2d2), MATTE);                                              // a blank plate
+    solid(b, cyl(8), at(0.9, 1.07, -0.87, 0.12, 0.13, 0.12, 0, 0, PI / 2), TRIM, SATIN);                                          // spot lamp on the pillar
     solid(b, BOX, at(-0.19, 1.45, 0, 0.32, 0.05, 1.22), TRIM, SATIN); solid(b, BOX, at(-0.19, 1.5, 0, 0.26, 0.08, 0.12), STEEL, METAL);   // light bar: base and centre block
     return finish(b, 28);
   }
@@ -1530,14 +1532,16 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     for (const s of [-1, 1]) {
       solid(b, BOX, at(-0.19, 1.505, s * 0.34, 0.26, 0.09, 0.5), bar[s < 0 ? 0 : 1], 0);
       solid(b, BOX, at(XF - 0.07, 0.635, s * 0.55, 0.1, 0.13, 0.3, 0, -s * 0.55, 0), mul(HEAD, 1.15), 0);
-      solid(b, BOX, at(XR + 0.05, 0.745, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
+      solid(b, BOX, at(XR + 0.075, 0.745, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
+      solid(b, BOX, at(XF - 0.2, 0.5, s * 0.775, 0.13, 0.06, 0.05, 0, -s * 1.0, 0), [1, 0.5, 0.08], 0);
     }
+    solid(b, BOX, at(XR - 0.004, 0.745, 0, 0.02, 0.045, 0.82), mul(TAIL, 0.5), 0);
     return finish(b, -1);
   });
   const carGlow = (k) => once("carGlow" + k, () => {
     const b = bag(), bar = barSet(k), wash = k === 0 ? 0.07 : 0.2;
     glow(b, -0.03, 0.03, 0, 3.15, 1.8, dark(0.62));                                                                         // contact shadow
-    glow(b, 6.4, 0.05, 0, 4.4, 2.5, light(HEAD, 0.13)); for (const s of [-1, 1]) glow(b, 3.7, 0.052, s * 0.55, 1.9, 1.0, light(HEAD, 0.09));   // headlight pools
+    glow(b, 6.2, 0.05, 0, 4.2, 2.2, light(HEAD, 0.07)); for (const s of [-1, 1]) glow(b, 3.9, 0.052, s * 0.55, 2.0, 0.9, light(HEAD, 0.1), s * 0.06);   // headlight pools
     glow(b, -3.2, 0.05, 0, 1.5, 1.5, light(TAIL, 0.1));
     for (const s of [-1, 1]) {
       glow(b, XF + 0.06, 0.86, s * 0.55, 0.42, 0.42, light(HEAD, 0.5)); glow(b, XR - 0.02, 0.96, s * 0.57, 0.3, 0.3, light(TAIL, 0.4));
@@ -1559,7 +1563,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     return finish(b, 30);
   }
   function speakerGeo() {
-    const b = bag(), CAB = lin(P.speaker), LIP = mul(CAB, 1.5), STEEL = lin(0xb8c0c6), DARK = lin(0x08080a), FRAME = lin(0x3a3b45), CONE0 = lin(0x5c5f6e), CONE1 = lin(0x202127), DOME = lin(0x8b8fa0), RIM = lin(0x8a5318), BAFFLE = lin(0x2c2d36);
+    const b = bag(), CAB = lin(P.speaker), LIP = mul(CAB, 1.5), STEEL = lin(0xb8c0c6), DARK = lin(0x08080a), FRAME = lin(0x3a3b45), CONE0 = lin(0x5c5f6e), CONE1 = lin(0x202127), DOME = lin(0x8b8fa0), RIM = lin(0x8a5318), BAFFLE = lin(0x2c2d36), INK = mul(lin(P.ink), 0.62);
     solid(b, BOX, at(-0.065, 1, 0, 1.05, 1.96, 1.46), (p) => mul(CAB, 0.8 + 0.35 * p[1]), SATIN);                           // the box; its front is a recessed baffle
     quad(b, [0.462, 0.02, 0.73], [0.462, 0.02, -0.73], [0.462, 1.98, -0.73], [0.462, 1.98, 0.73], [mul(BAFFLE, 0.7), mul(BAFFLE, 0.7), BAFFLE, BAFFLE], MATTE);
     for (const y of [0.045, 1.955]) solid(b, BOX, at(0.525, y, 0, 0.13, 0.06, 1.46), LIP, SATIN);
@@ -1570,7 +1574,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       for (const y of [0.05, 1.95]) solid(b, BOX, at(sx * 0.553, y, sz * 0.703, 0.104, 0.104, 0.104), mul(STEEL, 1.1), METAL);
       solid(b, cyl(10), at(sx * 0.36, 1.985, sz * 0.5, 0.1, 0.02, 0.1), mul(STEEL, 0.5), METAL);                        // stacking cups
     }
-    for (const s of [-1, 1]) { solid(b, BOX, at(0, 1.25, s * 0.733, 0.44, 0.2, 0.012), DARK, SATIN); solid(b, BOX, at(0, 1.25, s * 0.762, 0.3, 0.032, 0.032), STEEL, METAL); }   // side handles
+    for (const s of [-1, 1]) { solid(b, BOX, at(0, 1.25, s * 0.733, 0.44, 0.2, 0.012), DARK, SATIN); solid(b, BOX, at(0, 1.25, s * 0.75, 0.3, 0.032, 0.032), STEEL, METAL); }   // side handles
+    for (let q = 0; q < 4; q++) ann(b, 0.17, 0.235, q * PI / 2 + 0.1, (q + 1) * PI / 2 - 0.1, 5, INK, INK, 1.982); ann(b, 0, 0.075, 0, TAU, 12, INK, INK, 1.982);   // the mark, stencilled on the lid
     const prof = [[0.46, 0.385], [0.575, 0.385], [0.579, 0.358], [0.579, 0.315], [0.591, 0.294], [0.577, 0.272], [0.494, 0.1], [0.522, 0.066], [0.533, 0]];
     const tone = [[LIP, LIP], [RIM, RIM], [FRAME, FRAME], [DARK, mul(FRAME, 0.7)], [mul(FRAME, 0.7), DARK], [CONE0, CONE1], [mul(DOME, 0.7), DOME], [DOME, mul(DOME, 1.3)]], feel = [SATIN, GLOW, SATIN, RUBBER, RUBBER, MATTE, SATIN, SATIN];
     for (const cy of [0.475, 1.265]) {
@@ -1586,7 +1591,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   /* ---------------- coconut palm, skiff ---------------- */
   function palmGeo(i) {
     const b = bag(), TRUNK = lin(P.trunk), LIME = lin(0xe6dfce), F1 = lin(P.frond), F0 = lin(P.frondDark), STEM = lin(0x9aa658), DRY = lin(0xa98d52), OLIVE = lin(0x8d9a46);
-    const lean = 0.45 + 0.8 * rnd(i, 1), dir = rnd(i, 2) * TAU, H = 5.2 + 0.45 * rnd(i, 3), n = 7 + floor(rnd(i, 4) * 3), N = 16;
+    const lean = 0.45 + 0.8 * rnd(i, 1), dir = rnd(i, 2) * TAU, H = 5.12 + 0.45 * rnd(i, 3), n = 7 + floor(rnd(i, 4) * 3), N = 16;
     const pts = []; for (let k = 0; k <= N; k++) { const t = k / N, o = lean * (1 - (1 - t) * (1 - t)); pts.push([cos(dir) * o, H * t, sin(dir) * o]); }
     // trunk: leans out of the ground and straightens; ringed with leaf scars, whitewashed to shoulder height
     tube(b, pts, (k) => (0.2 - 0.075 * k / N + 0.1 * Math.exp(-k / N * 16)) * (k & 1 ? 1.07 : 1), 7, (k) => mul(pts[k][1] < 0.8 ? LIME : TRUNK, (k & 1 ? 0.78 : 1.06) * (pts[k][1] < 0.8 ? 0.92 : 1)), MATTE, [0.31, 0.02, 0.95]);
@@ -1612,24 +1617,24 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     return finish(b, 62);
   }
   function skiffGeo(hex) {
-    const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.7), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
+    const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.22), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
     const tab = (t, x) => { for (let k = 1; k < xs.length; k++) if (x <= xs[k]) return lerp(t[k - 1], t[k], clamp01((x - xs[k - 1]) / (xs[k] - xs[k - 1]))); return t[t.length - 1]; };
     const mirror = (x, R) => { const ring = R.map(([y, z]) => [x, y, z]); for (let k = R.length - 2; k >= 0; k--) ring.push([x, R[k][0], -R[k][1]]); return ring; };
     const outer = xs.map((x, k) => { const w = beams[k], s = sheers[k], d = drafts[k]; return mirror(x, [[s, w], [s - 0.11, w * 0.99], [s * 0.5, w * 0.95], [-d * 0.2, w * 0.78], [-d * 0.75, w * 0.42], [-d, 0]]); });
-    const inner = xs.map((x, k) => { const w = beams[k], s = sheers[k], f = 0.07 - drafts[k]; return mirror(k ? x : x + 0.05, [[s, max(0.004, w - 0.05)], [s * 0.5, max(0.003, w * 0.95 - 0.05)], [f + 0.05, max(0.002, w * 0.74 - 0.03)], [f, w * 0.42], [f, 0]]); });
+    const inner = xs.map((x, k) => { const w = beams[k], s = sheers[k], f = 0.05; return mirror(k ? x : x + 0.05, [[s, max(0.004, w - 0.05)], [s * 0.55, max(0.003, w * 0.95 - 0.05)], [f + 0.05, max(0.002, w * 0.78 - 0.03)], [f, w * 0.45], [f, 0]]); });   // the floor sits just above the waterline: the harbour is one flat sheet and would show through a deeper hull
     loft(b, outer, (i, j) => { const s = min(j, 9 - j); return s === 0 ? CREAM : mul(HULL, [1, 1, 0.82, 0.6, 0.5][s]); }, PAINT);
     loft(b, inner, (i, j) => { const s = min(j, 7 - j); return s < 2 ? mul(INNER, s ? 0.86 : 1) : mul(FLOOR, 0.85 + 0.3 * rnd(i, j)); }, (i, j) => min(j, 7 - j) < 2 ? PAINT : MATTE, { inward: true });
-    for (let k = 0; k + 1 < xs.length; k++) for (const j of [0, 1]) { const o = j ? outer[k].length - 1 : 0, q = j ? inner[k].length - 1 : 0; upQuad(b, outer[k][o], outer[k + 1][o], inner[k + 1][q], inner[k][q], RAIL, VARNISH); }   // gunwale
+    for (let k = 0; k + 1 < xs.length; k++) for (const j of [0, 1]) { const o = j ? outer[k].length - 1 : 0, q = j ? inner[k].length - 1 : 0; upQuad(b, outer[k][o], outer[k + 1][o], inner[k + 1][q], inner[k][q], CREAM, PAINT); }   // gunwale
     cap(b, outer[0], [-1, 0, 0], mul(HULL, 0.9), PAINT); cap(b, inner[0], [1, 0, 0], INNER, PAINT);
-    upQuad(b, outer[0][0], inner[0][0], inner[0][inner[0].length - 1], outer[0][outer[0].length - 1], RAIL, VARNISH);
+    upQuad(b, outer[0][0], inner[0][0], inner[0][inner[0].length - 1], outer[0][outer[0].length - 1], CREAM, PAINT);
     for (const [x, w] of [[-1.85, 0.34], [-0.35, 0.26], [1.0, 0.26]]) solid(b, BOX, at(x, tab(sheers, x) - 0.13, 0, w, 0.045, 2 * tab(beams, x) - 0.08), mul(WOOD, 0.9 + 0.2 * rnd(floor(x * 10), 3)), VARNISH);   // thwarts
     const fx0 = 1.9, y0 = tab(sheers, fx0) - 0.035, w0 = tab(beams, fx0) - 0.05; tri(b, [fx0, y0, w0], [2.64, 0.6, 0], [fx0, y0, -w0], mul(HULL, 1.12), mul(HULL, 1.12), mul(HULL, 1.12), PAINT);      // foredeck
     solid(b, BOX, at(fx0 + 0.01, y0 - 0.03, 0, 0.04, 0.07, 2 * w0), RAIL, VARNISH);
     for (const s of [-1, 1]) { solid(b, BOX, at(0.05, 0.325, s * 0.5, 2.5, 0.04, 0.05, 0, s * 0.05, 0), WOOD, VARNISH); solid(b, BOX, at(1.5, 0.33, s * 0.435, 0.56, 0.022, 0.14, 0, s * 0.05, 0), mul(WOOD, 1.15), VARNISH); }   // oars across the thwarts
-    solid(b, cyl(10), at(-1.05, 0.03, 0.32, 0.3, 0.3, 0.3), lin(0xe8e4d8), SATIN); solid(b, cyl(10), at(-1.05, 0.185, 0.32, 0.26, 0.01, 0.26), lin(0x25303a), MATTE);           // bait bucket
-    solid(b, ball(8, 5), at(0.35, -0.02, -0.22, 0.42, 0.13, 0.3), lin(0x1f5560), MATTE); solid(b, ball(7, 5), at(0.62, 0.05, -0.34, 0.12, 0.12, 0.12), lin(0xff7a2a), SATIN);   // net and float
-    solid(b, new THREE.TorusGeometry(0.17, 0.04, 5, 10), at(1.45, -0.06, 0.05, 1, 1, 1, PI / 2), ROPE, MATTE);
+    solid(b, cyl(10), at(-1.05, 0.19, 0.32, 0.3, 0.28, 0.3), lin(0xe8e4d8), SATIN); solid(b, cyl(10), at(-1.05, 0.335, 0.32, 0.26, 0.01, 0.26), lin(0x25303a), MATTE);           // bait bucket
+    solid(b, ball(8, 5), at(0.35, 0.07, -0.22, 0.42, 0.13, 0.3), lin(0x1f5560), MATTE); solid(b, ball(7, 5), at(0.62, 0.17, -0.34, 0.12, 0.12, 0.12), lin(0xff7a2a), SATIN);   // net and float
+    solid(b, new THREE.TorusGeometry(0.17, 0.04, 5, 10), at(1.45, 0.08, 0.05, 1, 1, 1, PI / 2), ROPE, MATTE);
     solid(b, BOX, at(-2.74, 0.42, 0, 0.1, 0.2, 0.24), GREY, SATIN); solid(b, BOX, at(-2.87, 0.22, 0, 0.09, 0.76, 0.08), GREY, SATIN);                                          // outboard: clamp, leg, cowl, tiller
     solid(b, ball(9, 6), at(-2.86, 0.7, 0, 0.26, 0.17, 0.17), (p) => p[1] > 0.74 ? lin(0xdadfe2) : GREY, PAINT);
     solid(b, BOX, at(-2.5, 0.71, 0.09, 0.56, 0.03, 0.03, 0, 0.22, 0), lin(0x8d949a), METAL);
@@ -1646,16 +1651,16 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     return finish(b, 45);
   }
   function lampGlow() {
-    const b = bag(), A = NH.LAMP_ARM, SODIUM = lin(P.sodium), WARM = [1, 0.6, 0.28];
-    glow(b, A, 0.04, 0, 7.6, 7.6, light(SODIUM, 0.15)); glow(b, A, 0.044, 0, 3.6, 3.6, light(WARM, 0.08));     // the pool: wide sodium, a warmer heart
-    glow(b, A, 5.93, 0, 1.3, 1.3, light(WARM, 0.22)); glow(b, A + 0.02, 6.22, 0, 0.5, 0.5, light([1, 0.82, 0.55], 1.1));   // haze round the head and the glare of the lamp itself
+    const b = bag(), A = NH.LAMP_ARM, SODIUM = [1, 0.43, 0.09], WARM = [1, 0.6, 0.28];   // sodium, a touch yellower than the palette swatch: added over blue night ground the swatch itself turns pink
+    glow(b, A, 0.04, 0, 8, 8, light(SODIUM, 0.27)); glow(b, A, 0.044, 0, 4, 4, light(WARM, 0.09));     // the pool: wide sodium, a warmer heart
+    glow(b, A, 5.93, 0, 0.95, 0.95, light(WARM, 0.16)); glow(b, A + 0.02, 6.22, 0, 0.34, 0.34, light([1, 0.82, 0.55], 1.0));   // haze round the head and the glare of the lamp itself
     return finish(b, -1, true);
   }
 
   /* ---------------- marks on the ground ---------------- */
   function coneGeo(R, half, alert) {
-    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.1, hi = alert ? 0.58 : 0.46;
-    const radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [1, 1, 1, lo + (hi - lo) * Math.pow(r / R, 1.5)];
+    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.1, hi = alert ? 0.56 : 0.44, TINT = [1, 0.78, 0.46];   // the fill is a shade deeper than the edge, so it also shows on pale concrete
+    const radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [TINT[0], TINT[1], TINT[2], lo + (hi - lo) * Math.pow(r / R, 1.5)];
     const edge = (s, wide, c0, c1) => { const d = [cos(half), 0, s * sin(half)], n = [sin(half), 0, -s * cos(half)], A = mul(d, 0.4), B = mul(d, R + (wide < 0 ? 0.05 : 0)); upQuad(b, A, B, add(B, mul(n, wide)), add(A, mul(n, wide)), [c0, c0, c1, c1]); };
     ann(b, R, R + 0.24, -half - 0.02, half + 0.02, seg, dark(0.3), dark(0)); for (const s of [-1, 1]) edge(s, -0.24, dark(0.3), dark(0));       // a soft dark fringe lifts the pale shape off pale ground
     ann(b, R, R + 0.05, -half - 0.004, half + 0.004, seg, dark(0.6)); for (const s of [-1, 1]) edge(s, -0.05, dark(0.6), dark(0.6));          // and a dark hairline keeps its edge crisp
@@ -1725,8 +1730,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script>
 <script>/* src/lighting.js */
-/* lighting: the sun and the moon (one shadow-casting light between them), the sky fill, the sky, the haze and the night lights.
-   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight, three PointLights and one SpotLight.
+/* lighting: the sun and the moon (one shadow-casting beam between them), the sky fill, the sky, the haze and the night lights.
+   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight, three PointLights and one
+   SpotLight. It also owns scene.background, scene.fog and renderer.toneMappingExposure, and adds one mesh: the sky dome (one draw call).
    API: NH.lighting.build(env) -> { update(tod, focus, S), sun, fill, lamps, sky }
      env    = { scene, camera, renderer, sim, quality }
      tod    = NH.tod(dusk): { dusk, sun, warm, night } each 0..1
@@ -1736,30 +1742,34 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
               its arguments and the camera, so the same moment always looks the same.
      sun, fill, lamps, sky = optional extras for whoever inspects the rig: the DirectionalLight, the HemisphereLight, the four
               night lights [yard, player, street lamp, street lamp] and the sky dome mesh. main.js does not use them.
-   The day: 4 PM sun high in the south-west; golden hour low in the west-south-west with long shadows; the sun is at zero
-   strength when tod.sun reaches 0, and at that moment the same light turns to the south-east and comes back as the moon.
-   The sky fill carries the twilight in between. The four night lights are always in the scene (at zero strength by day), so the
-   number of lights never changes and no shader is rebuilt in the middle of a run. env.quality() is not read: every cheaper
-   setting here (a smaller shadow map, fewer lights) would rebuild textures or shaders and show as a jump.
-   Fog and the sky are drawn after tone mapping, so their colours below are the colours on screen and exposure does not move them. */
+   The day: at 4 PM the sun is high in the south-west; by golden hour it is low in the west-south-west and shadows are long.
+   Its strength reaches zero when tod.sun does, and at that moment the same beam turns round and comes back as a still moon, high
+   in the north. The sky fill carries the twilight in between and leans toward the afterglow while no beam is up.
+   Shadows: the box is a square round the ground the camera can see (any screen shape, any zoom) and moves in whole texels.
+   Night: the yard light grows with each crate delivered; the player's light is a soft spot from above on the camera's side; the
+   two lamp lights sit on the two street lamps nearest the focus and fade so that a light only ever moves while it is dark.
+   The four night lights stay in the scene at zero strength by day, so the number of lights never changes and no shader is
+   rebuilt in the middle of a run. env.quality() is not read: every cheaper setting this module could switch to (a smaller
+   shadow map, fewer lights) would rebuild a texture or shaders and show as a jump.
+   Fog and sky are drawn after tone mapping: their colours below are the colours on screen, and exposure does not move them. */
 (function () {
   "use strict";
   const NH = window.NH, sim = NH.sim, U = NH.U;
-  const MAP = 2048, REACH = 120, PAD = 4, STEP = 2;   // shadow map size; metres from the middle of the shadow box up the beam to the light; metres added round what the camera sees; the box grows in steps of this
+  const MAP = 2048, REACH = 120, PAD = 4, GROW = 2;   // shadow map size; metres from the middle of the shadow box up the beam to the light; metres added round what the camera sees; the box grows in steps of this
   const NIGHT_AT_FLIP = 0.374;                       // tod.night at the moment tod.sun reaches zero
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
     [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
     [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
-    [0.50, 0xffb264, 4.70, 0xa6bcf6, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
+    [0.50, 0xffbe76, 4.70, 0xb6c4f0, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
     [0.62, 0xff8c48, 4.00, 0x90a8f0, 0xb4704c, 1.72, 0xf2a874, 0x5a78c0, 1.05, 125],
-    [0.72, 0xff6a3c, 3.00, 0x809cf0, 0x74586e, 1.60, 0xa87c98, 0x3c4f9c, 1.06, 130],
-    [0.84, 0xff6a3c, 3.00, 0x6c86dc, 0x3a4868, 1.45, 0x4c5ea2, 0x1d2c6a, 1.06, 145],
-    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x2a3a58, 1.05, 0x263a72, 0x0f1a44, 1.06, 155],
+    [0.72, 0xff6a3c, 3.00, 0x8ea2f0, 0x5c5684, 1.85, 0xa87c98, 0x3c4f9c, 1.06, 130],
+    [0.84, 0xff6a3c, 3.00, 0x6c86dc, 0x44527a, 1.52, 0x4c5ea2, 0x1d2c6a, 1.06, 145],
+    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x4a5a84, 1.02, 0x263a72, 0x0f1a44, 1.06, 155],
   ].map((k) => ({ at: k[0], sun: new THREE.Color(k[1]), power: k[2], sky: new THREE.Color(k[3]), ground: new THREE.Color(k[4]), fill: k[5],
                   horizon: new THREE.Color(k[6]), zenith: new THREE.Color(k[7]), exposure: k[8], haze: k[9] }));
-  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.45, MOON_EL = 50 * RAD, MOON_AZ = 38 * RAD;   // the moon stands still in the south-east, so night shadows never move
+  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.4, MOON_EL = 66 * RAD, MOON_AZ = -82 * RAD;   // the moon stands still, high in the north, so night shadows never move and zinc and water shine back at the camera
   const GLOW = new THREE.Color(0xff9a4a);
 
   NH.lighting = {
@@ -1811,11 +1821,13 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           const west = Math.PI - (56 - 50 * dusk) * RAD;     // where the sun stands, or last stood: it goes down in the west-south-west
           let el, az;
           if (day) { el = Math.max(7, 57 - 52 * dusk - 18 * dusk * dusk) * RAD; az = west; sun.color.lerpColors(a.sun, b.sun, t); sun.intensity = (a.power + (b.power - a.power) * t) * tod.sun; }
-          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * smooth((night - NIGHT_AT_FLIP) / 0.6); }
+          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * Math.min(1, Math.max(0, (night - NIGHT_AT_FLIP) / 0.6)); }
           dir.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));        // from the ground toward the light; az runs from east (+X) round through south (+Z)
 
           /* sky fill, sky, haze, exposure */
           hemi.color.lerpColors(a.sky, b.sky, t); hemi.groundColor.lerpColors(a.ground, b.ground, t); hemi.intensity = a.fill + (b.fill - a.fill) * t;
+          const lean = 0.85 * smooth((dusk - 0.56) / 0.16) * (1 - smooth((dusk - 0.76) / 0.2));        // at twilight the fill leans toward the afterglow in the west, so roofs and people keep their shape while no beam is up
+          hemi.position.set(Math.cos(west) * Math.sin(lean), Math.cos(lean), Math.sin(west) * Math.sin(lean));
           horizon.lerpColors(a.horizon, b.horizon, t); zenith.lerpColors(a.zenith, b.zenith, t); scene.fog.color.copy(horizon);
           renderer.toneMappingExposure = a.exposure + (b.exposure - a.exposure) * t;
           const cx = camera.position.x - focus.x, cy = camera.position.y - focus.y, cz = camera.position.z - focus.z, flat = Math.hypot(cx, cz), away = Math.hypot(flat, cy);
@@ -1836,7 +1848,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           const tTop = Math.min(h / Math.max(0.05, sp - tv * cp), 2.2 * away), tBot = h / (sp + tv * cp);                     // lengths of the rays through the top and bottom edges of the screen
           const fTop = tTop * (cp + tv * sp), fBot = tBot * (cp - tv * sp), wTop = tTop * th, wBot = tBot * th;                 // how far ahead of the camera they land, and half the width of the view there
           const mid = Math.min(fTop, Math.max(fBot, (fTop * fTop + wTop * wTop - fBot * fBot - wBot * wBot) / (2 * (fTop - fBot))));
-          const R = Math.ceil((Math.sqrt(Math.max(wTop * wTop + (fTop - mid) * (fTop - mid), wBot * wBot + (fBot - mid) * (fBot - mid))) + PAD) / STEP) * STEP;
+          const R = Math.ceil((Math.sqrt(Math.max(wTop * wTop + (fTop - mid) * (fTop - mid), wBot * wBot + (fBot - mid) * (fBot - mid))) + PAD) / GROW) * GROW;
           if (R !== boxR) { boxR = R; box.left = -R; box.right = R; box.top = R; box.bottom = -R; box.far = REACH + R + 30; box.updateProjectionMatrix(); }
           const fx = flat > 0.001 ? -cx / flat : 0, fz = flat > 0.001 ? -cz / flat : -1;
           let px = camera.position.x + fx * mid, pz = camera.position.z + fz * mid, py = 0;
@@ -1848,7 +1860,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
           /* night lights */
           const lit = smooth(night), crates = S ? S.delivered : 0;
-          yard.intensity = lit * (34 + 12 * crates);
+          yard.intensity = lit * (26 + 16 * crates);
           const ux = S ? (S.player.x - sim.W / 2) * U : focus.x, uz = S ? (S.player.y - sim.H / 2) * U : focus.z;
           self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit;
           let n1 = 0, n2 = 0, d1 = 1e9, d2 = 1e9, d3 = 1e9;
@@ -1856,11 +1868,11 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
             const d = Math.hypot(LX[k] - focus.x, LZ[k] - focus.z);
             if (d < d1) { d3 = d2; d2 = d1; n2 = n1; d1 = d; n1 = k; } else if (d < d2) { d3 = d2; d2 = d; n2 = k; } else if (d < d3) d3 = d;
           }
-          // each light stays on its lamp while that lamp is one of the nearest two; a lamp is at zero strength when it is tied with the third nearest, so a move never shows
+          // each light stays on its lamp while that lamp is one of the nearest two; its strength is zero when its lamp ties with the third nearest, so a move never shows
           if (atA !== n1 && atA !== n2) atA = atB === n1 ? n2 : n1;
           if (atB !== n1 && atB !== n2 || atB === atA) atB = atA === n1 ? n2 : n1;
-          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 5);
-          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 5);
+          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
+          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
         },
       };
     },

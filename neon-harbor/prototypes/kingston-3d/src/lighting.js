@@ -1,5 +1,6 @@
-/* lighting: the sun and the moon (one shadow-casting light between them), the sky fill, the sky, the haze and the night lights.
-   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight, three PointLights and one SpotLight.
+/* lighting: the sun and the moon (one shadow-casting beam between them), the sky fill, the sky, the haze and the night lights.
+   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight, three PointLights and one
+   SpotLight. It also owns scene.background, scene.fog and renderer.toneMappingExposure, and adds one mesh: the sky dome (one draw call).
    API: NH.lighting.build(env) -> { update(tod, focus, S), sun, fill, lamps, sky }
      env    = { scene, camera, renderer, sim, quality }
      tod    = NH.tod(dusk): { dusk, sun, warm, night } each 0..1
@@ -9,30 +10,34 @@
               its arguments and the camera, so the same moment always looks the same.
      sun, fill, lamps, sky = optional extras for whoever inspects the rig: the DirectionalLight, the HemisphereLight, the four
               night lights [yard, player, street lamp, street lamp] and the sky dome mesh. main.js does not use them.
-   The day: 4 PM sun high in the south-west; golden hour low in the west-south-west with long shadows; the sun is at zero
-   strength when tod.sun reaches 0, and at that moment the same light turns to the south-east and comes back as the moon.
-   The sky fill carries the twilight in between. The four night lights are always in the scene (at zero strength by day), so the
-   number of lights never changes and no shader is rebuilt in the middle of a run. env.quality() is not read: every cheaper
-   setting here (a smaller shadow map, fewer lights) would rebuild textures or shaders and show as a jump.
-   Fog and the sky are drawn after tone mapping, so their colours below are the colours on screen and exposure does not move them. */
+   The day: at 4 PM the sun is high in the south-west; by golden hour it is low in the west-south-west and shadows are long.
+   Its strength reaches zero when tod.sun does, and at that moment the same beam turns round and comes back as a still moon, high
+   in the north. The sky fill carries the twilight in between and leans toward the afterglow while no beam is up.
+   Shadows: the box is a square round the ground the camera can see (any screen shape, any zoom) and moves in whole texels.
+   Night: the yard light grows with each crate delivered; the player's light is a soft spot from above on the camera's side; the
+   two lamp lights sit on the two street lamps nearest the focus and fade so that a light only ever moves while it is dark.
+   The four night lights stay in the scene at zero strength by day, so the number of lights never changes and no shader is
+   rebuilt in the middle of a run. env.quality() is not read: every cheaper setting this module could switch to (a smaller
+   shadow map, fewer lights) would rebuild a texture or shaders and show as a jump.
+   Fog and sky are drawn after tone mapping: their colours below are the colours on screen, and exposure does not move them. */
 (function () {
   "use strict";
   const NH = window.NH, sim = NH.sim, U = NH.U;
-  const MAP = 2048, REACH = 120, PAD = 4, STEP = 2;   // shadow map size; metres from the middle of the shadow box up the beam to the light; metres added round what the camera sees; the box grows in steps of this
+  const MAP = 2048, REACH = 120, PAD = 4, GROW = 2;   // shadow map size; metres from the middle of the shadow box up the beam to the light; metres added round what the camera sees; the box grows in steps of this
   const NIGHT_AT_FLIP = 0.374;                       // tod.night at the moment tod.sun reaches zero
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
     [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
     [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
-    [0.50, 0xffb264, 4.70, 0xa6bcf6, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
+    [0.50, 0xffbe76, 4.70, 0xb6c4f0, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
     [0.62, 0xff8c48, 4.00, 0x90a8f0, 0xb4704c, 1.72, 0xf2a874, 0x5a78c0, 1.05, 125],
-    [0.72, 0xff6a3c, 3.00, 0x809cf0, 0x74586e, 1.60, 0xa87c98, 0x3c4f9c, 1.06, 130],
-    [0.84, 0xff6a3c, 3.00, 0x6c86dc, 0x3a4868, 1.45, 0x4c5ea2, 0x1d2c6a, 1.06, 145],
-    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x2a3a58, 1.05, 0x263a72, 0x0f1a44, 1.06, 155],
+    [0.72, 0xff6a3c, 3.00, 0x8ea2f0, 0x5c5684, 1.85, 0xa87c98, 0x3c4f9c, 1.06, 130],
+    [0.84, 0xff6a3c, 3.00, 0x6c86dc, 0x44527a, 1.52, 0x4c5ea2, 0x1d2c6a, 1.06, 145],
+    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x4a5a84, 1.02, 0x263a72, 0x0f1a44, 1.06, 155],
   ].map((k) => ({ at: k[0], sun: new THREE.Color(k[1]), power: k[2], sky: new THREE.Color(k[3]), ground: new THREE.Color(k[4]), fill: k[5],
                   horizon: new THREE.Color(k[6]), zenith: new THREE.Color(k[7]), exposure: k[8], haze: k[9] }));
-  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.45, MOON_EL = 50 * RAD, MOON_AZ = 38 * RAD;   // the moon stands still in the south-east, so night shadows never move
+  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.4, MOON_EL = 66 * RAD, MOON_AZ = -82 * RAD;   // the moon stands still, high in the north, so night shadows never move and zinc and water shine back at the camera
   const GLOW = new THREE.Color(0xff9a4a);
 
   NH.lighting = {
@@ -84,11 +89,13 @@
           const west = Math.PI - (56 - 50 * dusk) * RAD;     // where the sun stands, or last stood: it goes down in the west-south-west
           let el, az;
           if (day) { el = Math.max(7, 57 - 52 * dusk - 18 * dusk * dusk) * RAD; az = west; sun.color.lerpColors(a.sun, b.sun, t); sun.intensity = (a.power + (b.power - a.power) * t) * tod.sun; }
-          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * smooth((night - NIGHT_AT_FLIP) / 0.6); }
+          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * Math.min(1, Math.max(0, (night - NIGHT_AT_FLIP) / 0.6)); }
           dir.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));        // from the ground toward the light; az runs from east (+X) round through south (+Z)
 
           /* sky fill, sky, haze, exposure */
           hemi.color.lerpColors(a.sky, b.sky, t); hemi.groundColor.lerpColors(a.ground, b.ground, t); hemi.intensity = a.fill + (b.fill - a.fill) * t;
+          const lean = 0.85 * smooth((dusk - 0.56) / 0.16) * (1 - smooth((dusk - 0.76) / 0.2));        // at twilight the fill leans toward the afterglow in the west, so roofs and people keep their shape while no beam is up
+          hemi.position.set(Math.cos(west) * Math.sin(lean), Math.cos(lean), Math.sin(west) * Math.sin(lean));
           horizon.lerpColors(a.horizon, b.horizon, t); zenith.lerpColors(a.zenith, b.zenith, t); scene.fog.color.copy(horizon);
           renderer.toneMappingExposure = a.exposure + (b.exposure - a.exposure) * t;
           const cx = camera.position.x - focus.x, cy = camera.position.y - focus.y, cz = camera.position.z - focus.z, flat = Math.hypot(cx, cz), away = Math.hypot(flat, cy);
@@ -109,7 +116,7 @@
           const tTop = Math.min(h / Math.max(0.05, sp - tv * cp), 2.2 * away), tBot = h / (sp + tv * cp);                     // lengths of the rays through the top and bottom edges of the screen
           const fTop = tTop * (cp + tv * sp), fBot = tBot * (cp - tv * sp), wTop = tTop * th, wBot = tBot * th;                 // how far ahead of the camera they land, and half the width of the view there
           const mid = Math.min(fTop, Math.max(fBot, (fTop * fTop + wTop * wTop - fBot * fBot - wBot * wBot) / (2 * (fTop - fBot))));
-          const R = Math.ceil((Math.sqrt(Math.max(wTop * wTop + (fTop - mid) * (fTop - mid), wBot * wBot + (fBot - mid) * (fBot - mid))) + PAD) / STEP) * STEP;
+          const R = Math.ceil((Math.sqrt(Math.max(wTop * wTop + (fTop - mid) * (fTop - mid), wBot * wBot + (fBot - mid) * (fBot - mid))) + PAD) / GROW) * GROW;
           if (R !== boxR) { boxR = R; box.left = -R; box.right = R; box.top = R; box.bottom = -R; box.far = REACH + R + 30; box.updateProjectionMatrix(); }
           const fx = flat > 0.001 ? -cx / flat : 0, fz = flat > 0.001 ? -cz / flat : -1;
           let px = camera.position.x + fx * mid, pz = camera.position.z + fz * mid, py = 0;
@@ -121,7 +128,7 @@
 
           /* night lights */
           const lit = smooth(night), crates = S ? S.delivered : 0;
-          yard.intensity = lit * (34 + 12 * crates);
+          yard.intensity = lit * (26 + 16 * crates);
           const ux = S ? (S.player.x - sim.W / 2) * U : focus.x, uz = S ? (S.player.y - sim.H / 2) * U : focus.z;
           self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit;
           let n1 = 0, n2 = 0, d1 = 1e9, d2 = 1e9, d3 = 1e9;
@@ -129,11 +136,11 @@
             const d = Math.hypot(LX[k] - focus.x, LZ[k] - focus.z);
             if (d < d1) { d3 = d2; d2 = d1; n2 = n1; d1 = d; n1 = k; } else if (d < d2) { d3 = d2; d2 = d; n2 = k; } else if (d < d3) d3 = d;
           }
-          // each light stays on its lamp while that lamp is one of the nearest two; a lamp is at zero strength when it is tied with the third nearest, so a move never shows
+          // each light stays on its lamp while that lamp is one of the nearest two; its strength is zero when its lamp ties with the third nearest, so a move never shows
           if (atA !== n1 && atA !== n2) atA = atB === n1 ? n2 : n1;
           if (atB !== n1 && atB !== n2 || atB === atA) atB = atA === n1 ? n2 : n1;
-          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 5);
-          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 5);
+          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
+          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
         },
       };
     },
