@@ -58,10 +58,11 @@ Still a flat 2D browser prototype: this is not the game's graphics.
 | Sun shadows: short in the afternoon, long at dusk, gone at night | built | screenshots at 4:15, 5:34 and 6:46 PM. The first version drew nothing (the shapes cancelled each other out); fixed |
 | Kerbs and pavements, palms with shadows, deeper water with foam | built | street and harbour screenshots, day and night |
 | Night: lamp pools, coloured string lights, a yard glow that grows with the stack, lit windows | built | night screenshots |
-| Patrol view cones readable day and night; red and flashing when they see you | built | screenshots; the cone is two flat steps, not a gradient |
+| Patrol view cones readable day and night; red and flashing when they see you | built | screenshots, including a patrol entering at the screen edge by day and at night. A review found the first version's outer edge dimmer than before; its brightness was restored and the screen-edge darkening eased |
 | Soft dark screen edges | built | done in CSS, so it costs nothing per frame |
 | Gameplay unchanged | built | every earlier check re-run: movement, delivery, sight lines, heat, pause, restart, codes, landscape |
-| Frame cost | measured, software renderer only | about 7–15 ms a frame after, against 5–12 ms before, on a headless browser with no graphics card. The first version of this pass cost 20–34 ms and was rejected. **This says nothing reliable about a phone** |
+| Frame cost | measured, software renderer only | On a headless browser with no graphics card. Phone size (390×844): about 7–17 ms a frame after, against 4–12 ms before. Foldable size (720×840): about 14–18 ms by day and 26–34 ms at night after, against 7–10 and 15–18 ms before, so roughly double. The first version of this pass cost 20–34 ms at phone size and was rejected. **This says nothing reliable about a real phone** |
+| Dynamic resolution | built | if most frames in a 90-frame window take over 24 ms, the drawing resolution drops a step (to a floor of half); fast frames never lower it. Checked by feeding it frame times: 1 → 0.75 → 0.5, canvas 1440 → 1080 → 720 px wide; long gaps ignored |
 | Looks good on a real phone | not assessed | needs a person |
 
 **What the measurement changed:** pre-drawing the world into big images made frames

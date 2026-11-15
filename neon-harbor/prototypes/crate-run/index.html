@@ -22,7 +22,7 @@
   #stage { position: relative; width: 100%; height: 100%; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   #vignette { position: absolute; inset: 0; pointer-events: none;
-              background: radial-gradient(ellipse at center, rgba(4,8,18,0) 48%, rgba(4,8,18,.46) 100%); }
+              background: radial-gradient(ellipse at center, rgba(4,8,18,0) 62%, rgba(4,8,18,.24) 100%); }
   #hud { position: absolute; left: 0; right: 0; top: 0; display: flex; gap: 10px; align-items: center;
          padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px));
          padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -266,8 +266,18 @@ function end(result) { S.result = result; scene = result === "won" ? "won" : "lo
 /* ---------------- drawing: every figure is drawn here, in code ---------------- */
 const cv = document.getElementById("c"), ctx = cv.getContext("2d");
 let vw = 0, vh = 0, scale = 1, dpr = 1;
+// Dynamic resolution: if this device is really drawing slowly, draw fewer pixels. Frame rate
+// comes first and sharpness gives way (ADR 0050). A fast device never loses any sharpness.
+let quality = 1, slowFrames = 0, countedFrames = 0;
+function tally(ms) { // called once per real frame with the time since the last one
+  if (ms <= 0 || ms > 250) return;                    // ignore tab switches and the first frame
+  countedFrames++; if (ms > 24) slowFrames++;
+  if (countedFrames < 90) return;
+  if (slowFrames > 45 && quality > 0.5) { quality -= 0.25; fit(); }
+  countedFrames = 0; slowFrames = 0;
+}
 function fit() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2); vw = cv.clientWidth; vh = cv.clientHeight;
+  dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2) * quality); vw = cv.clientWidth; vh = cv.clientHeight;
   cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr); scale = clamp(Math.min(vw, vh) / 560, 0.6, 1.6);
 }
 function hair(c, kind) {
@@ -328,7 +338,7 @@ function patrolCar(c, g) { // an original boxy patrol car: body, glass, light ba
 }
 function cone(c, g) { // what a patrol can see: brighter near the lamps, and red once it has you
   const a = tune.seeHalfAngle * Math.PI / 180, r = tune.seeRange, col = g.sees ? "255,77,94" : "255,240,190";
-  for (const [k, alpha] of [[1, g.sees ? 0.24 : 0.13], [0.55, g.sees ? 0.2 : 0.13]]) {
+  for (const [k, alpha] of [[1, g.sees ? 0.34 : 0.2], [0.55, g.sees ? 0.16 : 0.12]]) { // the outer edge is where you get caught: keep it clear
     c.fillStyle = `rgba(${col},${alpha})`; c.beginPath(); c.moveTo(g.x, g.y); c.arc(g.x, g.y, r * k, g.ang - a, g.ang + a); c.closePath(); c.fill(); }
   if (!g.foot) light(c, g.sees && Math.floor(S.t * 4) % 2 ? "255,77,94" : "111,183,255", g.x, g.y, 46, g.sees ? 0.55 : 0.22);
 }
@@ -576,12 +586,13 @@ addEventListener("resize", fit);
 /* ---------------- loop: logic runs on a fixed step, never on the wall clock ---------------- */
 let acc = 0, last = 0, manual = false;
 function frame(now) {
-  if (!manual) { acc += Math.min(0.1, (now - last) / 1000 || 0); while (acc >= STEP) { step(); acc -= STEP; } }
+  if (!manual) { acc += Math.min(0.1, (now - last) / 1000 || 0); while (acc >= STEP) { step(); acc -= STEP; } if (scene === "play" && last) tally(now - last); }
   last = now; audio(); hud(); draw(); requestAnimationFrame(frame);
 }
 // check hooks: let a script drive the game and read its state
 window.game = {
   get scene() { return scene; }, get state() { return S; }, config,
+  get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
   press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
   step(n) { manual = true; for (let i = 0; i < (n || 1); i++) step(); hud(); draw(); },
   start() { reset(); beat.layers = 0; scene = "play"; showCard(); },

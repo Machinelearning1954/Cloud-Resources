@@ -557,8 +557,11 @@ binding.)
   lengthen toward dusk, kerbs, palms, deeper water, night lighting, readable view cones.
   - Done without the play verdict the prototype still awaits.
   - The first version cost three to four times as much per frame in a software-rendered
-    test and was reworked until it was close to the old cost. No claim is made about
-    a phone.
+    test and was reworked. It now costs about the same to twice as much as before,
+    depending on screen size (figures in the checklist). No claim is made about a phone.
+  - Dynamic resolution was added as a safety net: the prototype lowers its drawing
+    resolution only when frames are really slow (ADR 0050: frame rate first).
+  - A review found the new view cones dimmer at their outer edge; that was fixed.
 - **Close:** POLICY + ADOPT → `prototypes/crate-run/` (checklist, change 2).
 
 ## Open PENDING queue
