@@ -23,3 +23,4 @@
 | [0056](ADR-0056-story.md) | Story — "Two Tides" (5 acts, 48 missions outlined) | PROPOSED |
 | [0057](ADR-0057-multiplayer.md) | Multiplayer — Opt-In, Server-Authoritative, Budgeted | PROPOSED (amends rule §0) |
 | [0058](ADR-0058-cheat-codes.md) | Cheat Codes — Original Sequences, Single-Player Only | PROPOSED |
+| [0059](ADR-0059-engine-target.md) | Move the Engine Target from Unreal 5.5 to 5.8 | **PROPOSED — awaiting the user** |

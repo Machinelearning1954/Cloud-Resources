@@ -92,12 +92,14 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–77 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–78 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations + ADR 0055 near-future Dubai
                             + ADR 0056 story "Two Tides" + ADR 0057 multiplayer
-                            + ADR 0058 cheat codes)
+                            + ADR 0058 cheat codes; ADR 0059 engine 5.5 → 5.8 is PROPOSED, awaiting the user)
+docs/art/ART_BIBLE.md       art bible, DRAFT (ledger row 78)
+docs/art/ASSET_SPECS_*.md   asset build list for the vertical slice
 docs/web/index.html         world browser (ADR 0047), plain HTML/JS over registry JSON
 docs/ADR/ADR-0049-*.md      amenity parity matrix (29 original venues)
 data/registries/*.json      7 registries; amenities.json is authoritative

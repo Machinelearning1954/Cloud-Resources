@@ -515,9 +515,37 @@ binding.)
   real taps and keys.
 - **Close:** GOSSIP + ADOPT → ADR 0058; red-team scan RT9 and eight new attacks.
 
+## Row 78 — User directive: use the template "to get me to gta 6 level graphics"
+
+- **Class:** POLICY (rule 8, DEDUPE of rows 63 and 71) + REFERENCE + ADOPT
+- **Received (2026-11-15):** the Claude Code Game Studios link again, with the request
+  to use it to reach the genre leader's level of graphics.
+- **What the template can do for graphics:** nothing directly. It holds text
+  instructions for Claude Code: no art, no renderer, no assets. Its README says its
+  engine route is not yet shown (row 76).
+- **What in it was useful, and was used:**
+  - **Its Unreal reference is written for 5.8.** That exposed that this project
+    targets 5.5, two years old. Checked independently:
+    - 5.8 released 17 June 2026; MegaLights production-ready; Lumen Lite beta:
+      https://www.unrealengine.com/news/unreal-engine-5-8-is-now-available ,
+      https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-5-8-release-notes
+    - Iris production-ready for licensees (same release notes).
+    - Epic's site is blocked in this session, so these were read through web search
+      summaries, not the pages themselves.
+  - **Its art-bible and asset-spec methods.** Followed by hand; no text copied.
+- **Corrections this forces:** rows 68, 70 and 74 and ADR 0050 and 0057 describe
+  MegaLights and Iris as experimental. That is true of 5.5 and out of date for 5.8.
+  They are left as written until ADR 0059 is decided.
+- **Close:**
+  - ADOPT → `docs/art/ART_BIBLE.md` (draft) and
+    `docs/art/ASSET_SPECS_kingston_slice.md` (16 assets, all Needed).
+  - PROPOSED → ADR 0059, move the engine target to 5.8. **Awaiting the user.**
+  - No comparison to another title is made, and no graphics exist yet.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 78** — ADR 0059 (engine 5.5 → 5.8) awaits the user's decision; art bible section 1 awaits sign-off.
 - **Row 76** — Crate Run awaits a person's play verdict: proceed, pivot or kill.
 - **Row 74** — multiplayer: all budgets unmeasured; hosting provider, cost, moderation and privacy review to do.
 - **Row 73** — story: writers' room pass and the 48 mission rows are still to do.
