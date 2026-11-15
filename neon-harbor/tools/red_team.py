@@ -202,14 +202,16 @@ def scan(root):
             if tuple(seq) in seen:
                 bad.append(f"{c['id']}: same sequence as {seen[tuple(seq)]}")
             seen[tuple(seq)] = c["id"]
-            if c.get("category") == "vehicle" and "vehicle" in c and c["vehicle"] not in vehicles:
-                bad.append(f"{c['id']}: unknown vehicle {c['vehicle']}")
-            if "FLY" in c["id"] and c.get("gate") != "flight-streaming":
+            if c.get("category") == "vehicle" and c.get("vehicle") not in vehicles:
+                bad.append(f"{c['id']}: a vehicle cheat must name a registry vehicle (got {c.get('vehicle')})")
+            if c.get("category") == "flight" and c.get("gate") != "flight-streaming":
                 bad.append(f"{c['id']}: flight cheat must carry the flight gate")
+            if c.get("category") not in ("player", "street_heat", "vehicle", "world", "flight", "story_meter"):
+                bad.append(f"{c['id']}: unknown category {c.get('category')}")
             if c.get("marks_save_as_cheated") is not True:
                 bad.append(f"{c['id']}: must mark the save as cheated")
             text = (str(c.get("name", "")) + " " + str(c.get("effect", ""))).lower()
-            if any(w in text for w in ("currency", "money", "cash", "$")):
+            if any(w in text for w in ("currency", "money", "cash", "$", "funds", "dollar", "coin", "wallet", "payout")):
                 bad.append(f"{c['id']}: a cheat may not grant currency")
             if c.get("category") == "story_meter":
                 bad.append(f"{c['id']}: a cheat may not change a story meter")
@@ -298,6 +300,8 @@ def build_attacks(term):
         ("cheats", "two cheats share one sequence", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][1].update(sequence=d["cheat_codes"]["codes"][0]["sequence"]))),
         ("cheats", "cheat that grants currency", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][3].update(effect="full health, armour and money"))),
         ("cheats", "cheat spawning a vehicle that does not exist", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][8].update(vehicle="VH-TANK-99"))),
+        ("cheats", "vehicle cheat with no vehicle named", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][8].pop("vehicle"))),
+        ("cheats", "flight cheat relabelled to dodge its gate", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][-1].update(category="hover", gate=None))),
         ("cheats", "flight cheat with its gate removed", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][-1].update(gate=None))),
         ("cheats", "single-player rule deleted", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"].update(rules=d["cheat_codes"]["rules"][1:]))),
         ("cheats", "cheat that edits a story meter", lambda t: edit_json(t, "services.json", lambda d: d["cheat_codes"]["codes"][5].update(category="story_meter"))),

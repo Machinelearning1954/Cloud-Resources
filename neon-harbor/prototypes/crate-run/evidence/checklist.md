@@ -36,7 +36,7 @@ up), the block's street layout, the patrol routes, and the look of the patrol ca
 
 | Line | Status | How it was checked |
 | --- | --- | --- |
-| Code pad in the pause menu, six directions | built | real taps on a phone-size screen entered Cool Breeze; heat went 60 → 0 |
+| Code pad in the pause menu, six directions | built | real taps on a phone-size screen entered Clean Slate; heat went 60 → 0 |
 | Arrow keys enter codes while paused | built | real key presses |
 | Codes do nothing during play | built | same six arrow keys while playing: no effect |
 | A wrong sequence does nothing | built | scripted |
@@ -44,3 +44,5 @@ up), the block's street layout, the patrol routes, and the look of the patrol ca
 | Late Doors winds the clock back 30 s | built | clock 100 → 70 |
 | Using a code marks the run; restart clears it | built | win card shows the note; restart resets the flag |
 | The codes are fun or fair | not assessed | needs a person |
+| Pause card and code pad fit a landscape phone (844×390) | built | pad fully on the card, no overlap with the heading, no sideways scroll; screenshot looked at |
+| The code's result is shown inside the pause card | built | screenshot; gameplay hints are hidden while a menu is open |

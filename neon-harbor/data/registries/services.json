@@ -253,7 +253,7 @@
     "design_history": "Draft 1 (30 Hz players, 60 replicated NPCs) needed 397 kbps on T0 against a 256 kbps budget and failed check N2. Draft 2 lowers update rates, shrinks payloads and stops replicating ambient crowds."
   },
   "cheat_codes": {
-    "status": "PROPOSED design (ADR 0058). Nothing is built. Sequences are original and machine-generated; they copy no other game's codes.",
+    "status": "PROPOSED design (ADR 0058). Nothing is built. Sequences are original and were generated at random; they copy no other game's codes.",
     "input_tokens": [
       "UP",
       "DOWN",
@@ -668,8 +668,8 @@
       {
         "id": "CH-FLY-01",
         "name": "Sky Lane Pass",
-        "category": "vehicle",
-        "effect": "spawn a personal flyer",
+        "category": "flight",
+        "effect": "spawn a personal flyer (ADR 0055); no registry vehicle exists for it yet",
         "sequence": [
           "NORTH",
           "EAST",

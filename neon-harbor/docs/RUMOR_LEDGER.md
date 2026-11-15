@@ -496,17 +496,24 @@ binding.)
   - The table has typos ("Clax Wanted Level", "Garbage Track") and repeated row
     numbers. The art looks AI-generated. It comes from a fan account, not the
     publisher.
+  - Web check (2026-11-14): the game launches 2026-11-19 and no official cheat codes
+    have been published; guide sites say any list claiming otherwise is invented:
+    https://www.gtabase.com/gta-6/gta-6-cheats-ps5-cheat-codes ,
+    https://www.gtaboom.com/will-gta-6-have-cheat-codes-thousands-are-searching-for-gta-6-cheats-already-42b9
   - Close: **GOSSIP**. It is not evidence of that game's real codes.
 - **Walls:** the image's title art, character likenesses, vehicle names and button
   sequences are another studio's material. None enter the repo (W2, W3).
-- **ADOPT — the category, original:** ADR 0058 and `services.json → cheat_codes`:
-  21 codes with original names and machine-generated 8-input sequences, spawning only
-  this project's registry vehicles.
-  - Not translated: the image's money code. No cheat grants currency (ADR 0058).
-  - Wanted-level codes become street-heat codes; story meters are untouchable.
+- **ADOPT — a cheat-code system, on the user's request:** nothing is adopted from the
+  image (unverifiable media never adopts). The basis is the user's ask for cheat
+  codes plus the M1 milestone's existing "weapon cheat rows" slot.
+  - ADR 0058 and `services.json → cheat_codes`: 21 codes with original names and
+    randomly generated 8-input sequences. Vehicle codes spawn only this project's
+    registry vehicles.
+  - No cheat grants currency, and none touches a story meter. The heat codes act on
+    street heat, a separate transient value.
 - **Prototype:** Crate Run gains three demo codes on a pause-menu pad, checked by
   real taps and keys.
-- **Close:** GOSSIP + ADOPT → ADR 0058; red-team scan RT9 and six new attacks.
+- **Close:** GOSSIP + ADOPT → ADR 0058; red-team scan RT9 and eight new attacks.
 
 ## Open PENDING queue
 

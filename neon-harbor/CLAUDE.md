@@ -106,7 +106,7 @@ tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
 tools/check_engine_config.py  11-check static test for that file; run it after any edit
 tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
-tools/red_team.py           9 extra scans + 50 sabotage attacks on the checkers (ledger row 75)
+tools/red_team.py           9 extra scans + 52 sabotage attacks on the checkers (ledger row 75)
 prototypes/crate-run/       playable browser prototype of one mechanic (ledger row 76); throwaway,
                             never imported by game code; walls apply here too
 Source/README.md            honest NOT-RECOVERED marker

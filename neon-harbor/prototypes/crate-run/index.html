@@ -49,6 +49,7 @@
   #toast { position: absolute; left: 50%; transform: translateX(-50%); top: 54px; max-width: min(92%, 520px);
            background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px;
            font-size: 14px; text-align: center; z-index: 5; }
+  #toast.low { top: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   #card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
           background: rgba(6, 12, 20, .78); padding-block: 16px;
           padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -144,7 +145,7 @@ const CAST = [ // every figure, drawn in code; hair ids are from the project's h
 
 // Demo cheat codes for this prototype only (ADR 0058): six directions, entered on the pause pad.
 const CODES = [
-  { seq: "UUDLRD", name: "Cool Breeze", does: "heat cleared",            run: () => { S.heat = 0; } },
+  { seq: "UUDLRD", name: "Clean Slate", does: "heat cleared",            run: () => { S.heat = 0; } },
   { seq: "LRLRDD", name: "Slow Riddim", does: "patrols at half speed",   run: () => { S.slowUntil = S.t + tune.slowSeconds; } },
   { seq: "DDURLU", name: "Late Doors",  does: "clock wound back",        run: () => { S.t = Math.max(0, S.t - tune.bonusSeconds); S.slowUntil = Math.max(0, S.slowUntil - tune.bonusSeconds); } },
 ];
@@ -153,8 +154,9 @@ function enterCode(d) {
   if (scene !== "pause") return;
   typed = (typed + d).slice(-6);
   const hit = CODES.find((c) => c.seq === typed);
-  if (hit) { hit.run(); S.cheated = true; typed = ""; say(`Code: ${hit.name} — ${hit.does}. This run no longer counts.`); say.until = S.t + 6; }
-  const el = document.getElementById("code"); if (el) el.textContent = typed.split("").join(" ");
+  const el = document.getElementById("code"), msg = document.getElementById("codemsg");
+  if (hit) { hit.run(); S.cheated = true; typed = ""; if (msg) msg.textContent = `${hit.name}: ${hit.does}. This run no longer counts.`; }
+  if (el) el.textContent = typed.split("").join(" ");
 }
 
 /* ---------------- deterministic helpers ---------------- */
@@ -435,7 +437,7 @@ function audio() {
 const $ = (id) => document.getElementById(id);
 function say(msg) { lastToast = msg; $("toast").textContent = msg; $("toast").hidden = !msg; say.until = S ? S.t + 4.5 : 0; }
 function hud() {
-  const playing = scene === "play"; $("hud").hidden = scene === "title" || scene === "figures"; $("drop").hidden = !playing;
+  const playing = scene === "play"; $("toast").classList.toggle("low", !playing); $("toast").hidden = !lastToast || !(playing || scene === "figures"); $("hud").hidden = scene === "title" || scene === "figures"; $("drop").hidden = !playing;
   if (!S) return;
   const mins = Math.floor(clamp(S.t / tune.clockSeconds, 0, 1) * 180);
   $("clock").textContent = `${4 + Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}`;
@@ -457,7 +459,7 @@ function showCard() {
   else if (scene === "figures") box.innerHTML = "";
   else if (scene === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>
     <p class="sub">Codes: tap six directions (or use the arrow keys). Try Up Up Down Left Right Down.</p>
-    <div id="code" aria-live="polite"></div>
+    <div id="code"></div><p class="sub" id="codemsg" role="status"></p>
     <div class="pad"><span></span><button class="key" data-d="U" type="button">Up</button><span></span>
       <button class="key" data-d="L" type="button">Left</button><button class="key" data-d="D" type="button">Down</button><button class="key" data-d="R" type="button">Right</button></div>`;
   else if (scene === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ''}<div class="row">${btn("again", "Play again")}</div>`;
