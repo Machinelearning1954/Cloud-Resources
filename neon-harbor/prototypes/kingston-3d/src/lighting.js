@@ -1,5 +1,5 @@
 /* lighting: the sun and the moon (one shadow-casting light between them), the sky fill, the sky, the haze and the night lights.
-   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight and four PointLights.
+   This is the only module that creates THREE.Light objects: one DirectionalLight, one HemisphereLight, three PointLights and one SpotLight.
    API: NH.lighting.build(env) -> { update(tod, focus, S), sun, fill, lamps, sky }
      env    = { scene, camera, renderer, sim, quality }
      tod    = NH.tod(dusk): { dusk, sun, warm, night } each 0..1
@@ -8,10 +8,10 @@
      update = called every frame, after the camera has been aimed. It allocates nothing, and what it shows depends only on
               its arguments and the camera, so the same moment always looks the same.
      sun, fill, lamps, sky = optional extras for whoever inspects the rig: the DirectionalLight, the HemisphereLight, the four
-              PointLights [yard, player, street lamp, street lamp] and the sky dome mesh. main.js does not use them.
+              night lights [yard, player, street lamp, street lamp] and the sky dome mesh. main.js does not use them.
    The day: 4 PM sun high in the south-west; golden hour low in the west-south-west with long shadows; the sun is at zero
    strength when tod.sun reaches 0, and at that moment the same light turns to the south-east and comes back as the moon.
-   The sky fill carries the twilight in between. The four point lights are always in the scene (at zero strength by day), so the
+   The sky fill carries the twilight in between. The four night lights are always in the scene (at zero strength by day), so the
    number of lights never changes and no shader is rebuilt in the middle of a run. env.quality() is not read: every cheaper
    setting here (a smaller shadow map, fewer lights) would rebuild textures or shaders and show as a jump.
    Fog and the sky are drawn after tone mapping, so their colours below are the colours on screen and exposure does not move them. */
@@ -43,9 +43,10 @@
       const box = sun.shadow.camera; box.near = 1;
       const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
       const point = (color, reach) => new THREE.PointLight(color, 0, reach, 2);
-      const yard = point(0xffa552, 26), self = point(0xffe4c4, 11), lampA = point(0xffa04a, 17), lampB = point(0xffa04a, 17);
+      const yard = point(0xffb066, 26), lampA = point(0xffa04a, 17), lampB = point(0xffa04a, 17);
+      const self = new THREE.SpotLight(0xffe9d2, 0, 18, 0.4, 1, 2);       // a soft follow-spot from high on the camera's side, so it lights the tops and fronts the camera sees and little else
       yard.position.set((sim.DROP.x - sim.W / 2) * U, 4.8, (sim.DROP.y + 10 - sim.H / 2) * U);
-      scene.add(sun, sun.target, hemi, yard, self, lampA, lampB);
+      scene.add(sun, sun.target, hemi, yard, self, self.target, lampA, lampB);
       const horizon = new THREE.Color(), zenith = new THREE.Color(); scene.background = horizon; scene.fog = new THREE.Fog(0x000000, 100, 300);
 
       // street lamps: every lamp but the last, which stands in the soundhall yard and is covered by the yard light
@@ -120,9 +121,9 @@
 
           /* night lights */
           const lit = smooth(night), crates = S ? S.delivered : 0;
-          yard.intensity = lit * (40 + 15 * crates);
-          if (S) self.position.set((S.player.x - sim.W / 2) * U, 3.4, (S.player.y - sim.H / 2) * U + 2.2); else self.position.set(focus.x, 3.4, focus.z + 2.2);
-          self.intensity = 9 * lit;
+          yard.intensity = lit * (34 + 12 * crates);
+          const ux = S ? (S.player.x - sim.W / 2) * U : focus.x, uz = S ? (S.player.y - sim.H / 2) * U : focus.z;
+          self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit;
           let n1 = 0, n2 = 0, d1 = 1e9, d2 = 1e9, d3 = 1e9;
           for (let k = 0; k < LN; k++) {
             const d = Math.hypot(LX[k] - focus.x, LZ[k] - focus.z);
