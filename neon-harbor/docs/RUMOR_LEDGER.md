@@ -797,6 +797,31 @@ binding.)
     for offline ray tracing on a free graphics card. It has not been run on Kaggle.
 - **Close:** REFERENCE + PENDING + POLICY + ADOPT.
 
+## Row 86 — User directive: "Add a.i in the game"
+
+- **Class:** ADOPT (local patrol AI) + POLICY (a live cloud AI in play is refused)
+- **Received (2026-11-16, verbatim):** "Add a.i in the game"
+- **POLICY — no cloud AI in play.** A game that asks a hosted model for its decisions, or
+  sends player data to one, would connect during single-player. Rule 6 forbids that. The
+  request is read as game AI: the opponents' behaviour, which runs on the device.
+- **ADOPT — patrol AI in `prototypes/kingston-3d/src/sim.js`.** Each patrol is a small state
+  machine: route, hunt, search, return.
+  - Hunting: a carrier in view is chased at `chasePercent` (130%) of normal speed and held 30 px
+    away. A carrier out of view is looked for at the place last seen.
+  - Searching: the patrol turns on the spot for `searchSeconds` (4), then returns to the
+    nearest point of its loop.
+  - Nobody carrying means no hunt: a patrol stops and walks home.
+  - Patrols slide along walls and give up after 90 steps without progress, so none gets
+    stuck in a building.
+- **Tests:** four new rule tests (hunt and hold, give up on drop, search then return, empty-handed
+  never hunted), added to `test/sim.test.js`: 21 of 21 pass. The 25 browser checks pass. A
+  picture of a patrol car that has seen a carrier and is closing in is in the session's scratch
+  folder, not the repository.
+- **Balance, stated plainly:** a hunting car is faster than a carrier, so breaking line of sight
+  or dropping the crate is the only escape. The rules made stealth harder; this has not been
+  played by a person.
+- **Close:** ADOPT + POLICY. Still not played by a person.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

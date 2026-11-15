@@ -145,11 +145,14 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     pickRadius:   { value: 34,  min: 16,  max: 80,  step: 2 },
     slowSeconds:  { value: 30,  min: 5,   max: 120, step: 5 },    // how long the Slow Riddim code lasts
     bonusSeconds: { value: 30,  min: 5,   max: 120, step: 5 },    // clock time the Late Doors code gives back
+    chasePercent: { value: 130, min: 100, max: 200, step: 5 },    // a hunting patrol moves at this % of its normal speed
+    searchSeconds:{ value: 4,   min: 1,   max: 15,  step: 1 },    // how long a patrol looks around where it lost you
   };
   const tune = new Proxy({}, { get: (_, k) => config[k].value });
 
   /* ---- the block, in sim pixels (x right, y toward the harbour) ---- */
   const W = 1200, H = 1600, QUAY = 1380, WATER = 1470, STEP = 1 / 60, PLAYER_RADIUS = 11;
+  const PATROL_RADIUS = 10, HOLD = 30, STUCK = 90;   // patrols keep HOLD px from the carrier; STUCK steps without progress gives up
   const ROOF = ["#8fa3ad", "#a39a8b", "#7f9a8f", "#a98f7a", "#8c93a8", "#9aa58a"];
   const WALL = ["#d8c9a8", "#c9d6cf", "#e2b98f", "#b9c4d6", "#d6c2c0"];
   const B = [ // buildings: x, y, w, h. Gaps between them are alleys.
@@ -218,6 +221,21 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     if (x < rad || x > W - rad || y < rad || y > WATER - rad) return true;
     return B.some((r) => x > r.x - rad && x < r.x + r.w + rad && y > r.y - rad && y < r.y + r.h + rad);
   }
+  function stepToward(g, tx, ty, speed) { // move a patrol toward a point, sliding along walls; true once it arrives
+    const d = Math.hypot(tx - g.x, ty - g.y);
+    if (d < 4) return true;
+    const s = Math.min(d, speed * STEP), nx = g.x + (tx - g.x) / d * s, ny = g.y + (ty - g.y) / d * s, ox = g.x, oy = g.y;
+    if (!blocked(nx, g.y, PATROL_RADIUS)) g.x = nx;
+    if (!blocked(g.x, ny, PATROL_RADIUS)) g.y = ny;
+    g.ang = Math.atan2(ty - oy, tx - ox);
+    g.stuck = Math.hypot(g.x - ox, g.y - oy) < 0.05 ? (g.stuck || 0) + 1 : 0;
+    return false;
+  }
+  function nearestPoint(pts, x, y) {
+    let best = 0;
+    for (let i = 1; i < pts.length; i++) if (Math.hypot(pts[i][0] - x, pts[i][1] - y) < Math.hypot(pts[best][0] - x, pts[best][1] - y)) best = i;
+    return best;
+  }
   function patrolSpeed(S, g) {
     return (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
   }
@@ -225,7 +243,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   /* ---- state ---- */
   function newPatrol(i) {
     const r = ROUTES[i % ROUTES.length];
-    return { id: i, route: r, foot: !!r.foot, leg: 0, dir: 1, x: r.pts[0][0], y: r.pts[0][1], ang: 0, sees: false };
+    return { id: i, route: r, foot: !!r.foot, leg: 0, dir: 1, x: r.pts[0][0], y: r.pts[0][1], ang: 0, sees: false,
+             mode: "route", timer: 0, memory: null, homing: false, stuck: 0 };
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
@@ -277,18 +296,38 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       if (S.delivered >= tune.cratesToWin) return end(S, "won");
     }
 
-    // patrols follow their loops and look ahead
+    // patrols are small state machines. route: walk the loop. hunt: a carrier in view is chased (at chasePercent of
+    // normal speed) and held HOLD px away; a carrier out of view is looked for where last seen. search: turn on the
+    // spot for searchSeconds. return: walk back to the nearest point of the loop. Nobody carrying: they stop hunting.
     const cosHalf = Math.cos(tune.seeHalfAngle * Math.PI / 180), wasSeen = S.seen; S.seen = false;
     for (const g of S.patrols) {
-      const pts = g.route.pts, speed = patrolSpeed(S, g);
-      let next = g.foot ? g.leg + g.dir : (g.leg + 1) % pts.length;
-      if (g.foot && (next < 0 || next >= pts.length)) { g.dir = -g.dir; next = g.leg + g.dir; }
-      const tx = pts[next][0], ty = pts[next][1], d = Math.hypot(tx - g.x, ty - g.y);
-      if (d < speed * STEP) { g.x = tx; g.y = ty; g.leg = next; }
-      else { g.x += (tx - g.x) / d * speed * STEP; g.y += (ty - g.y) / d * speed * STEP; g.ang = Math.atan2(ty - g.y, tx - g.x); }
+      const pts = g.route.pts, speed = patrolSpeed(S, g), chase = speed * tune.chasePercent / 100;
       const dx = p.x - g.x, dy = p.y - g.y, dd = Math.hypot(dx, dy);
       g.sees = S.carrying && dd < tune.seeRange && dd > 0 &&
                (dx * Math.cos(g.ang) + dy * Math.sin(g.ang)) / dd > cosHalf && clearSight(g, p);
+      if (g.sees) { g.memory = { x: p.x, y: p.y }; if (g.mode !== "hunt") { g.mode = "hunt"; g.stuck = 0; } }
+      else if (!S.carrying && g.mode !== "route" && g.mode !== "return") g.mode = "return";
+      if (g.mode === "hunt") {
+        if (g.sees) {
+          if (g.stuck > STUCK) { g.mode = "search"; g.timer = tune.searchSeconds; g.stuck = 0; }   // walled in: give up on this carrier
+          else if (dd > HOLD) stepToward(g, p.x, p.y, chase);
+          else { g.ang = Math.atan2(dy, dx); g.stuck = 0; }
+        } else if (stepToward(g, g.memory.x, g.memory.y, chase) || g.stuck > STUCK) {
+          g.mode = "search"; g.timer = tune.searchSeconds; g.stuck = 0;
+        }
+      } else if (g.mode === "search") {
+        g.ang += 1.2 * STEP; g.timer -= STEP;                 // turns slowly, as if looking about
+        if (g.timer <= 0) g.mode = "return";
+      } else if (g.mode === "return") {
+        if (!g.homing) { g.leg = nearestPoint(pts, g.x, g.y); g.homing = true; }
+        if (stepToward(g, pts[g.leg][0], pts[g.leg][1], speed) || g.stuck > STUCK) { g.mode = "route"; g.homing = false; g.stuck = 0; }
+      } else {
+        let next = g.foot ? g.leg + g.dir : (g.leg + 1) % pts.length;
+        if (g.foot && (next < 0 || next >= pts.length)) { g.dir = -g.dir; next = g.leg + g.dir; }
+        const tx = pts[next][0], ty = pts[next][1], d = Math.hypot(tx - g.x, ty - g.y);
+        if (d < speed * STEP) { g.x = tx; g.y = ty; g.leg = next; }
+        else { g.x += (tx - g.x) / d * speed * STEP; g.y += (ty - g.y) / d * speed * STEP; g.ang = Math.atan2(ty - g.y, tx - g.x); }
+      }
       if (g.sees) S.seen = true;
     }
     S.heat = clamp(S.heat + (S.seen ? tune.heatRise : -tune.heatFall) * STEP, 0, 100);

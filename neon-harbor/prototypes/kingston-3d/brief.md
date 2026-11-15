@@ -11,8 +11,13 @@ phone browser. Throwaway code, not the game. Ledger row 80.
 - **What it is not:** it is not the Unreal game and it tells nothing about how that
   game will look. There is no ray tracing here. Nothing in this folder is imported by
   game code.
-- **Rules:** identical to Crate Run. They live in `src/sim.js`, which has no drawing
-  code and runs in Node, so the rules are tested without a browser.
+- **Rules:** the same as Crate Run, plus one addition: **patrol AI** (ledger row 86). Each patrol
+  is a small state machine. On a route it walks its loop. When it sees a carrier it hunts: it
+  chases at 130% of its normal speed and holds 30 px away. If the carrier goes out of sight it
+  walks to where it last saw them, looks around for four seconds, then walks back to its loop.
+  Once you put the crate down, it stops hunting. The AI runs entirely on the device: no network,
+  no cloud model (rule 6). The rules live in `src/sim.js`, which has no drawing code and runs in
+  Node, so they are tested without a browser. Tuning: `chasePercent` and `searchSeconds`.
 - **Camera:** fixed heading, tilted 64 degrees, following the player. Every sim
   rectangle is a fenced lot with the house at its south edge and a low yard behind,
   so a building never hides the street behind it. People, patrols, the stash crate

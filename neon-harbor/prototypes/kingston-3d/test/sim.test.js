@@ -122,6 +122,50 @@ test("a full game can be won inside the clock by the scripted route alone", () =
   console.log(`  info  blind route result: ${S.result}, delivered ${S.delivered}, ${S.t.toFixed(0)} s, heat ${S.heat.toFixed(0)}`);
 });
 
+/* ---- patrol AI: spot, hunt, search, return ---- */
+function placePatrol(S, x, y) { const g = S.patrols[0]; g.x = x; g.y = y; g.ang = 0; g.leg = 0; g.mode = "route"; return g; }
+test("a patrol that sees a carrier turns to hunt, closes in, and holds a short distance off", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 520; S.player.y = 420;
+  for (let i = 0; i < 90; i++) sim.step(S, STILL);
+  assert.equal(g.mode, "hunt");
+  assert.ok(sim.dist(g, S.player) <= 32, `held ${sim.dist(g, S.player).toFixed(0)} px away`);
+  assert.ok(g.sees, "still in view while holding");
+});
+test("a hunting patrol gives up when you put the crate down, and walks back to its loop", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 520; S.player.y = 420;
+  for (let i = 0; i < 60; i++) sim.step(S, STILL);
+  assert.equal(g.mode, "hunt");
+  S.carrying = false;
+  for (let i = 0; i < 900; i++) sim.step(S, STILL);   // 15 s
+  assert.equal(g.mode, "route");
+});
+test("a patrol that loses sight of a carrier searches where it last saw them, then goes home", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 520; S.player.y = 420;
+  sim.step(S, STILL); assert.equal(g.mode, "hunt");
+  let hide = null;   // a free spot inside its range that a building hides from it
+  for (let x = 120; x < 1100 && !hide; x += 4) for (let y = 120; y < 1400 && !hide; y += 4) {   // any free spot a building hides from it
+    if (!sim.blocked(x, y, 11) && sim.dist(g, { x, y }) > 60 && !sim.clearSight(g, { x, y })) hide = { x, y };
+  }
+  assert.ok(hide, "found a hiding place");
+  S.player.x = hide.x; S.player.y = hide.y;
+  const modes = [];
+  for (let i = 0; i < 1800 && !S.over; i++) { S.heat = 0; sim.step(S, STILL); if (modes[modes.length - 1] !== g.mode) modes.push(g.mode); }
+  const search = modes.indexOf("search");
+  assert.ok(search > 0, `modes ${modes.join(">")}`);
+  assert.ok(modes.indexOf("return", search) > search, `modes ${modes.join(">")}`);
+  assert.equal(modes[modes.length - 1], "route", `modes ${modes.join(">")}`);
+});
+test("empty-handed you are never hunted, however close you stand", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = false; S.player.x = 420; S.player.y = 420;
+  for (let i = 0; i < 300; i++) sim.step(S, STILL);
+  assert.notEqual(g.mode, "hunt");
+  assert.equal(S.seen, false);
+});
+
 let failed = 0;
 for (const [ok, name, why] of results) { console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : " — " + why}`); failed += !ok; }
 console.log(`\nRule tests: ${results.length - failed} passed, ${failed} failed (of ${results.length}).`);
