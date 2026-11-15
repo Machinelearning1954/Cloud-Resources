@@ -37,7 +37,7 @@
   const actor = (obj) => { obj.traverse((o) => { if (o.isMesh && !o.userData.ghost) o.renderOrder = 2; }); return obj; };
   const ghostGeo = { person: new THREE.CapsuleGeometry(0.42, 1.1, 3, 8).translate(0, 0.97, 0), car: new THREE.BoxGeometry(4.5, 1.7, 2.0).translate(0, 0.85, 0), crate: new THREE.BoxGeometry(1.1, 1.1, 1.1).translate(0, 0.55, 0) };
   const ghostMats = { you: ghostMat(0x2fb58a, 1), patrol: ghostMat(0xd8475a, 1), other: ghostMat(0x8f939c, 1), crate: ghostMat(0xd9872e, 1) };
-  function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
+  function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = m.userData.overlay = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
@@ -49,7 +49,7 @@
   function patrolView(g) {
     const v = g.foot ? Object.assign(person(6, "patrol"), { foot: true }) : Object.assign(NH.props.car(), { foot: false });
     if (!g.foot) { ghost(v.group, "car", "patrol"); scene.add(v.group); }
-    v.cone = NH.props.visionCone(tune.seeRange * U, tune.seeHalfAngle * Math.PI / 180); scene.add(v.cone.mesh);
+    v.cone = NH.props.visionCone(tune.seeRange * U, tune.seeHalfAngle * Math.PI / 180); v.cone.mesh.userData.overlay = true; scene.add(v.cone.mesh);
     v.coneGhost = v.cone.mesh.clone(true); v.coneGhostMat = ghostMat(0xfff0be, 0.16);          // the same sector, shown faintly where a building covers it
     v.coneGhost.traverse((o) => { if (o.isMesh) { o.material = v.coneGhostMat; o.renderOrder = 8; } }); scene.add(v.coneGhost);   // see-through, so it is drawn late with the other see-through things
     return v;
@@ -62,6 +62,7 @@
   }
   const ring = NH.props.dropRing((tune.pickRadius + 14) * U); NH.put(ring, sim.DROP.x, sim.DROP.y, 0); scene.add(ring);
   const arrow = NH.props.arrow(); scene.add(arrow);
+  ring.userData.overlay = arrow.userData.overlay = true;   // game markers, not part of the place: the scene exporter leaves "overlay" objects out
   sim.PALMS.forEach(([x, y], i) => { const t = NH.props.palm(i); NH.put(t, x, y, 0); t.rotation.y = i * 1.7; scene.add(t); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
   const lamps = sim.LAMPS.map(([x, y], i) => { // the post stands on a corner; its arm reaches back so the lamp hangs over the lamp point
@@ -282,7 +283,7 @@
   // Check hooks: a script can drive the game and read its state. After the first step() the page
   // stops drawing by itself (software-rendered test machines are slow); call render() before a screenshot.
   window.game = {
-    get scene() { return scn; }, get state() { return S; }, config: sim.config,
+    get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
     press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
     step(n) { manual = true; for (let i = 0; i < (n || 1); i++) tick(); hud(); },
