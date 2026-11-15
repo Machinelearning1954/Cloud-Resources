@@ -654,6 +654,29 @@ binding.)
 - **Close:** REFERENCE + ADOPT + POLICY → `prototypes/kingston-3d/`, ADR 0057 Decision 6,
   `.claude/agents/`, `.claude/hooks/`. **Not yet seen on a real phone.**
 
+## Row 81 — User directive: "Use rtx and u real engine … g t a six level of graphics or better"
+
+- **Class:** POLICY (DEDUPE of rows 63, 68, 71, 72, 78, 79 and 80)
+- **Received (2026-11-15, verbatim, voice-typed):** "Use rtx and u real engine act as a
+  subject matter expert in these fills, and get me to g t a six level of graphics or
+  better the aim for the better, I'll shut you down"
+- **Checked again in this turn:** no computer is connected to this session, so there is
+  still nowhere to run Unreal Engine or a ray-tracing graphics card. Nothing was rendered
+  in Unreal, and no document was written to stand in for that.
+- **What already exists for the Unreal route, unchanged:** renderer settings
+  (`Config/DefaultEngine.ini`, names verified, rendering untested), visual targets and the
+  RTX Ultra tier (ADR 0050, rows 68 to 70), the art bible and 16 asset specs (row 78), and
+  the proposed move to engine 5.8 (ADR 0059, awaiting the user).
+- **What unblocks it:** a Windows PC with a ray-tracing card and Unreal installed,
+  connected to a session (the user's own, someone else's, or a paid cloud desktop: the
+  last costs money and needs the user's own Epic account, so it is the user's decision).
+- **Refused, as before:** any promise or claim of matching or beating another title's
+  graphics (rule 8), and speaking with insider authority about another studio (rule 7).
+- **Done instead, and visible:** the builders' street and people modules were integrated
+  into `prototypes/kingston-3d/` and republished (row 80). The builder agents had been
+  stopped by the account's usage limit; they were restarted for props and lighting.
+- **Close:** POLICY. No new architecture.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
