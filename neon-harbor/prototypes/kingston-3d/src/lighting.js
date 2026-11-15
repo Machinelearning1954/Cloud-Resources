@@ -23,16 +23,16 @@
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
-    [0.00, 0xfff2dc, 3.40, 0xbdd8ff, 0x9c8a6e, 1.45, 0xcfe2ee, 0x4c8fd6, 1.00, 190],
-    [0.30, 0xffe6c2, 3.30, 0xb4cdf6, 0xa3875e, 1.35, 0xdde4e0, 0x4f8ccf, 1.00, 170],
-    [0.50, 0xffc37e, 3.10, 0x9fb2ea, 0xb07a48, 1.15, 0xf5d7a0, 0x6c98d2, 1.02, 130],
-    [0.62, 0xff9a52, 2.90, 0x8d98dc, 0xa66244, 1.05, 0xf0a672, 0x5a78c0, 1.04, 120],
-    [0.72, 0xff7040, 2.60, 0x7484d6, 0x70505c, 1.00, 0xb27a8c, 0x3c4f9c, 1.05, 125],
-    [0.84, 0xff7040, 2.60, 0x5871cc, 0x34405e, 0.95, 0x4a5c9e, 0x1d2c6a, 1.05, 140],
-    [1.00, 0xff7040, 2.60, 0x4c68c6, 0x24324e, 0.92, 0x25396f, 0x0f1a44, 1.05, 150],
+    [0.00, 0xfff2dc, 3.50, 0xbdd8ff, 0x9c8a6e, 1.45, 0xcfe2ee, 0x4c8fd6, 1.00, 190],
+    [0.30, 0xffe4bc, 3.60, 0xb6cef8, 0xa88a5e, 1.45, 0xdfe5de, 0x4f8ccf, 1.00, 170],
+    [0.50, 0xffbf78, 4.20, 0xaabff4, 0xc08a52, 1.50, 0xf6d9a2, 0x6c98d2, 1.03, 130],
+    [0.62, 0xff9450, 3.60, 0x9aa9ec, 0xb4704c, 1.80, 0xf2a874, 0x5a78c0, 1.05, 120],
+    [0.72, 0xff6a3c, 3.00, 0x8ea2f0, 0x7c5a6c, 1.55, 0xb47c90, 0x3c4f9c, 1.06, 125],
+    [0.84, 0xff6a3c, 3.00, 0x7088dc, 0x3a4868, 1.45, 0x4c5ea2, 0x1d2c6a, 1.06, 140],
+    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x2a3a58, 1.05, 0x263a72, 0x0f1a44, 1.06, 150],
   ].map((k) => ({ at: k[0], sun: new THREE.Color(k[1]), power: k[2], sky: new THREE.Color(k[3]), ground: new THREE.Color(k[4]), fill: k[5],
                   horizon: new THREE.Color(k[6]), zenith: new THREE.Color(k[7]), exposure: k[8], haze: k[9] }));
-  const MOON = new THREE.Color(0xa9c0ff), MOON_POWER = 0.95, MOON_EL = 50 * RAD, MOON_AZ = 38 * RAD;   // the moon stands still in the south-east, so night shadows never move
+  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.45, MOON_EL = 50 * RAD, MOON_AZ = 38 * RAD;   // the moon stands still in the south-east, so night shadows never move
   const GLOW = new THREE.Color(0xff9a4a);
 
   NH.lighting = {
@@ -80,10 +80,10 @@
           const a = KEYS[i], b = KEYS[i + 1], t = Math.min(1, Math.max(0, (dusk - a.at) / (b.at - a.at)));
 
           /* the one beam: sun, then moon. It turns round only while its strength is zero. */
-          const west = Math.PI - (50 - 52 * dusk) * RAD;     // where the sun stands, or last stood: it goes down in the west-south-west
+          const west = Math.PI - (56 - 50 * dusk) * RAD;     // where the sun stands, or last stood: it goes down in the west-south-west
           let el, az;
-          if (day) { el = Math.max(7, 56 - 66 * dusk) * RAD; az = west; sun.color.lerpColors(a.sun, b.sun, t); sun.intensity = (a.power + (b.power - a.power) * t) * tod.sun; }
-          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * smooth((night - NIGHT_AT_FLIP) / 0.38); }
+          if (day) { el = Math.max(7, 57 - 52 * dusk - 18 * dusk * dusk) * RAD; az = west; sun.color.lerpColors(a.sun, b.sun, t); sun.intensity = (a.power + (b.power - a.power) * t) * tod.sun; }
+          else { el = MOON_EL; az = MOON_AZ; sun.color.copy(MOON); sun.intensity = MOON_POWER * smooth((night - NIGHT_AT_FLIP) / 0.6); }
           dir.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));        // from the ground toward the light; az runs from east (+X) round through south (+Z)
 
           /* sky fill, sky, haze, exposure */

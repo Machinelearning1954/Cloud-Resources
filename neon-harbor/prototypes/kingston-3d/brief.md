@@ -46,9 +46,9 @@ vendor/           three.min.js r160, its licence, checksums
 dev/baseline/     the last integrated version of each visual module, used by --solo builds
 dev/              check.js (browser checks), sheet.js and shot.js (screenshots), lock-check.js
 dev/raytrace/     export.js writes the game's scene to a file; render.py ray-traces it offline in
-                  Blender Cycles (on a graphics card with hardware ray tracing if one is present).
-                  Pictures only, several seconds each: not the game running. render.py has NOT been
-                  run yet; export.js has.
+                  Blender Cycles: on a graphics card with hardware ray tracing if one is present,
+                  otherwise on the CPU. Both have been run here, on a CPU only. Pictures only,
+                  tens of seconds each: not the game running, and not something a phone does.
 test/             Node tests: rules, saved-run counting, lock crypto. These run in CI.
 ```
 
