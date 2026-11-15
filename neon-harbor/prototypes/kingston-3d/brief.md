@@ -45,10 +45,13 @@ build.js          joins all of the above and the library into index.html (genera
 vendor/           three.min.js r160, its licence, checksums
 dev/baseline/     the last integrated version of each visual module, used by --solo builds
 dev/              check.js (browser checks), sheet.js and shot.js (screenshots), lock-check.js
-dev/raytrace/     export.js writes the game's scene to a file; render.py ray-traces it offline in
-                  Blender Cycles: on a graphics card with hardware ray tracing if one is present,
-                  otherwise on the CPU. Both have been run here, on a CPU only. Pictures only,
-                  tens of seconds each: not the game running, and not something a phone does.
+dev/raytrace/     Offline ray tracing of the game's own scene in Blender Cycles: pictures only, tens of
+                  seconds each on a CPU, not the game running.
+                  export.js / export_scene.py (same export, from Node or Python) + inpage.js write the scene;
+                  render.py renders it, on a graphics card if one is present, otherwise on the CPU;
+                  cloud_render.sh does all of it in one command on a fresh machine; kaggle_render.ipynb
+                  runs that on a free notebook service's graphics card. Run and checked here on a CPU
+                  only. Never run on a graphics card or on that service.
 test/             Node tests: rules, saved-run counting, lock crypto. These run in CI.
 ```
 
