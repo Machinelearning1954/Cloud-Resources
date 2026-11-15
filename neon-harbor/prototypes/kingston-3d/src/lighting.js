@@ -72,7 +72,7 @@
       const skyGeo = new THREE.BufferGeometry(), skyAttr = new THREE.BufferAttribute(skyCol, 3); skyAttr.setUsage(THREE.DynamicDrawUsage);
       skyGeo.setAttribute("position", new THREE.BufferAttribute(skyPos, 3)); skyGeo.setAttribute("color", skyAttr); skyGeo.setIndex(skyIdx);
       const sky = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false, toneMapped: false, depthWrite: false }));
-      sky.renderOrder = -10; sky.frustumCulled = false; scene.add(sky);
+      sky.renderOrder = -10; sky.frustumCulled = false; sky.visible = false; scene.add(sky);
       let skyDusk = -1;
 
       let boxR = 0;
@@ -101,7 +101,10 @@
           const cx = camera.position.x - focus.x, cy = camera.position.y - focus.y, cz = camera.position.z - focus.z, flat = Math.hypot(cx, cz), away = Math.hypot(flat, cy);
           scene.fog.near = away; scene.fog.far = away + a.haze + (b.haze - a.haze) * t;      // clear up to the point the camera looks at, wherever the camera stands
           sky.position.copy(camera.position);
-          if (Math.abs(dusk - skyDusk) > 0.0015) { // the sky changes slowly: repaint it about twice a second of play
+          // the game camera looks steeply down, so the dome is drawn (and repainted) only when the top of the view comes near the horizon
+          sky.visible = Math.atan2(cy, flat) - camera.fov * Math.PI / 360 < 8 * RAD;
+          if (!sky.visible) skyDusk = -1;
+          else if (Math.abs(dusk - skyDusk) > 0.0015) { // the sky changes slowly: repaint it about twice a second of play
             skyDusk = dusk;
             const g = tod.warm * tod.warm * 0.55, sx = Math.cos(west), sz = Math.sin(west);
             for (let v = 0, s = 0; v < NV; v++, s = v % SEG) {
@@ -128,9 +131,9 @@
 
           /* night lights */
           const lit = smooth(night), crates = S ? S.delivered : 0;
-          yard.intensity = lit * (26 + 16 * crates);
+          yard.intensity = lit * (14 + 4 * Math.min(4, crates));          // capped: the yard must not wash out the drop ring or a cone on it
           const ux = S ? (S.player.x - sim.W / 2) * U : focus.x, uz = S ? (S.player.y - sim.H / 2) * U : focus.z;
-          self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit;
+          self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit * Math.min(1, Math.hypot(ux - yard.position.x, uz - yard.position.z) / 14);   // the yard light already lights the player there
           let n1 = 0, n2 = 0, d1 = 1e9, d2 = 1e9, d3 = 1e9;
           for (let k = 0; k < LN; k++) {
             const d = Math.hypot(LX[k] - focus.x, LZ[k] - focus.z);

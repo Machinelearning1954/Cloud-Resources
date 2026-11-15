@@ -313,8 +313,8 @@
           const px = xa + 0.7 + (xb - xa - 1.4) * hash(o.seed, 810 + k), south = hash(o.seed, 830 + k) < 0.6, d = 0.5 + (Math.min(R, RN) - 1) * hash(o.seed, 820 + k), t = hash(o.seed, 840 + k);
           if (hip && d > up(px) - 0.4) continue;
           const z = south ? zs - d : zn + d, y = (south ? ys : yn) + d * tp;
-          if (t < 0.55) box(M, px - 0.2, y - 0.05, z - 0.1, px + 0.2, y + 0.17, z + 0.1, mul(CONCRETE, 0.8 + 0.2 * t));
-          else if (t < 0.86) solid(M, TYRE, at(px, y + 0.09, z, 1, 1, 1, south ? o.pitch - 1.5708 : -o.pitch - 1.5708), DARK);
+          if (t < 0.55 || (t < 0.86 && !(hash(o.seed, 850 + k) < 0.15 && (o.seed & 3) === 1))) box(M, px - 0.2, y - 0.05, z - 0.1, px + 0.2, y + 0.17, z + 0.1, mul(CONCRETE, 0.8 + 0.2 * t));
+          else if (t < 0.86) solid(M, TYRE, at(px, y + 0.11, z, 1.3, 1.3, 1.3, south ? o.pitch - 1.5708 : -o.pitch - 1.5708), mul(CONCRETE, 0.42));
           else if (!hip && R > 2.2) { const tz = zr + 0.75, ty = ys + (zs - tz) * tp; box(M, px - 0.5, ty - 0.3, tz - 0.5, px + 0.5, ty + 0.12, tz + 0.5, mul(CONCRETE, 0.85)); solid(M, CYL, at(px, ty + 0.62, tz, 0.48, 1.0, 0.48), lin(0x1c2622)); solid(M, CYL, at(px, ty + 1.15, tz, 0.2, 0.08, 0.2), lin(0x2c3a34)); }
         }
       }
@@ -405,11 +405,11 @@
 
       /* ---- an ordinary lot: yard strip and fence on the north side, house flush with the south edge ---- */
       function lot(b, lite) {
-        const hs = NH.house(b), H = hs.height, s = b.i, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y), zS = Z(b.y + b.h), w = x1 - x0, d = zS - zH;
+        const hs = NH.house(b), H = hs.height, s = b.i, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y) + (hs.yard && Z(b.y + b.h) - Z(hs.y) > 6 ? 1.4 : 0), zS = Z(b.y + b.h), w = x1 - x0, d = zS - zH;
         const roof = mul(rich(lin(b.c), 1.5), 1.22), wall = mul(lin(b.wall), 1.08), trim = TRIMS[(s * 5 + 2) % TRIMS.length], accent = ACCENTS[(s * 3 + 1) % ACCENTS.length], style = s % 3;
         const dado = hash(s, 6) < 0.62 ? mix(wall, accent, 0.5) : null;
         if (hs.yard) {
-          flat(b.x, b.y, b.x + b.w, hs.y, 0.02, mul(EARTH, 0.85 + 0.25 * hash(s, 1)));
+          flat(b.x, b.y, b.x + b.w, b.y + (zH - zN) / NH.U, 0.02, mul(EARTH, 0.85 + 0.25 * hash(s, 1)));
           const kind = [0, 1, 2, 3, 0, 2, 1, 0, 3][(s * 4 + (s >> 2)) % 9], fh = 1.15 + 0.3 * hash(s, 2);
           fence(x0, zN, x1, zN, 1, kind, fh, s, lite); fence(x0, zN, x0, zH, 1, kind, fh + 0.06, s + 77, lite); fence(x1, zN, x1, zH, -1, kind, fh + 0.06, s + 131, lite);
           if (!lite) yardThings(x0 + 0.5, x1 - 0.5, zN + 0.3, zH - 0.2, s); else if (hash(s, 3) < 0.6) bush(x0 + w * (0.2 + 0.6 * hash(s, 4)), (zN + zH) / 2, 0.7, s);
@@ -547,7 +547,7 @@
       const signs = std(Object.assign({ map: signTex, transparent: true, depthWrite: false, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0 }, lay));
       const pools = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
       const meshes = [toMesh(G, std({ map: grainTex }), false), toMesh(M, std({ map: plasterTex }), true),
-        toMesh(ZN, std({ map: zincTex, normalMap: zincNormal, roughness: 0.5, metalness: 0.35 }), true), toMesh(F, std(Object.assign({ map: frontTex }, lay)), false),
+        toMesh(ZN, std({ map: zincTex, normalMap: zincNormal, roughness: 0.8, metalness: 0.12 }), true), toMesh(F, std(Object.assign({ map: frontTex }, lay)), false),
         toMesh(LIT[0], lit[0], false), toMesh(LIT[1], lit[1], false), toMesh(D, std(Object.assign({ map: decalTex, transparent: true, depthWrite: false }, lay)), false, -3),
         toMesh(W, water, false), toMesh(PL, pools, false, -1)];
       if (SG.count) meshes.push(toMesh(SG, signs, false, -2));

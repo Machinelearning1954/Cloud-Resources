@@ -695,8 +695,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           const px = xa + 0.7 + (xb - xa - 1.4) * hash(o.seed, 810 + k), south = hash(o.seed, 830 + k) < 0.6, d = 0.5 + (Math.min(R, RN) - 1) * hash(o.seed, 820 + k), t = hash(o.seed, 840 + k);
           if (hip && d > up(px) - 0.4) continue;
           const z = south ? zs - d : zn + d, y = (south ? ys : yn) + d * tp;
-          if (t < 0.55) box(M, px - 0.2, y - 0.05, z - 0.1, px + 0.2, y + 0.17, z + 0.1, mul(CONCRETE, 0.8 + 0.2 * t));
-          else if (t < 0.86) solid(M, TYRE, at(px, y + 0.09, z, 1, 1, 1, south ? o.pitch - 1.5708 : -o.pitch - 1.5708), DARK);
+          if (t < 0.55 || (t < 0.86 && !(hash(o.seed, 850 + k) < 0.15 && (o.seed & 3) === 1))) box(M, px - 0.2, y - 0.05, z - 0.1, px + 0.2, y + 0.17, z + 0.1, mul(CONCRETE, 0.8 + 0.2 * t));
+          else if (t < 0.86) solid(M, TYRE, at(px, y + 0.11, z, 1.3, 1.3, 1.3, south ? o.pitch - 1.5708 : -o.pitch - 1.5708), mul(CONCRETE, 0.42));
           else if (!hip && R > 2.2) { const tz = zr + 0.75, ty = ys + (zs - tz) * tp; box(M, px - 0.5, ty - 0.3, tz - 0.5, px + 0.5, ty + 0.12, tz + 0.5, mul(CONCRETE, 0.85)); solid(M, CYL, at(px, ty + 0.62, tz, 0.48, 1.0, 0.48), lin(0x1c2622)); solid(M, CYL, at(px, ty + 1.15, tz, 0.2, 0.08, 0.2), lin(0x2c3a34)); }
         }
       }
@@ -787,11 +787,11 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
       /* ---- an ordinary lot: yard strip and fence on the north side, house flush with the south edge ---- */
       function lot(b, lite) {
-        const hs = NH.house(b), H = hs.height, s = b.i, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y), zS = Z(b.y + b.h), w = x1 - x0, d = zS - zH;
+        const hs = NH.house(b), H = hs.height, s = b.i, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y) + (hs.yard && Z(b.y + b.h) - Z(hs.y) > 6 ? 1.4 : 0), zS = Z(b.y + b.h), w = x1 - x0, d = zS - zH;
         const roof = mul(rich(lin(b.c), 1.5), 1.22), wall = mul(lin(b.wall), 1.08), trim = TRIMS[(s * 5 + 2) % TRIMS.length], accent = ACCENTS[(s * 3 + 1) % ACCENTS.length], style = s % 3;
         const dado = hash(s, 6) < 0.62 ? mix(wall, accent, 0.5) : null;
         if (hs.yard) {
-          flat(b.x, b.y, b.x + b.w, hs.y, 0.02, mul(EARTH, 0.85 + 0.25 * hash(s, 1)));
+          flat(b.x, b.y, b.x + b.w, b.y + (zH - zN) / NH.U, 0.02, mul(EARTH, 0.85 + 0.25 * hash(s, 1)));
           const kind = [0, 1, 2, 3, 0, 2, 1, 0, 3][(s * 4 + (s >> 2)) % 9], fh = 1.15 + 0.3 * hash(s, 2);
           fence(x0, zN, x1, zN, 1, kind, fh, s, lite); fence(x0, zN, x0, zH, 1, kind, fh + 0.06, s + 77, lite); fence(x1, zN, x1, zH, -1, kind, fh + 0.06, s + 131, lite);
           if (!lite) yardThings(x0 + 0.5, x1 - 0.5, zN + 0.3, zH - 0.2, s); else if (hash(s, 3) < 0.6) bush(x0 + w * (0.2 + 0.6 * hash(s, 4)), (zN + zH) / 2, 0.7, s);
@@ -929,7 +929,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const signs = std(Object.assign({ map: signTex, transparent: true, depthWrite: false, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0 }, lay));
       const pools = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
       const meshes = [toMesh(G, std({ map: grainTex }), false), toMesh(M, std({ map: plasterTex }), true),
-        toMesh(ZN, std({ map: zincTex, normalMap: zincNormal, roughness: 0.5, metalness: 0.35 }), true), toMesh(F, std(Object.assign({ map: frontTex }, lay)), false),
+        toMesh(ZN, std({ map: zincTex, normalMap: zincNormal, roughness: 0.8, metalness: 0.12 }), true), toMesh(F, std(Object.assign({ map: frontTex }, lay)), false),
         toMesh(LIT[0], lit[0], false), toMesh(LIT[1], lit[1], false), toMesh(D, std(Object.assign({ map: decalTex, transparent: true, depthWrite: false }, lay)), false, -3),
         toMesh(W, water, false), toMesh(PL, pools, false, -1)];
       if (SG.count) meshes.push(toMesh(SG, signs, false, -2));
@@ -1104,10 +1104,10 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
 
   /* ---------------- colours ---------------- */
-  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x9a8672), 0.5), EYE = lin(0x0e0a09);
+  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0xb8a38a), 0.62), EYE = lin(0x0e0a09);
   const WRAP_A = lin(P.harbour), WRAP_B = lin(P.ink), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(P.patrolBand), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(P.zinc), NAVY = 0x18233a;
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
-  const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8a6a45];
+  const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];
 
   /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
   function lookFor(cast) {
@@ -1147,7 +1147,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       // legs: bare below whatever the bottoms cover
       const hem = HEMS[L.kind] || 0.07, lr = (y, rx, rz, cx) => hr(y, rx, rz, cx, z, { b: [LEG, SHIN, min(1, max(0, (0.6 - y) / 0.2))] });   // the knee bends between 0.4 and 0.6
       const bare = [lr(0.085, 0.037, 0.035, 0), lr(0.2, 0.044, 0.042, -0.004), lr(0.34, 0.058, 0.054, -0.008), lr(0.5, 0.056, 0.054, 0.002), lr(0.62, 0.068, 0.064, 0), lr(0.78, 0.084, 0.078, 0)];
-      const cloth = [[0.07, 0.064, 0.06], [0.29, 0.068, 0.064], [0.5, 0.073, 0.069], [0.72, 0.09, 0.084], [0.9, 0.094, 0.086]].filter((r) => r[0] > hem + 0.03).map((r) => lr(r[0], r[1], r[2], 0));
+      const cloth = [[0.07, 0.064, 0.06], [0.29, 0.068, 0.064], [0.5, 0.073, 0.069], [0.72, 0.09, 0.084], [0.9, 0.094, 0.086]].filter((r) => hem <= 0.07 || r[0] > hem + 0.03).map((r) => lr(r[0], r[1], r[2], 0));
       if (hem > 0.07) { loft(B, SKIN, bare.filter((r) => r.p[1] < hem + 0.1), 8, { c: WHITE }); if (hem < 1) cloth.unshift(lr(hem, 0.094 - (0.9 - hem) * 0.036, 0.088 - (0.9 - hem) * 0.036, 0)); }   // a loose hem
       if (hem < 1) loft(B, CLOTH, cloth, 8, { c: L.legs });
       // shoe: a blunt wedge along +X with a flat sole
@@ -1180,9 +1180,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const pts = [], rad = [], band = [[0.4, 1.03], [0.43, 1.1], [0.8, 1.1], [0.83, 1.03]].map(([el, sc]) => { const at = B.n; for (let j = 0; j < 20; j++) B.v(skull(j / 20 * TAU, el, sc), L.shirt, [HEAD]); return at; });
       for (let i = 0; i < 3; i++) B.strip(CLOTH, band[i], band[i + 1], 20);   // the band that holds the locs up, in the colour of the shirt
       B.done();
-      for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.012 + 0.085 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.075 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.042 - 0.012 * t); }
+      for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.014 + 0.11 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.095 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.052 - 0.014 * t); }
       tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
-      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; loc(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.45 + rnd(i, 3) * 0.05, z * 1.15]], 0.019, 1 + i % 3); }
+      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; loc(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.39 + rnd(i, 3) * 0.05, z * 1.15]], 0.025, 1 + i % 3); }
     },
     /* thick freeform locs of uneven thickness, falling to the shoulders all round */
     "locs-freeform"(B) {
@@ -1211,7 +1211,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       for (const sd of [-1, 1]) tube(B, CLOTH, [[K0[0], K0[1], K0[2] + sd * 0.02], [K0[0] + 0.03, K0[1] - 0.02 + sd * 0.02, K0[2] + sd * 0.06], [K0[0] + 0.026, K0[1] - 0.07 + sd * 0.02, K0[2] + sd * 0.085]], [0.02, 0.024, 0.016], 4, { c: sd < 0 ? WRAP_A : WRAP_B, b: [HEAD], flat: 0.4 });
     },
     /* 360 waves: cut close, ripples in rings out from the crown, a squared-off hairline */
-    waves(B) { shell(B, HAIR, 6, 18, -0.42, (k) => [1.026 + (k % 2 ? 0.016 : 0), k % 2 ? WAVE : HAIRC], true); },
+    waves(B) { shell(B, HAIR, 4, 18, -0.42, (k) => [1.024 + (k % 2 ? 0.03 : 0), k % 2 ? WAVE : HAIRC], true); },
     /* a rounded natural afro, clearly larger than the head, opening round the face */
     afro(B) {
       const C = [-0.03, 1.71, 0], R = 0.222, n = 20, K = 10, b = [HEAD];
@@ -1226,11 +1226,11 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     },
     /* straight-back canerows: raised plaited rows from the hairline to the nape, the scalp itself showing in the partings */
     canerows(B) {
-      [0, 0.046, -0.046, 0.088, -0.088].forEach((z, i) => {
-        const side = i > 2, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
-        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0128 * (k % 2 ? 1.16 : 0.9)); bs.push([HEAD]); }
-        const tail = side ? [[-0.088, 1.585, z * 0.95], [-0.1, 1.52, z * 0.95], [-0.108, 1.45, z * 1.05]] : [[-0.112, 1.5, z * 0.95], [-0.124, 1.45, z * 1.1], [-0.128, 1.39 + rnd(i, 2) * 0.02, z * 1.25]];
-        tail.forEach((p, k) => { pts.push(p); rad.push(0.0125 - 0.0015 * k); bs.push([HEAD, SWAY, min(1, 0.4 + 0.3 * k)]); });
+      [0.036, -0.036, 0.096, -0.096].forEach((z, i) => {
+        const side = i > 1, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
+        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0175 * (k % 2 ? 1.12 : 0.92)); bs.push([HEAD]); }
+        const tail = side ? [] : [[-0.118, 1.51, z * 1.05]];
+        tail.forEach((p, k) => { pts.push(p); rad.push(0.015); bs.push([HEAD]); });
         tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.12, root: true });
       });
     },
@@ -1538,8 +1538,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     const b = bag(), bar = barSet(k);
     for (const s of [-1, 1]) {
       solid(b, BOX, at(-0.19, 1.505, s * 0.34, 0.26, 0.09, 0.5), bar[s < 0 ? 0 : 1], 0);
-      solid(b, BOX, at(XF - 0.07, 0.635, s * 0.55, 0.1, 0.13, 0.3, 0, -s * 0.55, 0), mul(HEAD, 1.15), 0);
-      solid(b, BOX, at(XR + 0.075, 0.745, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
+      solid(b, BOX, at(XF + 0.01, 0.68, s * 0.55, 0.1, 0.13, 0.3, 0, -s * 0.55, 0), mul(HEAD, 1.15), 0);
+      solid(b, BOX, at(XR - 0.01, 0.76, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
       solid(b, BOX, at(XF - 0.2, 0.5, s * 0.775, 0.13, 0.06, 0.05, 0, -s * 1.0, 0), [1, 0.5, 0.08], 0);
     }
     solid(b, BOX, at(XR - 0.004, 0.745, 0, 0.02, 0.045, 0.82), mul(TAIL, 0.5), 0);
@@ -1659,7 +1659,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
   function lampGlow() {
     const b = bag(), A = NH.LAMP_ARM, SODIUM = [1, 0.43, 0.09], WARM = [1, 0.6, 0.28];   // sodium, a touch yellower than the palette swatch: added over blue night ground the swatch itself turns pink
-    glow(b, A, 0.04, 0, 8, 8, light(SODIUM, 0.27)); glow(b, A, 0.044, 0, 4, 4, light(WARM, 0.09));     // the pool: wide sodium, a warmer heart
+    glow(b, A, 0.04, 0, 6.5, 6.5, light(SODIUM, 0.15)); glow(b, A, 0.044, 0, 3, 3, light(WARM, 0.045));     // the pool: wide sodium, a warmer heart
     glow(b, A, 5.93, 0, 0.95, 0.95, light(WARM, 0.16)); glow(b, A + 0.02, 6.22, 0, 0.34, 0.34, light([1, 0.82, 0.55], 1.0));   // haze round the head and the glare of the lamp itself
     return finish(b, -1, true);
   }
@@ -1669,14 +1669,14 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
      Everything that is only there to help the eye (dark fringe, hairline, range ticks) is wound to face DOWN: this
      module's two-sided material shows it, the copy does not, so the copy stays exactly the sector a patrol can see. */
   function coneGeo(R, half, alert) {
-    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.1, hi = alert ? 0.56 : 0.44, TINT = [1, 0.78, 0.46];   // the fill is a shade deeper than the edge, so it also shows on pale concrete
+    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.24, hi = alert ? 0.56 : 0.44, TINT = [1, 0.78, 0.46];   // the fill is a shade deeper than the edge, so it also shows on pale concrete
     const radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [TINT[0], TINT[1], TINT[2], lo + (hi - lo) * Math.pow(r / R, 1.5)];
     const edge = (s, wide, c0, c1, down) => { const d = [cos(half), 0, s * sin(half)], n = [sin(half), 0, -s * cos(half)], A = mul(d, 0.4), B = mul(d, R + (wide < 0 ? 0.05 : 0)); upQuad(b, A, B, add(B, mul(n, wide)), add(A, mul(n, wide)), [c0, c0, c1, c1], 0, down); };
     ann(b, R, R + 0.24, -half - 0.02, half + 0.02, seg, dark(0.3), dark(0), 0, true); for (const s of [-1, 1]) edge(s, -0.24, dark(0.3), dark(0), true);        // a soft dark fringe lifts the pale shape off pale ground
-    ann(b, R, R + 0.05, -half - 0.004, half + 0.004, seg, dark(0.6), dark(0.6), 0, true); for (const s of [-1, 1]) edge(s, -0.05, dark(0.6), dark(0.6), true);   // and a dark hairline keeps its edge crisp
+    ann(b, R, R + 0.13, -half - 0.01, half + 0.01, seg, dark(0.55), dark(0.55), 0, true); for (const s of [-1, 1]) edge(s, -0.13, dark(0.55), dark(0.55), true);   // and a dark hairline keeps its edge crisp
     for (let k = 0; k + 1 < radii.length; k++) ann(b, radii[k], radii[k + 1], -half, half, seg, fill(radii[k]), fill(radii[k + 1]));                              // the fill, stronger toward the rim
     for (const t of [1 / 3, 2 / 3]) ann(b, R * t - 0.03, R * t + 0.03, -half, half, seg, [1, 1, 1, 0.3], [1, 1, 1, 0.3], 0, true);                                // range ticks
-    ann(b, R - w, R, -half, half, seg, [1, 1, 1, 1]); for (const s of [-1, 1]) edge(s, w * 0.8, [1, 1, 1, 1], [1, 1, 1, 1]);                                      // the bright edge
+    const E = alert ? [1, 1, 1, 1] : [1, 0.7, 0.32, 1]; ann(b, R - w, R, -half, half, seg, E); for (const s of [-1, 1]) edge(s, w * 0.8, E, E);   // calm edge is amber: brightness contrast on pale ground                                      // the bright edge
     return finish(b, -1, true);
   }
   function ringGeo(R) {
@@ -1730,7 +1730,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const mat = mats().mark({ color: 0xfff0be, opacity: 0.85, side: THREE.DoubleSide }), fill = mesh(calm, mat), holder = new THREE.Group(); fill.position.y = 0.08; fill.renderOrder = 2; holder.add(fill);
       return { mesh: holder, set(sees) { mat.color.setHex(sees ? P.heat : 0xfff0be); mat.opacity = sees ? 1 : 0.85; fill.geometry = sees ? alert : calm; } };
     },
-    dropRing(radius) { const m = mesh(once("ring" + radius.toFixed(3), () => ringGeo(radius)), mats().ring), g = new THREE.Group(); m.position.y = 0.06; m.renderOrder = 1; g.add(m); return g; },
+    dropRing(radius) { const m = mesh(once("ring" + radius.toFixed(3), () => ringGeo(radius)), mats().ring), g = new THREE.Group(); m.position.y = 0.06; m.renderOrder = 3; g.add(m); return g; },
     arrow() {
       const mat = mats().mark({ color: P.go }), m = mesh(once("arrow", arrowGeo), mat), g = new THREE.Group(); m.position.y = 0.09; m.renderOrder = 3; g.add(m);
       return Object.assign(g, { setColor(hex) { mat.color.setHex(hex); } });
@@ -1814,7 +1814,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const skyGeo = new THREE.BufferGeometry(), skyAttr = new THREE.BufferAttribute(skyCol, 3); skyAttr.setUsage(THREE.DynamicDrawUsage);
       skyGeo.setAttribute("position", new THREE.BufferAttribute(skyPos, 3)); skyGeo.setAttribute("color", skyAttr); skyGeo.setIndex(skyIdx);
       const sky = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false, toneMapped: false, depthWrite: false }));
-      sky.renderOrder = -10; sky.frustumCulled = false; scene.add(sky);
+      sky.renderOrder = -10; sky.frustumCulled = false; sky.visible = false; scene.add(sky);
       let skyDusk = -1;
 
       let boxR = 0;
@@ -1843,7 +1843,10 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           const cx = camera.position.x - focus.x, cy = camera.position.y - focus.y, cz = camera.position.z - focus.z, flat = Math.hypot(cx, cz), away = Math.hypot(flat, cy);
           scene.fog.near = away; scene.fog.far = away + a.haze + (b.haze - a.haze) * t;      // clear up to the point the camera looks at, wherever the camera stands
           sky.position.copy(camera.position);
-          if (Math.abs(dusk - skyDusk) > 0.0015) { // the sky changes slowly: repaint it about twice a second of play
+          // the game camera looks steeply down, so the dome is drawn (and repainted) only when the top of the view comes near the horizon
+          sky.visible = Math.atan2(cy, flat) - camera.fov * Math.PI / 360 < 8 * RAD;
+          if (!sky.visible) skyDusk = -1;
+          else if (Math.abs(dusk - skyDusk) > 0.0015) { // the sky changes slowly: repaint it about twice a second of play
             skyDusk = dusk;
             const g = tod.warm * tod.warm * 0.55, sx = Math.cos(west), sz = Math.sin(west);
             for (let v = 0, s = 0; v < NV; v++, s = v % SEG) {
@@ -1870,9 +1873,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
           /* night lights */
           const lit = smooth(night), crates = S ? S.delivered : 0;
-          yard.intensity = lit * (26 + 16 * crates);
+          yard.intensity = lit * (14 + 4 * Math.min(4, crates));          // capped: the yard must not wash out the drop ring or a cone on it
           const ux = S ? (S.player.x - sim.W / 2) * U : focus.x, uz = S ? (S.player.y - sim.H / 2) * U : focus.z;
-          self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit;
+          self.position.set(ux, 9, uz + 2.6); self.target.position.set(ux, 1.2, uz); self.intensity = 60 * lit * Math.min(1, Math.hypot(ux - yard.position.x, uz - yard.position.z) / 14);   // the yard light already lights the player there
           let n1 = 0, n2 = 0, d1 = 1e9, d2 = 1e9, d3 = 1e9;
           for (let k = 0; k < LN; k++) {
             const d = Math.hypot(LX[k] - focus.x, LZ[k] - focus.z);
