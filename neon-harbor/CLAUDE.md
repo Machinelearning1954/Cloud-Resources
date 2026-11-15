@@ -60,7 +60,10 @@ files that claim to be the original — that is fabrication.
    If the `multiplayer` block changed, also run `python3 tools/check_net_budget.py`.
    Always run `python3 tools/red_team.py`: it covers holes the doctor's text search
    cannot see (escaped or look-alike characters, files outside `*.json`, broken
-   crew/radio references). When you add a checker rule, add an attack for it there.
+   crew/radio references, a swapped third-party library). When you add a checker
+   rule, add an attack for it there.
+   If `prototypes/kingston-3d/` changed: `node build.js`, then the three Node tests in
+   its `test/` folder. Keep screenshots and other scratch output outside the repository.
 3. Commit with an `NH-` prefixed message.
 4. Publish only via `NEON_REMOTE=git@github.com:<you>/neon-harbor.git bash tools/publish.sh`
    (it runs the doctor first; never publish red).
@@ -92,7 +95,7 @@ compiler line numbers, not assumptions.
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–79 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–80 full, 54/59 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations + ADR 0055 near-future Dubai
@@ -108,8 +111,15 @@ tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
 tools/check_engine_config.py  11-check static test for that file; run it after any edit
 tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
-tools/red_team.py           9 extra scans + 52 sabotage attacks on the checkers (ledger row 75)
+tools/red_team.py           10 extra scans + 62 sabotage attacks on the checkers (ledger rows 75, 80);
+                            7 of the attacks and 4 of the checkers need Node and are skipped without it
 prototypes/crate-run/       playable browser prototype of one mechanic (ledger row 76); throwaway,
                             never imported by game code; walls apply here too
+prototypes/kingston-3d/     the same block and rules in real-time 3D in a browser (ledger row 80);
+                            read its brief.md and src/contract.js first. Holds the tree's only
+                            third-party file (vendor/three.min.js, pinned by checksum in two places)
+../.claude/agents/          nh-explorer (read-only, small model), nh-builder, nh-checker: optional
+                            helpers for this project, defined at the repository root
+../.claude/hooks/           nh-quick-check.sh: runs the quick checkers after an edit under neon-harbor/
 Source/README.md            honest NOT-RECOVERED marker
 ```

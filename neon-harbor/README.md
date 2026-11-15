@@ -34,7 +34,7 @@ compile-time law, not documentation.
 | `docs/ADR/` | Architecture decision records (INDEX + 18 ADRs) | 7 reconstructed, ADR 0049, **ADR 0050 (visual targets), 0051 (character appearance), 0052 (seven districts), 0053 (geodata pipeline), 0054 (radio), 0055 (near-future Dubai), 0056 (story), 0057 (multiplayer), 0058 (cheat codes), 0059 (engine target, proposed)** |
 | `docs/art/` | Art bible (draft) and the asset build list for the first Kingston block | draft, awaiting sign-off |
 | `docs/web/` | World browser (ADR 0047): plain HTML/JS over registry JSON | **regenerated 2026-11-10** |
-| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–79 full** | rows 54/59 PENDING |
+| `docs/RUMOR_LEDGER.md` | Intake machine — rows 1–58 lossy summary, **rows 60–80 full** | rows 54/59 PENDING |
 | `docs/RECOVERY_LOG.md` | What was lost, what was rebuilt, restore-from-local protocol | current |
 | `data/registries/` | Districts, **amenities (27 evidence-mapped + 2 Dubai branches = 29 rows)**, species, vehicles, services, bounties, crews | amenities authoritative |
 | `tools/repo_doctor.sh` | Policy scanner — four walls, ledger integrity, registry cross-refs, amenity completeness | 26 checks |
@@ -42,6 +42,7 @@ compile-time law, not documentation.
 | `tools/publish.sh` | GitHub publish script (ready; needs remote URL) | ready |
 | `Config/DefaultEngine.ini` | Unreal renderer settings (Lumen, hardware ray tracing, Virtual Shadow Maps) | names verified, **rendering untested**; checked by `tools/check_engine_config.py` (11 checks) |
 | `prototypes/crate-run/` | **Playable** browser prototype of one mechanic. Open `index.html` by double-click | first playable; not yet played by a person |
+| `prototypes/kingston-3d/` | The same block and rules in **real-time 3D in a browser** (WebGL). Open `index.html` by double-click | checked in a headless test browser; **not yet seen on a real phone** |
 | `Source/` | **NOT RECOVERED** — honest marker only | empty |
 
 ## The three commands that still close the loop
@@ -103,14 +104,19 @@ density players expect from the genre while every brand, venue and character rem
   free-roam sessions (up to 16) on dedicated servers. Design and budgets only;
   `tools/check_net_budget.py` checks the arithmetic. Rule §0 is amended: single-player
   stays fully offline.
-- **Red team (ledger row 75)** — `tools/red_team.py` sabotages a copy of the repo in 52
+- **Red team (ledger rows 75, 80)** — `tools/red_team.py` sabotages a copy of the repo in 62
   ways and confirms a checker catches each one. The first run found 18 gaps, and a later review found 3 more; all are
-  closed. It also adds 9 scans the doctor's text search cannot do.
+  closed. It also adds 10 scans the doctor's text search cannot do.
 - **First playable (ledger row 76)** — `prototypes/crate-run/`: one Kingston block, carry
   speaker crates past patrols that only notice you while you carry. A prototype of one
   mechanic in the browser, not the game and not Unreal.
 - **Cheat codes (ADR 0058, ledger row 77)** — 21 original codes in `services.json`, single-player
   only, none granting currency. Crate Run has three demo codes on its pause-menu pad.
+- **Crate Run 3D (ledger row 80)** — `prototypes/kingston-3d/`: the Crate Run block as a lit 3D
+  place that runs in a phone browser, with the same tested rules. It is a browser prototype
+  without ray tracing, not the Unreal game. Saved runs can be locked to the device (AES-256-GCM
+  under a passkey); ADR 0057 gains a decision on encryption in transit. Built with one
+  orchestrating session and scout, builder, reviewer and fixer agents.
 - **Art bible, asset specs and engine target (ledger row 78)** — `docs/art/` holds a draft art
   bible and 16 asset specs for the first block. ADR 0059 proposes moving from Unreal 5.5
   to 5.8 and awaits a decision.

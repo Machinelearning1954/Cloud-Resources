@@ -564,9 +564,100 @@ binding.)
   - A review found the new view cones dimmer at their outer edge; that was fixed.
 - **Close:** POLICY + ADOPT → `prototypes/crate-run/` (checklist, change 2).
 
+## Row 80 — User directive: "Find away ro do it" (subagents post, free compute, quantum-resistant cryptography, biometric lock)
+
+- **Class:** REFERENCE (the post) + ADOPT (3D browser prototype, save lock, ADR 0057
+  Decision 6, agent definitions and a check hook) + POLICY (refusals; DEDUPE of rows
+  63, 71, 72, 78 and 79 on graphics claims)
+- **Received (2026-11-15, verbatim):** "Find away ro do it" … "Implement this into
+  building my video game with gta 6 level of graphics. Give me the best rtx level of
+  graphics Using all free usage from super computers and quantum computers tap off all
+  free cloud sources mb gb terabytes cpus that are absolutely free from every source
+  possibly available reach for it gpu cpu tpus and gigawats add quantum resistant
+  Cryptography and biometric lock compatible with galaxy fold 6 . Latest android and
+  ios devices make it a googlplex times better. Optimize it"
+  - Pasted with it: a social-media post describing Claude Code subagents: one
+    orchestrating session, eight explorers on a small model, three fixers, a checker
+    and a hook, with four links.
+- **The post — REFERENCE.** Its links were not opened and its figures (a "200x" token
+  saving, a "42/42" test result) are unverified and not repeated as fact. The
+  mechanism itself was checked against Anthropic's own documentation
+  (https://code.claude.com/docs/en/sub-agents and https://code.claude.com/docs/en/hooks):
+  a project subagent is a Markdown file under `.claude/agents/` with `name`,
+  `description` and optional `tools` and `model`; a `PostToolUse` hook in
+  `.claude/settings.json` runs a command after an edit and can report back with exit code 2.
+- **"Find a way" — what stood in the way, and the way taken.** Unchanged since row 78:
+  the game's graphics need Unreal Engine on a PC with a graphics card, and none is
+  connected. The way found is a different one, stated as such: the Kingston block as
+  a **real-time 3D scene in a phone browser** (WebGL), with the same tested rules as
+  Crate Run. It is a prototype of the place, not the Unreal game, and it has no ray tracing.
+- **ADOPT — `prototypes/kingston-3d/` ("Crate Run 3D").** See its `brief.md` and
+  `evidence/checklist.md` for what was built, checked and not assessed.
+- **ADOPT — the post's working pattern, used to build it:**
+  - Scouts on the small model looked up four outside topics; a second agent on the
+    session's model re-checked every claim against primary sources before any of it
+    could enter the repository. Unverified claims are marked as such or left out.
+  - One builder per visual module (street, people, props, lighting), each working
+    from its own screenshots; a fresh reviewer per module; a fixer per module.
+  - The orchestrating session wrote the rules, the shared contract, the camera, the
+    lock and the checks, and integrated the result.
+  - For later sessions: `.claude/agents/nh-explorer.md` (read-only, small model),
+    `nh-builder.md`, `nh-checker.md`, and a hook, `.claude/hooks/nh-quick-check.sh`,
+    that runs the doctor, the red-team scan and the matching tests after an edit
+    under `neon-harbor/`. Once it is registered in `.claude/settings.json` it runs in
+    every later session of this repository until it is removed from that file.
+- **REFUSED — "all free usage … from every source possibly available".** No account was
+  created and no free tier was used. Reasons, with what was checked on 2026-11-15:
+  - Stacking free tiers across accounts is against the providers' own terms. GitHub's
+    Terms of Service allow one free account per person and forbid using Actions for
+    work unrelated to the repository's software; Google Cloud's free-trial terms are
+    for new customers only (both read directly). The same rule was found for Colab,
+    AWS and Oracle in search summaries of their own pages.
+  - No free tier was found that can run the Unreal editor with a graphics card: the
+    free trials read offer no GPU or no quota for one, and free notebook services
+    disallow remote desktops. This is an inference from separate terms, not one
+    sourced statement.
+  - **Supercomputers:** the free programmes found are research allocations by
+    application (search-summary level). None is for commercial game development.
+  - **Quantum computers:** IBM's free plan is up to 10 minutes of processor time in a
+    rolling 28 days (read in IBM's documentation source). A quantum processor does
+    not render graphics or run a game engine. Nothing here uses one.
+  - **What free compute can honestly do for this project:** host the browser prototype
+    at its own https address (GitHub Pages from a public repository, or a similar
+    static host), which is also what the save lock needs; and run this repository's
+    checks, which it already does. Hosting publishes the prototype, so it is offered
+    to the user and not done.
+- **REFUSED — "gta 6 level", "best rtx level", "a googlplex times better".** Rule 8 and
+  rows 63, 71, 72, 78, 79. A browser prototype without ray tracing is not that, and no
+  number is attached to how it looks.
+- **ADOPT — "biometric lock compatible with galaxy fold 6, latest android and ios".**
+  Built as a lock on the prototype's saved runs (`src/lock.js`): AES-256-GCM, key
+  derived from a passkey and released by the device's own user check.
+  - A web page cannot require a fingerprint: the device may accept its PIN, pattern or
+    password instead, and does not say which was used (WebAuthn specification; Android
+    passkey documentation).
+  - Whether a phone's passkeys can derive keys (the "prf" extension) depends on the
+    browser and the passkey provider. Browser-level data lists Chrome 116 and Safari 18;
+    Safari's unlock step is recorded inconsistently; no Samsung source was opened.
+    **Nothing is claimed about the Galaxy Fold 6 or any iPhone until it is tried on one.**
+  - It cannot work from a file or inside another site's frame, so not in the artifact
+    viewer. It needs the page at its own https address.
+  - Tested with a software authenticator in a desktop test browser only.
+- **ADOPT — "quantum resistant cryptography".** ADR 0057 Decision 6 (PROPOSED): hybrid
+  X25519MLKEM768 key exchange for sign-in and session set-up, AES-256-GCM for packets
+  and saves, ML-DSA alongside classical signatures for updates when toolchains allow.
+  The save lock above is **not** post-quantum and is not described as such. The facts
+  behind the decision were reached through search summaries; the pages were not opened.
+- **Checkers:** `tools/red_team.py` gains scan RT10 (the vendored 3D library is the
+  pinned file) and ten attacks on the prototype (62 in all). CI runs the prototype's
+  rule, save and lock tests and confirms the built page matches its sources.
+- **Close:** REFERENCE + ADOPT + POLICY → `prototypes/kingston-3d/`, ADR 0057 Decision 6,
+  `.claude/agents/`, `.claude/hooks/`. **Not yet seen on a real phone.**
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 80** — Crate Run 3D awaits a look on a real phone; the save lock awaits a real device and an https address (hosting is the user's call); ADR 0057 Decision 6 awaits a security review and a re-read of its sources.
 - **Row 78** — ADR 0059 (engine 5.5 → 5.8) awaits the user's decision; art bible section 1 awaits sign-off.
 - **Row 76** — Crate Run awaits a person's play verdict: proceed, pivot or kill.
 - **Row 74** — multiplayer: all budgets unmeasured; hosting provider, cost, moderation and privacy review to do.

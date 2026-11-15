@@ -19,6 +19,7 @@ Usage:
     python3 tools/red_team.py --scan     scan only
 Exit 0 = all good, 1 = a scan check failed or an attack got through.
 """
+import hashlib
 import json
 import os
 import re
@@ -33,6 +34,14 @@ REG = ("districts.json", "amenities.json", "species.json", "vehicles.json",
        "services.json", "bounties.json", "crews.json")
 GEO_CLASSES = {"GEO-ELEV-LIDAR-1M-PUBLIC", "GEO-IMG-AERIAL-60CM-PUBLIC", "GEO-ELEV-30M-OPEN",
                "GEO-IMG-SAT-10M-OPEN", "GEO-IMG-SAT-30CM-PURCHASE", "GEO-VEC-OPEN-MAP"}
+# The one third-party file in the tree: the 3D library used by prototypes/kingston-3d.
+# Its hash is pinned here as well as beside the file, so swapping the library and
+# updating the checksum next to it is still caught.
+K3D = os.path.join("prototypes", "kingston-3d")
+VENDOR_PINS = {
+    os.path.join(K3D, "vendor", "three.min.js"): "170c6789f43217c96b3170f4b42fafe135de7f7cd48497a4218f9757ee1d49fa",
+    os.path.join(K3D, "vendor", "LICENSE.three.txt"): "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d",
+}
 # Characters that can hide a banned word from a text search: invisible characters,
 # and letters from scripts that look like Latin letters.
 INVISIBLE = set(range(0x200B, 0x2010)) | set(range(0x202A, 0x202F)) | set(range(0x2060, 0x2065)) | {0xFEFF, 0x00AD}
@@ -222,6 +231,21 @@ def scan(root):
     except (KeyError, TypeError, AttributeError) as exc:
         bad.append(f"cheat_codes block is missing or malformed: {exc!r}")
     check("RT9 cheat codes are original-format, unique, gated and currency-free", not bad, "; ".join(bad))
+
+    bad = []
+    if os.path.isdir(os.path.join(root, K3D)):
+        for rel, want in VENDOR_PINS.items():
+            try:
+                got = hashlib.sha256(open(os.path.join(root, rel), "rb").read()).hexdigest()
+            except OSError:
+                got = "missing"
+            if got != want:
+                bad.append(f"{rel}: not the pinned file")
+        vendor = os.path.join(root, K3D, "vendor")
+        extra = sorted(set(os.listdir(vendor)) - {"three.min.js", "LICENSE.three.txt", "CHECKSUMS.sha256"}) if os.path.isdir(vendor) else []
+        if extra:
+            bad.append(f"unexpected files in vendor/: {extra}")
+    check("RT10 the vendored 3D library is the pinned file, and nothing else is vendored", not bad, "; ".join(bad))
     return out
 
 
@@ -256,6 +280,19 @@ def build_attacks(term):
         lookalike = chr(0x0430) + term
     ini = os.path.join("Config", "DefaultEngine.ini")
     veh = os.path.join("data", "registries", "vehicles.json")
+    k3d = lambda *parts: os.path.join(K3D, *parts)      # noqa: E731
+
+    def swap_library(t):
+        """Replace the 3D library, fix the checksum beside it, and rebuild the page so everything agrees."""
+        lib = os.path.join(t, k3d("vendor", "three.min.js"))
+        data = open(lib, "rb").read() + b"\n/* extra code would go here */"
+        open(lib, "wb").write(data)
+        sums = os.path.join(t, k3d("vendor", "CHECKSUMS.sha256"))
+        lines = open(sums, encoding="utf-8").read().splitlines()
+        open(sums, "w", encoding="utf-8").write("\n".join(
+            (hashlib.sha256(data).hexdigest() + "  three.min.js") if ln.endswith("three.min.js") else ln for ln in lines) + "\n")
+        if shutil.which("node"):
+            subprocess.run(["node", os.path.join(t, k3d("build.js"))], capture_output=True)
 
     def duplicate_amenity(t):
         edit_json(t, "amenities.json", lambda d: d["amenities"][1].update(id=d["amenities"][0]["id"]))
@@ -330,16 +367,37 @@ def build_attacks(term):
         ("engine", "same setting twice with different values", lambda t: edit_text(t, ini, lambda s: s.replace("r.RayTracing=True", "r.RayTracing=True\nr.RayTracing=False"))),
         ("engine", "settings file deleted", lambda t: os.remove(os.path.join(t, ini))),
         ("engine", "invalid value for a verified setting", lambda t: edit_text(t, ini, lambda s: s.replace("r.AntiAliasingMethod=4", "r.AntiAliasingMethod=99"))),
+        # --- 3D prototype (ledger row 80) ---
+        ("proto3d", "3D library swapped, its checksum fixed and the page rebuilt to match", swap_library),
+        ("proto3d", "an extra script dropped into vendor/", lambda t: write(t, k3d("vendor", "helper.min.js"), "/* not the pinned library */\n")),
+        ("proto3d", "banned word in a 3D source comment", lambda t: edit_text(t, k3d("src", "world.js"), lambda s: f"/* {term} */\n" + s)),
     ]
+    if shutil.which("node"):                            # these need the prototype's own Node checks to be runnable
+        A += [
+            ("proto3d", "one byte added to the 3D library", lambda t: open(os.path.join(t, k3d("vendor", "three.min.js")), "ab").write(b" ")),
+            ("proto3d", "a game rule changed without rebuilding the page", lambda t: edit_text(t, k3d("src", "sim.js"), lambda s: s.replace("STEP = 1 / 60", "STEP = 1 / 30", 1))),
+            ("proto3d", "the built page edited by hand", lambda t: edit_text(t, k3d("index.html"), lambda s: s.replace("Crate Run 3D", "Crate Run 3D!", 1))),
+            ("proto3d", "rule tests deleted", lambda t: os.remove(os.path.join(t, k3d("test", "sim.test.js")))),
+            ("proto3d", "save lock weakened to a 128-bit key", lambda t: edit_text(t, k3d("src", "lock.js"), lambda s: s.replace('{ name: "AES-GCM", length: 256 }', '{ name: "AES-GCM", length: 128 }'))),
+            ("proto3d", "save lock reuses one fixed nonce", lambda t: edit_text(t, k3d("src", "lock.js"), lambda s: s.replace("iv = rand(12)", "iv = new Uint8Array(12)"))),
+            ("proto3d", "a win with codes counted as a clean win", lambda t: edit_text(t, k3d("src", "save.js"), lambda s: s.replace("if (run.won && !run.cheated)", "if (run.won)"))),
+        ]
     return A
 
 
-CHECKERS = (
+CHECKERS = [
     ("doctor", ["bash", os.path.join("tools", "repo_doctor.sh")]),
     ("engine", [sys.executable, os.path.join("tools", "check_engine_config.py")]),
     ("net", [sys.executable, os.path.join("tools", "check_net_budget.py")]),
     ("scan", [sys.executable, os.path.join("tools", "red_team.py"), "--scan"]),
-)
+]
+if shutil.which("node"):                                # the 3D prototype's own checks, when Node is installed
+    CHECKERS += [
+        ("3d-page", ["node", os.path.join(K3D, "build.js"), "--check"]),
+        ("3d-rules", ["node", os.path.join(K3D, "test", "sim.test.js")]),
+        ("3d-save", ["node", os.path.join(K3D, "test", "save.test.js")]),
+        ("3d-lock", ["node", os.path.join(K3D, "test", "lock.test.js")]),
+    ]
 
 
 def run_checkers(tree):
@@ -371,6 +429,8 @@ def attack_suite(root):
     print("  PASS  baseline: the untouched tree passes every checker")
 
     attacks = build_attacks(term)
+    if not shutil.which("node"):
+        print("  note    Node is not installed: the 3D prototype's page, rule, save and lock checks and their 7 attacks were skipped")
     holes = 0
     for group, name, sabotage in attacks:
         tmp = tempfile.mkdtemp(prefix="nh-redteam-")

@@ -95,6 +95,46 @@ above (input validation with hard ceilings, then the arithmetic). It is not a ne
 
 "Train" has no meaning for this game's netcode: nothing here is a learned model.
 
+## Decision 6 — Encryption in transit, signed updates, and what "quantum-resistant" means here
+
+Added 2026-11-15 (ledger row 80). **PROPOSED. Nothing is built and nothing is measured.**
+
+The user asked for quantum-resistant cryptography. This is where it belongs: on the
+network, not in the picture. The game never claims to be "quantum-proof".
+
+| What | Decision | Status |
+|---|---|---|
+| Sign-in and session set-up (TLS 1.3) | Offer the hybrid key exchange X25519MLKEM768 first, fall back to X25519. It pairs a classical exchange with ML-KEM-768 (FIPS 203), so recorded traffic stays protected if either half is later broken. | PENDING: needs a server TLS stack that supports it, and a check that the engine's bundled TLS library can negotiate it |
+| Game packets (UDP) | AES-256-GCM, with the key agreed over the TLS channel above. | PENDING: Unreal ships an AES-256 GCM packet handler; its DTLS handler is labelled Experimental; Epic documents no post-quantum option |
+| Saves and local data | AES-256-GCM. Symmetric ciphers are not among the algorithms a quantum computer is expected to break, so nothing changes. | Already the plan |
+| Update and patch signing | Classical signature plus ML-DSA (FIPS 204) once the build toolchain and each store allow it. Stores sign packages their own way; that part is theirs to change. | PENDING |
+| Player sign-in (passkeys, platform accounts) | Left to the platform. Today's passkey signatures (ES256, RS256, EdDSA) are **not** post-quantum, and the game says so rather than implying otherwise. | Platform's to change |
+
+The servers must accept the larger TLS ClientHello that carries a hybrid key share;
+Apple warns that servers which cannot will fail to connect with its current systems.
+
+**What was checked (2026-11-15), and how well.** Every item below was reached through
+web-search summaries of the named source; the pages themselves could not be opened in
+that session. Re-read them before treating a version number or date as final.
+
+- NIST published FIPS 203 (ML-KEM), FIPS 204 (ML-DSA) and FIPS 205 (SLH-DSA) on 13 August 2024.
+  FIPS 203 carries a planning note (17 November 2025) about a correction to come: read the errata first.
+  https://csrc.nist.gov/pubs/fips/203/final · https://csrc.nist.gov/pubs/fips/204/final
+- RFC 10024 (August 2026) standardises the X25519MLKEM768 group for TLS 1.3.
+  https://www.rfc-editor.org/rfc/rfc10024.html
+- Chrome 131 and later on desktop, OpenSSL 3.5 and later, and Apple's system networking on
+  iOS 26 / macOS 26 offer X25519MLKEM768 by default. Chrome on Android: unconfirmed.
+  https://security.googleblog.com/2024/09/a-new-path-for-kyber-on-web.html ·
+  https://openssl-library.org/news/openssl-3.5-notes · https://support.apple.com/en-us/122756
+- NIST's position on AES, in paraphrase (the exact wording was not read): Grover's algorithm
+  gives little practical advantage, and AES with 128-, 192- or 256-bit keys can stay in use.
+  https://csrc.nist.gov/projects/post-quantum-cryptography/faqs
+- Unreal's packet handlers: Epic's API reference for `AESGCMHandlerComponent` and `DTLSHandlerComponent`.
+
+**Open:** which TLS library and version the chosen engine release bundles (ADR 0059);
+whether Android's platform TLS offers the hybrid group; a security review by someone
+qualified before any of this is built.
+
 ## Safety and operations
 
 - Voice and text chat need moderation tools, mute, block and report from day one,
@@ -110,3 +150,4 @@ above (input validation with hard ceilings, then the arithmetic). It is not a ne
 - CI runs the net budget check alongside the doctor and the engine config check.
 - Save codec v2 needs a clear split between host-owned story state and each
   player's own progress. That goes into the M0 design.
+- Decision 6 adds no checker: there is nothing to check until a server exists.
