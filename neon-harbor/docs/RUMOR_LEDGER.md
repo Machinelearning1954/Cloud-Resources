@@ -542,6 +542,25 @@ binding.)
   - PROPOSED → ADR 0059, move the engine target to 5.8. **Awaiting the user.**
   - No comparison to another title is made, and no graphics exist yet.
 
+## Row 79 — User directive: "Act as a developer from Rockstar and get me to gta 6 level of graphics"
+
+- **Class:** POLICY (DEDUPE of rows 63, 71, 72 and 78) + ADOPT (prototype visuals)
+- **Received (2026-11-15, verbatim):** "Act as a developer from Rockstar and get me to gta 6 level of graphics"
+- **Refused, as before:**
+  - Speaking as an employee of the genre leader: no insider knowledge exists here, and
+    claiming it would be an invented fact (rule 7; row 72).
+  - Any promise or claim of matching that title's graphics (rule 8).
+- **Still true:** the game has no graphics. They need Unreal Engine on a PC with a
+  graphics card; none is connected to this session (checked in row 78's turn).
+- **No new graphics document was written.** The one visible thing was improved instead.
+- **ADOPT — Crate Run visual pass:** building height with parallax, sun shadows that
+  lengthen toward dusk, kerbs, palms, deeper water, night lighting, readable view cones.
+  - Done without the play verdict the prototype still awaits.
+  - The first version cost three to four times as much per frame in a software-rendered
+    test and was reworked until it was close to the old cost. No claim is made about
+    a phone.
+- **Close:** POLICY + ADOPT → `prototypes/crate-run/` (checklist, change 2).
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
