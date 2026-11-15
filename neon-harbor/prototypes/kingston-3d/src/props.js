@@ -311,19 +311,19 @@
     return finish(b, 62);
   }
   function skiffGeo(hex) {
-    const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.22), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
+    const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
     const tab = (t, x) => { for (let k = 1; k < xs.length; k++) if (x <= xs[k]) return lerp(t[k - 1], t[k], clamp01((x - xs[k - 1]) / (xs[k] - xs[k - 1]))); return t[t.length - 1]; };
     const mirror = (x, R) => { const ring = R.map(([y, z]) => [x, y, z]); for (let k = R.length - 2; k >= 0; k--) ring.push([x, R[k][0], -R[k][1]]); return ring; };
     const outer = xs.map((x, k) => { const w = beams[k], s = sheers[k], d = drafts[k]; return mirror(x, [[s, w], [s - 0.11, w * 0.99], [s * 0.5, w * 0.95], [-d * 0.2, w * 0.78], [-d * 0.75, w * 0.42], [-d, 0]]); });
     const inner = xs.map((x, k) => { const w = beams[k], s = sheers[k], f = 0.05; return mirror(k ? x : x + 0.05, [[s, max(0.004, w - 0.05)], [s * 0.55, max(0.003, w * 0.95 - 0.05)], [f + 0.05, max(0.002, w * 0.78 - 0.03)], [f, w * 0.45], [f, 0]]); });   // the floor sits just above the waterline: the harbour is one flat sheet and would show through a deeper hull
     loft(b, outer, (i, j) => { const s = min(j, 9 - j); return s === 0 ? CREAM : mul(HULL, [1, 1, 0.82, 0.6, 0.5][s]); }, PAINT);
-    loft(b, inner, (i, j) => { const s = min(j, 7 - j); return s < 2 ? mul(INNER, s ? 0.86 : 1) : mul(FLOOR, 0.85 + 0.3 * rnd(i, j)); }, (i, j) => min(j, 7 - j) < 2 ? PAINT : MATTE, { inward: true });
+    loft(b, inner, (i, j) => { const s = min(j, 7 - j); return s < 3 ? mul(INNER, [1, 0.88, 0.74][s]) : mul(FLOOR, 0.85 + 0.3 * rnd(i, j)); }, (i, j) => min(j, 7 - j) < 3 ? PAINT : MATTE, { inward: true });   // painted inside as well: seen from above, the inside is most of the boat
     for (let k = 0; k + 1 < xs.length; k++) for (const j of [0, 1]) { const o = j ? outer[k].length - 1 : 0, q = j ? inner[k].length - 1 : 0; upQuad(b, outer[k][o], outer[k + 1][o], inner[k + 1][q], inner[k][q], CREAM, PAINT); }   // gunwale
     cap(b, outer[0], [-1, 0, 0], mul(HULL, 0.9), PAINT); cap(b, inner[0], [1, 0, 0], INNER, PAINT);
     upQuad(b, outer[0][0], inner[0][0], inner[0][inner[0].length - 1], outer[0][outer[0].length - 1], CREAM, PAINT);
     for (const [x, w] of [[-1.85, 0.34], [-0.35, 0.26], [1.0, 0.26]]) solid(b, BOX, at(x, tab(sheers, x) - 0.13, 0, w, 0.045, 2 * tab(beams, x) - 0.08), mul(WOOD, 0.9 + 0.2 * rnd(floor(x * 10), 3)), VARNISH);   // thwarts
-    const fx0 = 1.9, y0 = tab(sheers, fx0) - 0.035, w0 = tab(beams, fx0) - 0.05; tri(b, [fx0, y0, w0], [2.64, 0.6, 0], [fx0, y0, -w0], mul(HULL, 1.12), mul(HULL, 1.12), mul(HULL, 1.12), PAINT);      // foredeck
+    const fx0 = 1.9, y0 = tab(sheers, fx0) - 0.035, w0 = tab(beams, fx0) - 0.05; tri(b, [fx0, y0, w0], [2.64, 0.6, 0], [fx0, y0, -w0], HULL, mul(HULL, 1.15), HULL, PAINT);      // foredeck
     solid(b, BOX, at(fx0 + 0.01, y0 - 0.03, 0, 0.04, 0.07, 2 * w0), RAIL, VARNISH);
     for (const s of [-1, 1]) { solid(b, BOX, at(0.05, 0.325, s * 0.5, 2.5, 0.04, 0.05, 0, s * 0.05, 0), WOOD, VARNISH); solid(b, BOX, at(1.5, 0.33, s * 0.435, 0.56, 0.022, 0.14, 0, s * 0.05, 0), mul(WOOD, 1.15), VARNISH); }   // oars across the thwarts
     solid(b, cyl(10), at(-1.05, 0.19, 0.32, 0.3, 0.28, 0.3), lin(0xe8e4d8), SATIN); solid(b, cyl(10), at(-1.05, 0.335, 0.32, 0.26, 0.01, 0.26), lin(0x25303a), MATTE);           // bait bucket
