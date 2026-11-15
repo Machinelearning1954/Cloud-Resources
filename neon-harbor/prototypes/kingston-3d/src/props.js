@@ -166,7 +166,7 @@
     const std = (o) => new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 1, metalness: 1, roughnessMap: pal, metalnessMap: pal }, o));
     const mark = (o) => new THREE.MeshBasicMaterial(Object.assign({ vertexColors: true, transparent: true, depthWrite: false, fog: false, toneMapped: false }, o));
     return {
-      solid: std(), leaf: std({ side: THREE.DoubleSide }), speaker: std({ emissive: P.sodium, emissiveMap: emis, emissiveIntensity: 1.1 }),
+      solid: std(), leaf: std({ side: THREE.DoubleSide }), speaker: std({ emissive: P.sodium, emissiveMap: emis, emissiveIntensity: 0.9 }),
       crate: new THREE.MeshStandardMaterial({ map: crateTex(), vertexColors: true, roughness: 0.82, metalness: 0 }),
       lit: new THREE.MeshBasicMaterial({ vertexColors: true }), ring: mark({ color: P.go }), mark,
       // colour adds, alpha darkens: out = rgb + (1 - alpha) * what is behind
@@ -204,7 +204,7 @@
     solid(b, BOX, at(XF + 0.004, 0.61, 0, 0.02, 0.17, 0.8), UNDER, SATIN);                                                // grille
     for (const s of [-1, 1]) {
       solid(b, BOX, at(XF + 0.07, 0.56, s * 0.27, 0.05, 0.46, 0.05), TRIM, SATIN);                                         // push bar
-      solid(b, BOX, at(0.82, 1.0, s * 0.945, 0.12, 0.09, 0.15), BODY, PAINT);                                              // mirror
+      solid(b, BOX, at(0.84, 0.99, s * 0.935, 0.1, 0.075, 0.14), TRIM, SATIN);                                              // mirror
       for (const x of [0.8, -0.19]) solid(b, BOX, at(x, 0.57, s * 0.9, 0.014, 0.48, 0.012), TRIM, SATIN);                  // door seams
       for (const x of [-0.06, -0.8]) solid(b, BOX, at(x, 0.77, s * 0.9, 0.14, 0.028, 0.03), TRIM, SATIN);                  // door handles
       for (const x of [WX, -WX]) {
@@ -216,8 +216,8 @@
     solid(b, BOX, at(-0.19, 1.45, 0, 0.32, 0.05, 1.22), TRIM, SATIN); solid(b, BOX, at(-0.19, 1.5, 0, 0.26, 0.08, 0.12), STEEL, METAL);   // light bar: base and centre block
     return finish(b, 28);
   }
-  const BAR_BLUE = lin(0x6fb7ff), HEAD = [1, 0.93, 0.78], TAIL = lin(0xe0262f), FLASH_RED = lin(P.heat), FLASH_BLUE = lin(0x3f7bff);
-  const barSet = (k) => k === 0 ? [mul(BAR_BLUE, 1.25), mul(BAR_BLUE, 1.25)] : k === 1 ? [mul(FLASH_RED, 2.6), mul(FLASH_BLUE, 0.3)] : [mul(FLASH_RED, 0.3), mul(FLASH_BLUE, 2.8)];
+  const BAR_BLUE = lin(0x4a90ff), HEAD = [1, 0.93, 0.78], TAIL = lin(0xe0262f), FLASH_RED = lin(P.heat), FLASH_BLUE = lin(0x3f7bff);
+  const barSet = (k) => k === 0 ? [BAR_BLUE, BAR_BLUE] : k === 1 ? [mul(FLASH_RED, 2.6), mul(FLASH_BLUE, 0.3)] : [mul(FLASH_RED, 0.3), mul(FLASH_BLUE, 2.8)];
   // The lit parts and the glow come in three versions with the same shape and different colours: calm, flash left, flash right.
   const carLit = (k) => once("carLit" + k, () => {
     const b = bag(), bar = barSet(k);
@@ -229,13 +229,13 @@
     return finish(b, -1);
   });
   const carGlow = (k) => once("carGlow" + k, () => {
-    const b = bag(), bar = barSet(k), wash = k === 0 ? 0.2 : 0.3;
+    const b = bag(), bar = barSet(k), wash = k === 0 ? 0.07 : 0.2;
     glow(b, -0.03, 0.03, 0, 3.15, 1.8, dark(0.62));                                                                         // contact shadow
-    glow(b, 6.4, 0.05, 0, 4.4, 2.5, light(HEAD, 0.4)); for (const s of [-1, 1]) glow(b, 3.7, 0.052, s * 0.55, 1.9, 1.0, light(HEAD, 0.3));   // headlight pools
-    glow(b, -3.2, 0.05, 0, 1.5, 1.5, light(TAIL, 0.22));
+    glow(b, 6.4, 0.05, 0, 4.4, 2.5, light(HEAD, 0.13)); for (const s of [-1, 1]) glow(b, 3.7, 0.052, s * 0.55, 1.9, 1.0, light(HEAD, 0.09));   // headlight pools
+    glow(b, -3.2, 0.05, 0, 1.5, 1.5, light(TAIL, 0.1));
     for (const s of [-1, 1]) {
-      glow(b, XF + 0.06, 0.86, s * 0.55, 0.42, 0.42, light(HEAD, 0.9)); glow(b, XR - 0.02, 0.96, s * 0.57, 0.3, 0.3, light(TAIL, 0.6));
-      glow(b, -0.19, 0.054, s * (k ? 1.5 : 0.6), 4.2, 4.2, light(bar[s < 0 ? 0 : 1], wash)); glow(b, -0.19, 1.62, s * 0.34, 0.75, 0.75, light(bar[s < 0 ? 0 : 1], 0.55));
+      glow(b, XF + 0.06, 0.86, s * 0.55, 0.42, 0.42, light(HEAD, 0.5)); glow(b, XR - 0.02, 0.96, s * 0.57, 0.3, 0.3, light(TAIL, 0.4));
+      glow(b, -0.19, 0.054, s * (k ? 1.5 : 0.6), 4.2, 4.2, light(bar[s < 0 ? 0 : 1], wash)); glow(b, -0.19, 1.62, s * 0.34, 0.75, 0.75, light(bar[s < 0 ? 0 : 1], 0.3));
     }
     return finish(b, -1, true);
   });
@@ -253,24 +253,25 @@
     return finish(b, 30);
   }
   function speakerGeo() {
-    const b = bag(), CAB = lin(P.speaker), LIP = mul(CAB, 1.5), STEEL = lin(0xb8c0c6), DARK = lin(0x08080a), FRAME = lin(0x2b2c34), CONE0 = lin(0x42444f), CONE1 = lin(0x15161a), DOME = lin(0x646876), RIM = lin(0x8a5318);
+    const b = bag(), CAB = lin(P.speaker), LIP = mul(CAB, 1.5), STEEL = lin(0xb8c0c6), DARK = lin(0x08080a), FRAME = lin(0x3a3b45), CONE0 = lin(0x5c5f6e), CONE1 = lin(0x202127), DOME = lin(0x8b8fa0), RIM = lin(0x8a5318), BAFFLE = lin(0x2c2d36);
     solid(b, BOX, at(-0.065, 1, 0, 1.05, 1.96, 1.46), (p) => mul(CAB, 0.8 + 0.35 * p[1]), SATIN);                           // the box; its front is a recessed baffle
+    quad(b, [0.462, 0.02, 0.73], [0.462, 0.02, -0.73], [0.462, 1.98, -0.73], [0.462, 1.98, 0.73], [mul(BAFFLE, 0.7), mul(BAFFLE, 0.7), BAFFLE, BAFFLE], MATTE);
     for (const y of [0.045, 1.955]) solid(b, BOX, at(0.525, y, 0, 0.13, 0.06, 1.46), LIP, SATIN);
     for (const s of [-1, 1]) solid(b, BOX, at(0.525, 1, s * 0.705, 0.13, 1.96, 0.05), LIP, SATIN);
     for (const y of [0.02, 1.98]) for (const s of [-1, 1]) { solid(b, BOX, at(0, y, s * 0.73, 1.2, 0.04, 0.04), STEEL, METAL); solid(b, BOX, at(s * 0.58, y, 0, 0.04, 0.04, 1.5), STEEL, METAL); }   // steel edging
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
       solid(b, BOX, at(sx * 0.58, 1, sz * 0.73, 0.04, 2, 0.04), STEEL, METAL);
       for (const y of [0.05, 1.95]) solid(b, BOX, at(sx * 0.553, y, sz * 0.703, 0.104, 0.104, 0.104), mul(STEEL, 1.1), METAL);
-      solid(b, cyl(10), at(sx * 0.36, 1.985, sz * 0.5, 0.13, 0.02, 0.13), mul(STEEL, 0.75), METAL);                        // stacking cups
+      solid(b, cyl(10), at(sx * 0.36, 1.985, sz * 0.5, 0.1, 0.02, 0.1), mul(STEEL, 0.5), METAL);                        // stacking cups
     }
     for (const s of [-1, 1]) { solid(b, BOX, at(0, 1.25, s * 0.733, 0.44, 0.2, 0.012), DARK, SATIN); solid(b, BOX, at(0, 1.25, s * 0.762, 0.3, 0.032, 0.032), STEEL, METAL); }   // side handles
-    const prof = [[0.46, 0.385], [0.575, 0.385], [0.579, 0.352], [0.579, 0.315], [0.591, 0.294], [0.577, 0.272], [0.494, 0.1], [0.522, 0.066], [0.533, 0]];
+    const prof = [[0.46, 0.385], [0.575, 0.385], [0.579, 0.358], [0.579, 0.315], [0.591, 0.294], [0.577, 0.272], [0.494, 0.1], [0.522, 0.066], [0.533, 0]];
     const tone = [[LIP, LIP], [RIM, RIM], [FRAME, FRAME], [DARK, mul(FRAME, 0.7)], [mul(FRAME, 0.7), DARK], [CONE0, CONE1], [mul(DOME, 0.7), DOME], [DOME, mul(DOME, 1.3)]], feel = [SATIN, GLOW, SATIN, RUBBER, RUBBER, MATTE, SATIN, SATIN];
     for (const cy of [0.475, 1.265]) {
       rev(b, cy, 0, prof, 24, (i) => [tone[i][0], tone[i][0], tone[i][1], tone[i][1]], (i) => feel[i], [1, 0, 0]);
       for (const dy of [-0.22, -0.075, 0.075, 0.22]) solid(b, BOX, at(0.588, cy + dy, 0, 0.012, 0.016, 2 * sqrt(0.352 * 0.352 - dy * dy)), STEEL, METAL);   // grille bars
     }
-    const rect = (x, y0, y1, hz) => [[x, y0, hz], [x, y1, hz], [x, y1, -hz], [x, y0, -hz]], HORN = lin(0x50525e);         // the horn: a flared slot
+    const rect = (x, y0, y1, hz) => [[x, y0, hz], [x, y1, hz], [x, y1, -hz], [x, y0, -hz]], HORN = lin(0x74778c);         // the horn: a flared slot
     const horn = [rect(0.46, 1.675, 1.925, 0.56), rect(0.58, 1.675, 1.925, 0.56), rect(0.58, 1.695, 1.905, 0.54), rect(0.478, 1.785, 1.815, 0.1)];
     loft(b, horn, (i) => i === 0 ? LIP : i === 1 ? FRAME : [HORN, HORN, DARK, DARK], SATIN, { closed: true, toward: [1, 0, 0] }); cap(b, horn[3], [1, 0, 0], DARK, MATTE);
     return finish(b, 32);
@@ -340,19 +341,21 @@
   }
   function lampGlow() {
     const b = bag(), A = NH.LAMP_ARM, SODIUM = lin(P.sodium), WARM = [1, 0.6, 0.28];
-    glow(b, A, 0.04, 0, 7.6, 7.6, light(SODIUM, 0.55)); glow(b, A, 0.044, 0, 3.4, 3.4, light(WARM, 0.32));     // the pool: wide sodium, a warmer heart
-    glow(b, A, 5.93, 0, 1.4, 1.4, light(WARM, 0.8)); glow(b, A + 0.02, 6.22, 0, 0.55, 0.55, light([1, 0.82, 0.55], 1.7));   // haze round the head and the glare of the lamp itself
+    glow(b, A, 0.04, 0, 7.6, 7.6, light(SODIUM, 0.15)); glow(b, A, 0.044, 0, 3.6, 3.6, light(WARM, 0.08));     // the pool: wide sodium, a warmer heart
+    glow(b, A, 5.93, 0, 1.3, 1.3, light(WARM, 0.22)); glow(b, A + 0.02, 6.22, 0, 0.5, 0.5, light([1, 0.82, 0.55], 1.1));   // haze round the head and the glare of the lamp itself
     return finish(b, -1, true);
   }
 
   /* ---------------- marks on the ground ---------------- */
   function coneGeo(R, half, alert) {
-    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.19 : 0.12, radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [1, 1, 1, 0.07 + (alert ? 0.4 : 0.34) * Math.pow(r / R, 1.6)];
-    for (let k = 0; k + 1 < radii.length; k++) ann(b, radii[k], radii[k + 1], -half, half, seg, fill(radii[k]), fill(radii[k + 1]));
-    const edge = (s, inset, wide, c) => { const d = [cos(half), 0, s * sin(half)], n = [sin(half), 0, -s * cos(half)], A = add(mul(d, 0.4), mul(n, inset)), B = add(mul(d, R + (inset < 0 ? 0.04 : 0)), mul(n, inset)); upQuad(b, A, B, add(B, mul(n, wide)), add(A, mul(n, wide)), c); };
-    ann(b, R, R + 0.055, -half - 0.005, half + 0.005, seg, dark(0.55)); for (const s of [-1, 1]) edge(s, -0.055, 0.055, dark(0.55));   // the dark hairline outside
-    for (const t of [1 / 3, 2 / 3]) ann(b, R * t - 0.03, R * t + 0.03, -half, half, seg, [1, 1, 1, 0.3]);                              // range ticks
-    ann(b, R - w, R, -half, half, seg, [1, 1, 1, 1]); for (const s of [-1, 1]) edge(s, 0, w * 0.8, [1, 1, 1, 1]);                    // the bright edge
+    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.1, hi = alert ? 0.58 : 0.46;
+    const radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [1, 1, 1, lo + (hi - lo) * Math.pow(r / R, 1.5)];
+    const edge = (s, wide, c0, c1) => { const d = [cos(half), 0, s * sin(half)], n = [sin(half), 0, -s * cos(half)], A = mul(d, 0.4), B = mul(d, R + (wide < 0 ? 0.05 : 0)); upQuad(b, A, B, add(B, mul(n, wide)), add(A, mul(n, wide)), [c0, c0, c1, c1]); };
+    ann(b, R, R + 0.24, -half - 0.02, half + 0.02, seg, dark(0.3), dark(0)); for (const s of [-1, 1]) edge(s, -0.24, dark(0.3), dark(0));       // a soft dark fringe lifts the pale shape off pale ground
+    ann(b, R, R + 0.05, -half - 0.004, half + 0.004, seg, dark(0.6)); for (const s of [-1, 1]) edge(s, -0.05, dark(0.6), dark(0.6));          // and a dark hairline keeps its edge crisp
+    for (let k = 0; k + 1 < radii.length; k++) ann(b, radii[k], radii[k + 1], -half, half, seg, fill(radii[k]), fill(radii[k + 1]));           // the fill, stronger toward the rim
+    for (const t of [1 / 3, 2 / 3]) ann(b, R * t - 0.03, R * t + 0.03, -half, half, seg, [1, 1, 1, 0.3]);                                      // range ticks
+    ann(b, R - w, R, -half, half, seg, [1, 1, 1, 1]); for (const s of [-1, 1]) edge(s, w * 0.8, [1, 1, 1, 1], [1, 1, 1, 1]);                   // the bright edge
     return finish(b, -1, true);
   }
   function ringGeo(R) {
@@ -396,15 +399,15 @@
       for (let i = 0; i < count; i++) { const p = hang((i + 0.5) / count), c = COLS[i % 4], mid = [p[0], p[1] - 0.2, p[2]];
         solid(bulbs, cyl(6), at(p[0], p[1] - 0.05, p[2], 0.075, 0.1, 0.075), WIRE);
         solid(bulbs, ball(8, 6), at(mid[0], mid[1], mid[2], 0.095, 0.12, 0.095), (q) => mix(mul(c, 0.8), mix(c, WHITE, 0.55), clamp01((q[1] - mid[1]) * 5.5 + (q[2] - mid[2]) * 5.5)));
-        glow(fxb, mid[0], mid[1] + 0.06, mid[2], 0.55, 0.55, light(c, 0.75)); glow(fxb, mid[0], 0.046, mid[2], 2.3, 2.3, light(c, 0.2)); }
+        glow(fxb, mid[0], mid[1] + 0.06, mid[2], 0.55, 0.55, light(c, 0.4)); glow(fxb, mid[0], 0.046, mid[2], 2.3, 2.3, light(c, 0.045)); }
       const bulbMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }), glowMat = M.glow(), fx = mesh(finish(fxb, -1, true), glowMat); fx.renderOrder = 1;
       group.add(mesh(finish(bulbs, -1), bulbMat), fx);
       const api = { group, setGlow(k) { bulbMat.color.setScalar(0.55 + 1.15 * k); glowMat.color.setScalar(k); fx.visible = k > 0.004; } }; api.setGlow(0); return api;
     },
     visionCone(range, half) {
       const key = range.toFixed(3) + "/" + half.toFixed(4), calm = once("cone" + key, () => coneGeo(range, half, false)), alert = once("coneAlert" + key, () => coneGeo(range, half, true));
-      const mat = mats().mark({ color: 0xfff0be, opacity: 0.62 }), fill = mesh(calm, mat), holder = new THREE.Group(); fill.position.y = 0.08; fill.renderOrder = 2; holder.add(fill);
-      return { mesh: holder, set(sees) { mat.color.setHex(sees ? P.heat : 0xfff0be); mat.opacity = sees ? 1 : 0.62; fill.geometry = sees ? alert : calm; } };
+      const mat = mats().mark({ color: 0xfff0be, opacity: 0.85 }), fill = mesh(calm, mat), holder = new THREE.Group(); fill.position.y = 0.08; fill.renderOrder = 2; holder.add(fill);
+      return { mesh: holder, set(sees) { mat.color.setHex(sees ? P.heat : 0xfff0be); mat.opacity = sees ? 1 : 0.85; fill.geometry = sees ? alert : calm; } };
     },
     dropRing(radius) { const m = mesh(once("ring" + radius.toFixed(3), () => ringGeo(radius)), mats().ring), g = new THREE.Group(); m.position.y = 0.06; m.renderOrder = 1; g.add(m); return g; },
     arrow() {
