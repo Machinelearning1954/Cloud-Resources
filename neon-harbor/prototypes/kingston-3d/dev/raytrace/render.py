@@ -8,7 +8,7 @@ Options:
     --device gpu|cpu     gpu uses OptiX (hardware ray tracing) and falls back to CUDA, then CPU. Default gpu.
     --samples N          paths per pixel (default 192)
     --size WxH           picture size (default 1080x1920)
-    --views a,b,...      which cameras: game (the game's own camera), hero, street, quay, top (default game,hero,street)
+    --views a,b,...      which cameras: game (the game's own camera), hero, street, quay, aerial, top (default game,hero)
     --exposure E         stops added to every picture (default 0)
     --sun-from deg       compass direction the sun shines FROM (0 = north, 90 = east); default: as exported
     --sun-height deg     sun height above the horizon; default: as exported
@@ -40,7 +40,7 @@ SCENE_JSON, OUT = argv[0], argv[1]
 DEVICE = opt("--device", "gpu").lower()
 SAMPLES = int(opt("--samples", "192"))
 W, H = (int(v) for v in opt("--size", "1080x1920").split("x"))
-VIEWS = opt("--views", "game,hero,street").split(",")
+VIEWS = opt("--views", "game,hero").split(",")
 EXPOSURE = float(opt("--exposure", "0"))
 FRAMES = int(opt("--frames", "0"))
 os.makedirs(OUT, exist_ok=True)
@@ -211,10 +211,11 @@ if "--sun-from" in argv or "--sun-height" in argv:
     el = math.radians(float(opt("--sun-height", "30")))
     toward = Vector((math.sin(az) * math.cos(el), math.cos(az) * math.cos(el), math.sin(el)))
 toward.normalize()
-sun_color = sun_l["color"] if sun_l else (1, 0.9, 0.8)
+night, warm = tod["night"], tod["warm"]
+day_color = sun_l["color"] if sun_l else (1, 0.9, 0.8)
 sun = bpy.data.lights.new("Sun", "SUN")
-sun.energy = 0.25 + 4.25 * tod["sun"]            # watts per square metre: strong by day, a moon's worth at night
-sun.color = sun_color
+sun.energy = 0.10 + 6.4 * tod["sun"]             # watts per square metre: strong by day, a moon's worth at night
+sun.color = [d * (1 - night) + m * night for d, m in zip(day_color, (0.55, 0.66, 1.0))]   # sunlight by day, moonlight at night
 sun.angle = math.radians(1.6)                     # a slightly soft sun gives readable penumbras
 sun_o = bpy.data.objects.new("Sun", sun)
 sun_o.rotation_euler = toward.to_track_quat("Z", "Y").to_euler()
@@ -232,23 +233,22 @@ tc = wn.nodes.new("ShaderNodeTexCoord")
 sepz = wn.nodes.new("ShaderNodeSeparateXYZ")
 wn.links.new(tc.outputs["Generated"], sepz.inputs[0])
 wn.links.new(sepz.outputs["Z"], grad.inputs["Fac"])
-sky = hemi["color"] if hemi else (0.6, 0.75, 1.0)
-warm = tod["warm"]
-night = tod["night"]
-horizon = [(1 - warm) * (0.75 + 0.25 * c) + warm * h for c, h in zip(sky, (1.0, 0.62, 0.36))]
-zenith = [c * (0.55 + 0.25 * (1 - warm)) for c in sky]
-grad.color_ramp.elements[0].position = 0.5
-grad.color_ramp.elements[0].color = (*[c * (1 - 0.92 * night) + 0.02 * night for c in horizon], 1)
-grad.color_ramp.elements[1].position = 0.85
-grad.color_ramp.elements[1].color = (*[c * (1 - 0.92 * night) + 0.03 * night for c in zenith], 1)
-bg.inputs["Strength"].default_value = 1.1
+day_zenith = (0.20, 0.42, 0.90)
+horizon = [(1 - warm) * h0 + warm * h1 for h0, h1 in zip((0.72, 0.84, 1.0), (1.0, 0.66, 0.38))]
+zenith = [(1 - 0.35 * warm) * c for c in day_zenith]
+dark = 1 - 0.965 * night                          # the night sky keeps a little deep blue, never black
+grad.color_ramp.elements[0].position = 0.0        # the horizon
+grad.color_ramp.elements[0].color = (*[c * dark + n * night for c, n in zip(horizon, (0.010, 0.016, 0.040))], 1)
+grad.color_ramp.elements[1].position = 0.55       # well up the sky
+grad.color_ramp.elements[1].color = (*[c * dark + n * night for c, n in zip(zenith, (0.004, 0.008, 0.026))], 1)
+bg.inputs["Strength"].default_value = 0.75
 wn.links.new(grad.outputs["Color"], bg.inputs["Color"])
 wn.links.new(bg.outputs[0], w_out.inputs["Surface"])
 
 if night > 0.02:  # street lamps become real lights
     for k, p in enumerate(data["lamps"]):
         lamp = bpy.data.lights.new(f"Lamp{k}", "POINT")
-        lamp.energy = 2600 * night
+        lamp.energy = 950 * night
         lamp.color = (1.0, 0.62, 0.30)
         lamp.shadow_soft_size = 0.18
         lo = bpy.data.objects.new(f"Lamp{k}", lamp)
@@ -287,15 +287,17 @@ def game_camera():
     return o
 
 
-drop, pick = Vector(data["drop"]), Vector(data["pick"])
+drop, pick, water_y = Vector(data["drop"]), Vector(data["pick"]), data["block"]["waterY"]
 CAMERAS = {
     "game": game_camera,
-    # low three-quarter view of whoever the game camera follows, from the south-east
-    "hero": lambda: look_at("hero", focus + Vector((9.5, -13.0, 4.6)), focus + Vector((0, 1.0, 0.6)), lens=40, fstop=2.8),
-    # eye level on the street beside the player, looking north
-    "street": lambda: look_at("street", focus + Vector((-1.2, -9.0, 1.7)), focus + Vector((0.6, 6.0, 1.5)), lens=28, fstop=4.0),
-    # across the water at the quay and the boat shed
-    "quay": lambda: look_at("quay", pick + Vector((10.0, -16.0, 3.2)), pick + Vector((2.0, 4.0, 1.5)), lens=35, fstop=4.0),
+    # eye level, a few steps south-east of whoever the game camera follows, looking back at them
+    "hero": lambda: look_at("hero", focus + Vector((5.5, -6.0, 0.7)), focus + Vector((-1.0, 2.0, -0.3)), lens=35, fstop=2.8),
+    # eye level along an east-west street: export the scene with the player standing on one
+    "street": lambda: look_at("street", focus + Vector((-10.0, -0.8, 0.55)), focus + Vector((8.0, 0.4, 0.1)), lens=30, fstop=4.0),
+    # from a boat's height on the harbour, looking north at the quay and the boat shed
+    "quay": lambda: look_at("quay", Vector((pick.x + 7.0, water_y - 11.0, 2.4)), Vector((pick.x + 1.0, water_y + 6.0, 1.6)), lens=32, fstop=5.6),
+    # the whole block from over the harbour
+    "aerial": lambda: look_at("aerial", Vector((46.0, water_y - 42.0, 40.0)), Vector((2.0, 4.0, 0.0)), lens=32),
     # straight down, for checking the export against the game's own map
     "top": lambda: look_at("top", focus + Vector((0, -0.01, 85)), focus, lens=50),
 }
@@ -338,7 +340,7 @@ try:
     scene.view_settings.look = "AgX - Medium High Contrast"
 except Exception as exc:  # noqa: BLE001
     log("view transform left at default:", exc)
-scene.view_settings.exposure = EXPOSURE + (1.4 * night)   # open up the night so it reads like the game does
+scene.view_settings.exposure = EXPOSURE + (1.1 * night)   # open up the night a little: readable deep blue, as the game aims for
 
 
 def stats(path):  # numbers to judge exposure by, without having to look at the picture
