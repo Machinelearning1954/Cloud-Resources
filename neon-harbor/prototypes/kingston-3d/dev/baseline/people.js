@@ -151,10 +151,10 @@
   }
 
   /* ---------------- colours ---------------- */
-  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x9a8672), 0.5), EYE = lin(0x0e0a09);
+  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x6a4a34), 0.55)   /* the crest of each wave: dark hair catching the light, never grey */, EYE = lin(0x0e0a09);
   const WRAP_A = lin(P.harbour), WRAP_B = lin(P.ink), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(P.patrolBand), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(P.zinc), NAVY = 0x18233a;
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
-  const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8a6a45];
+  const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];
 
   /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
   function lookFor(cast) {
@@ -194,7 +194,7 @@
       // legs: bare below whatever the bottoms cover
       const hem = HEMS[L.kind] || 0.07, lr = (y, rx, rz, cx) => hr(y, rx, rz, cx, z, { b: [LEG, SHIN, min(1, max(0, (0.6 - y) / 0.2))] });   // the knee bends between 0.4 and 0.6
       const bare = [lr(0.085, 0.037, 0.035, 0), lr(0.2, 0.044, 0.042, -0.004), lr(0.34, 0.058, 0.054, -0.008), lr(0.5, 0.056, 0.054, 0.002), lr(0.62, 0.068, 0.064, 0), lr(0.78, 0.084, 0.078, 0)];
-      const cloth = [[0.07, 0.064, 0.06], [0.29, 0.068, 0.064], [0.5, 0.073, 0.069], [0.72, 0.09, 0.084], [0.9, 0.094, 0.086]].filter((r) => r[0] > hem + 0.03).map((r) => lr(r[0], r[1], r[2], 0));
+      const cloth = [[0.07, 0.064, 0.06], [0.29, 0.068, 0.064], [0.5, 0.073, 0.069], [0.72, 0.09, 0.084], [0.9, 0.094, 0.086]].filter((r) => hem <= 0.07 || r[0] > hem + 0.03).map((r) => lr(r[0], r[1], r[2], 0));
       if (hem > 0.07) { loft(B, SKIN, bare.filter((r) => r.p[1] < hem + 0.1), 8, { c: WHITE }); if (hem < 1) cloth.unshift(lr(hem, 0.094 - (0.9 - hem) * 0.036, 0.088 - (0.9 - hem) * 0.036, 0)); }   // a loose hem
       if (hem < 1) loft(B, CLOTH, cloth, 8, { c: L.legs });
       // shoe: a blunt wedge along +X with a flat sole
@@ -227,9 +227,9 @@
       const pts = [], rad = [], band = [[0.4, 1.03], [0.43, 1.1], [0.8, 1.1], [0.83, 1.03]].map(([el, sc]) => { const at = B.n; for (let j = 0; j < 20; j++) B.v(skull(j / 20 * TAU, el, sc), L.shirt, [HEAD]); return at; });
       for (let i = 0; i < 3; i++) B.strip(CLOTH, band[i], band[i + 1], 20);   // the band that holds the locs up, in the colour of the shirt
       B.done();
-      for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.012 + 0.085 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.075 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.042 - 0.012 * t); }
+      for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.014 + 0.11 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.095 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.052 - 0.014 * t); }
       tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
-      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; loc(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.45 + rnd(i, 3) * 0.05, z * 1.15]], 0.019, 1 + i % 3); }
+      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; loc(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.39 + rnd(i, 3) * 0.05, z * 1.15]], 0.025, 1 + i % 3); }
     },
     /* thick freeform locs of uneven thickness, falling to the shoulders all round */
     "locs-freeform"(B) {
@@ -258,7 +258,7 @@
       for (const sd of [-1, 1]) tube(B, CLOTH, [[K0[0], K0[1], K0[2] + sd * 0.02], [K0[0] + 0.03, K0[1] - 0.02 + sd * 0.02, K0[2] + sd * 0.06], [K0[0] + 0.026, K0[1] - 0.07 + sd * 0.02, K0[2] + sd * 0.085]], [0.02, 0.024, 0.016], 4, { c: sd < 0 ? WRAP_A : WRAP_B, b: [HEAD], flat: 0.4 });
     },
     /* 360 waves: cut close, ripples in rings out from the crown, a squared-off hairline */
-    waves(B) { shell(B, HAIR, 6, 18, -0.42, (k) => [1.026 + (k % 2 ? 0.016 : 0), k % 2 ? WAVE : HAIRC], true); },
+    waves(B) { shell(B, HAIR, 4, 18, -0.42, (k) => [1.024 + (k % 2 ? 0.03 : 0), k % 2 ? WAVE : HAIRC], true); },
     /* a rounded natural afro, clearly larger than the head, opening round the face */
     afro(B) {
       const C = [-0.03, 1.71, 0], R = 0.222, n = 20, K = 10, b = [HEAD];
@@ -273,11 +273,11 @@
     },
     /* straight-back canerows: raised plaited rows from the hairline to the nape, the scalp itself showing in the partings */
     canerows(B) {
-      [0, 0.046, -0.046, 0.088, -0.088].forEach((z, i) => {
-        const side = i > 2, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
-        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0128 * (k % 2 ? 1.16 : 0.9)); bs.push([HEAD]); }
-        const tail = side ? [[-0.088, 1.585, z * 0.95], [-0.1, 1.52, z * 0.95], [-0.108, 1.45, z * 1.05]] : [[-0.112, 1.5, z * 0.95], [-0.124, 1.45, z * 1.1], [-0.128, 1.39 + rnd(i, 2) * 0.02, z * 1.25]];
-        tail.forEach((p, k) => { pts.push(p); rad.push(0.0125 - 0.0015 * k); bs.push([HEAD, SWAY, min(1, 0.4 + 0.3 * k)]); });
+      [0.036, -0.036, 0.096, -0.096].forEach((z, i) => {
+        const side = i > 1, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
+        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0175 * (k % 2 ? 1.12 : 0.92)); bs.push([HEAD]); }
+        const tail = side ? [] : [[-0.118, 1.51, z * 1.05]];
+        tail.forEach((p, k) => { pts.push(p); rad.push(0.015); bs.push([HEAD]); });
         tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.12, root: true });
       });
     },

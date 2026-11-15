@@ -764,6 +764,39 @@ binding.)
   stills.
 - **Close:** REFERENCE + PENDING + POLICY + ADOPT (review only).
 
+## Row 85 — User directive: a second pasted guide ("definitive master guide": free GPUs, an accelerator programme, Unreal 5.8 with MCP bridges, a critique agent)
+
+- **Class:** REFERENCE + PENDING (unverified claims) + POLICY (DEDUPE of row 84) + ADOPT (two items)
+- **Received (2026-11-15):** a long guide pasted with no words of the user's own. Its action
+  plan: apply to a graphics-card maker's start-up programme for cloud credits; open free
+  notebook accounts; install Unreal 5.8 with an MCP plugin; give the agent a third-party
+  technical analysis of the genre leader's next game "as its Bible"; build a
+  screenshot-critique-rebuild loop.
+- **PENDING — not verified, not repeated as fact:** every figure in it. Among them: the
+  start-up programme's credit amounts and review time; the free notebook quotas and card
+  types (the Kaggle figure agrees with row 80's check; the others were not checked); a
+  hosted service's free daily card minutes; benchmark percentages for two graphics cards;
+  frame rates in engine demos; that Epic ships a first-party MCP server and the action
+  counts of community bridges; the description of another studio's rendering methods; the
+  $15,000 cost figure (also in row 84). No agents were spent checking them: none changes
+  what can be done from this session.
+- **For the user, not doable from here:** the start-up programme asks for an incorporated
+  company, a website and a pitch deck, by the guide's own account. Free notebook accounts
+  must be the user's own, one per person (row 80).
+- **POLICY:** a third-party analysis of another studio's unreleased game is not this
+  project's reference, and its trailer stills are not compared against (rules 1 and 8).
+  Generic techniques it names (global illumination, filtered shadow maps, mixed reflection
+  methods) are ordinary engine features and are already this project's settings where
+  verified (rows 69 and 70). No setting was added to `Config/DefaultEngine.ini` from the
+  guide: its names are unverified and the config checker refuses unverified names.
+- **ADOPT:**
+  - The screenshot-critique-rebuild loop is the review pass that ran on the browser
+    prototype (rows 80 and 84). Its findings and fixes are in
+    `prototypes/kingston-3d/evidence/checklist.md`.
+  - The free notebook route: `prototypes/kingston-3d/dev/raytrace/` holds a Kaggle notebook
+    for offline ray tracing on a free graphics card. It has not been run on Kaggle.
+- **Close:** REFERENCE + PENDING + POLICY + ADOPT.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.

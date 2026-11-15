@@ -6,22 +6,25 @@ with software WebGL: the pictures are correct, its speed says nothing about a ph
 
 ## State at this commit (2026-11-15)
 
-All four visual modules are builder agents' versions; the usage limit stopped the runs
-twice, so the second-agent review and fix pass has **not** run for any of them yet:
+All four visual modules were written by builder agents, then each was reviewed by a fresh
+agent from screenshots (against the art bible and the project's own ray-traced stills) and
+a fixer acted on the confirmed findings. What the reviews found and what was done:
 
-- `src/world.js` (the block) and `src/people.js` (characters and hairstyles): built in the
-  first run.
-- `src/lighting.js` (sun arc, sky, golden hour, moon, four night lights): its builder
-  finished and reported.
-- `src/props.js` (palms, patrol car, skiffs, crates, speakers, lamps, cones): its builder
-  was cut off mid-work; this is its last saved version.
-- The independent review of the main loop, the lock and the tooling did **not** run either.
+| Module | Found | Done |
+|---|---|---|
+| props | The calm vision cone was nearly invisible on sunlit concrete (must-fix); the yard lamp glow washed out the delivery ring and the yard at night; headlights were buried in the car body | All four fixed. The orchestrating session re-shot the daylight cone and a cone half behind a building: both read |
+| lighting | The soundhall yard clipped to pale yellow at night because the yard light grew without limit; the sky dome was drawn although never on screen | Yard light capped and the follow light fades near it; dome hidden when out of view. The yard centre is still bright |
+| world | Roofs turned one saturated blue at night; yards and fences were hidden under the eaves; roof tyres read as black holes | Roof made matte, yards widened on deep lots, roof clutter lightened. Roofs are still mostly blue at night: that is the moonlight, a lighting matter, still open |
+| people | Shoes floated below trouser legs (must-fix); 360 waves and canerows did not read at phone size; the updo read as a dot; tan shoes read as bare feet | Shoe gap fixed, updo enlarged, shoes recoloured, waves and canerows reworked. The waves fix came out pale grey, which read as grey hair; the orchestrating session darkened it and re-shot it. Canerows read close up and only faintly at game distance: still open |
 
-Looked at by the orchestrating session at this commit (day, golden hour and night street,
-the yard at night, the cast screen, a phone-real close-up, and a vision cone half behind a
-building): streets read fence to fence, lamps light real pools at night, cones show through
-walls, and the cast screen's short last row is now centred. The standard views draw 34 to 86
-draw calls and 57,000 to 81,000 triangles (contract budget: 220 and 120,000).
+Hair, judged by the reviewer and then by the orchestrating session from close-ups: locs updo,
+freeform locs, head wrap, afro and patrol cap read clearly; 360 waves reads as dark cropped
+hair with a ripple; canerows is the weakest. No stylist has reviewed any of them (ADR 0051).
+
+The independent review of the main loop, the lock and the tooling has still **not** run.
+
+The standard views draw 28 to 85 draw calls and 18,000 to 81,000 triangles (contract budget:
+220 and 120,000), counted in a software renderer.
 
 | What | How it was checked | Result |
 |---|---|---|
@@ -39,7 +42,7 @@ draw calls and 57,000 to 81,000 triangles (contract budget: 220 and 120,000).
 | Lock end to end: lock, reload, locked, unlock, refuse, passkey deleted, device without key derivation, no screen lock, opened from a file | `node dev/lock-check.js`, headless, **software authenticator** | 21 of 21 |
 | Lock on a real phone, with a real fingerprint or face | not possible from here | **not assessed** |
 | Frame rate on a phone | not possible from here | **not assessed** |
-| How it looks | the orchestrating session's own look at the standard views; no independent review yet | **partly assessed** |
+| How it looks | one independent review and fix pass per visual module, from screenshots; then re-shot by the orchestrating session | **assessed from screenshots only**; open items are in the table above |
 | Sound | carried over from the flat prototype, not listened to | **not assessed** |
 | Played by a person | no | **not yet** |
 

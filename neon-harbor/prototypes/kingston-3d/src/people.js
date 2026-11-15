@@ -151,7 +151,7 @@
   }
 
   /* ---------------- colours ---------------- */
-  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0xb8a38a), 0.62), EYE = lin(0x0e0a09);
+  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x6a4a34), 0.55)   /* the crest of each wave: dark hair catching the light, never grey */, EYE = lin(0x0e0a09);
   const WRAP_A = lin(P.harbour), WRAP_B = lin(P.ink), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(P.patrolBand), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(P.zinc), NAVY = 0x18233a;
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
   const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];

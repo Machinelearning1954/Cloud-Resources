@@ -27,8 +27,9 @@
    MERGING   BufferGeometryUtils is NOT in this build (it is an add-on). Merge by hand or use InstancedMesh.
    BUDGET    a phone must hold 60 fps: share geometries and materials, merge static meshes, use
              InstancedMesh for repeats, no per-frame allocation (no `new` inside update), no extra
-             render passes, at most ONE shadow-casting light (the sun) and at most 4 other real lights
-             in the whole scene. Whole scene in play: under 220 draw calls and 120,000 triangles.
+             render passes, at most ONE shadow-casting light (the sun), one hemisphere fill, and at
+             most 4 other real lights in the whole scene. Whole scene in play: under 220 draw calls
+             and 120,000 triangles.
    TIME      NH.tod(dusk) -> { dusk, sun, warm, night }, each 0..1. dusk 0 = 4 PM, 1 = 7 PM.
              sun = how strong direct sunlight is; warm = orange dusk tint; night = how dark it is.
    NAMES     no real brands, people or places beyond the fictional ones already in NH.sim. */

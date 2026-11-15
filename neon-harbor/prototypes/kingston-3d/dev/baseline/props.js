@@ -232,8 +232,8 @@
     const b = bag(), bar = barSet(k);
     for (const s of [-1, 1]) {
       solid(b, BOX, at(-0.19, 1.505, s * 0.34, 0.26, 0.09, 0.5), bar[s < 0 ? 0 : 1], 0);
-      solid(b, BOX, at(XF - 0.07, 0.635, s * 0.55, 0.1, 0.13, 0.3, 0, -s * 0.55, 0), mul(HEAD, 1.15), 0);
-      solid(b, BOX, at(XR + 0.075, 0.745, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
+      solid(b, BOX, at(XF + 0.01, 0.68, s * 0.55, 0.1, 0.13, 0.3, 0, -s * 0.55, 0), mul(HEAD, 1.15), 0);
+      solid(b, BOX, at(XR - 0.01, 0.76, s * 0.57, 0.08, 0.12, 0.32, 0, s * 0.5, 0), mul(TAIL, 0.85), 0);
       solid(b, BOX, at(XF - 0.2, 0.5, s * 0.775, 0.13, 0.06, 0.05, 0, -s * 1.0, 0), [1, 0.5, 0.08], 0);
     }
     solid(b, BOX, at(XR - 0.004, 0.745, 0, 0.02, 0.045, 0.82), mul(TAIL, 0.5), 0);
@@ -353,7 +353,7 @@
   }
   function lampGlow() {
     const b = bag(), A = NH.LAMP_ARM, SODIUM = [1, 0.43, 0.09], WARM = [1, 0.6, 0.28];   // sodium, a touch yellower than the palette swatch: added over blue night ground the swatch itself turns pink
-    glow(b, A, 0.04, 0, 8, 8, light(SODIUM, 0.27)); glow(b, A, 0.044, 0, 4, 4, light(WARM, 0.09));     // the pool: wide sodium, a warmer heart
+    glow(b, A, 0.04, 0, 6.5, 6.5, light(SODIUM, 0.15)); glow(b, A, 0.044, 0, 3, 3, light(WARM, 0.045));     // the pool: wide sodium, a warmer heart
     glow(b, A, 5.93, 0, 0.95, 0.95, light(WARM, 0.16)); glow(b, A + 0.02, 6.22, 0, 0.34, 0.34, light([1, 0.82, 0.55], 1.0));   // haze round the head and the glare of the lamp itself
     return finish(b, -1, true);
   }
@@ -363,14 +363,14 @@
      Everything that is only there to help the eye (dark fringe, hairline, range ticks) is wound to face DOWN: this
      module's two-sided material shows it, the copy does not, so the copy stays exactly the sector a patrol can see. */
   function coneGeo(R, half, alert) {
-    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.1, hi = alert ? 0.56 : 0.44, TINT = [1, 0.78, 0.46];   // the fill is a shade deeper than the edge, so it also shows on pale concrete
+    const b = bag(), seg = max(8, Math.round(half * 28)), w = alert ? 0.2 : 0.14, lo = alert ? 0.16 : 0.24, hi = alert ? 0.56 : 0.44, TINT = [1, 0.78, 0.46];   // the fill is a shade deeper than the edge, so it also shows on pale concrete
     const radii = [0.02, 0.3, 0.55, 0.78, 1].map((t) => t * (R - w)), fill = (r) => [TINT[0], TINT[1], TINT[2], lo + (hi - lo) * Math.pow(r / R, 1.5)];
     const edge = (s, wide, c0, c1, down) => { const d = [cos(half), 0, s * sin(half)], n = [sin(half), 0, -s * cos(half)], A = mul(d, 0.4), B = mul(d, R + (wide < 0 ? 0.05 : 0)); upQuad(b, A, B, add(B, mul(n, wide)), add(A, mul(n, wide)), [c0, c0, c1, c1], 0, down); };
     ann(b, R, R + 0.24, -half - 0.02, half + 0.02, seg, dark(0.3), dark(0), 0, true); for (const s of [-1, 1]) edge(s, -0.24, dark(0.3), dark(0), true);        // a soft dark fringe lifts the pale shape off pale ground
-    ann(b, R, R + 0.05, -half - 0.004, half + 0.004, seg, dark(0.6), dark(0.6), 0, true); for (const s of [-1, 1]) edge(s, -0.05, dark(0.6), dark(0.6), true);   // and a dark hairline keeps its edge crisp
+    ann(b, R, R + 0.13, -half - 0.01, half + 0.01, seg, dark(0.55), dark(0.55), 0, true); for (const s of [-1, 1]) edge(s, -0.13, dark(0.55), dark(0.55), true);   // and a dark hairline keeps its edge crisp
     for (let k = 0; k + 1 < radii.length; k++) ann(b, radii[k], radii[k + 1], -half, half, seg, fill(radii[k]), fill(radii[k + 1]));                              // the fill, stronger toward the rim
     for (const t of [1 / 3, 2 / 3]) ann(b, R * t - 0.03, R * t + 0.03, -half, half, seg, [1, 1, 1, 0.3], [1, 1, 1, 0.3], 0, true);                                // range ticks
-    ann(b, R - w, R, -half, half, seg, [1, 1, 1, 1]); for (const s of [-1, 1]) edge(s, w * 0.8, [1, 1, 1, 1], [1, 1, 1, 1]);                                      // the bright edge
+    const E = alert ? [1, 1, 1, 1] : [1, 0.7, 0.32, 1]; ann(b, R - w, R, -half, half, seg, E); for (const s of [-1, 1]) edge(s, w * 0.8, E, E);   // calm edge is amber: brightness contrast on pale ground                                      // the bright edge
     return finish(b, -1, true);
   }
   function ringGeo(R) {
@@ -424,7 +424,7 @@
       const mat = mats().mark({ color: 0xfff0be, opacity: 0.85, side: THREE.DoubleSide }), fill = mesh(calm, mat), holder = new THREE.Group(); fill.position.y = 0.08; fill.renderOrder = 2; holder.add(fill);
       return { mesh: holder, set(sees) { mat.color.setHex(sees ? P.heat : 0xfff0be); mat.opacity = sees ? 1 : 0.85; fill.geometry = sees ? alert : calm; } };
     },
-    dropRing(radius) { const m = mesh(once("ring" + radius.toFixed(3), () => ringGeo(radius)), mats().ring), g = new THREE.Group(); m.position.y = 0.06; m.renderOrder = 1; g.add(m); return g; },
+    dropRing(radius) { const m = mesh(once("ring" + radius.toFixed(3), () => ringGeo(radius)), mats().ring), g = new THREE.Group(); m.position.y = 0.06; m.renderOrder = 3; g.add(m); return g; },
     arrow() {
       const mat = mats().mark({ color: P.go }), m = mesh(once("arrow", arrowGeo), mat), g = new THREE.Group(); m.position.y = 0.09; m.renderOrder = 3; g.add(m);
       return Object.assign(g, { setColor(hex) { mat.color.setHex(hex); } });
