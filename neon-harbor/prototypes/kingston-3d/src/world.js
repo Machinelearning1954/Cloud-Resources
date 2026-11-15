@@ -157,7 +157,7 @@
     rough(5, 7, 54, 50, "rgba(255,255,255,0.8)", 40);                                                                                                // a resurfaced patch
     g.strokeStyle = "rgba(255,255,255,0.9)"; crack(68, 30, 0.1, 11, 2.2); crack(132, 6, 1.3, 12, 2.4); crack(150, 60, -1.2, 6, 1.6);                  // cracks
     for (let i = 0; i < 5; i++) soft(224 + (r() - 0.5) * 22, 32 + (r() - 0.5) * 22, 12 + r() * 14, "rgba(255,255,255,0.5)");                          // a stain
-    g.fillStyle = "#cfcfcf"; g.fillRect(6, 70, 52, 52); g.fillStyle = "#555"; g.fillRect(10, 74, 44, 44); g.fillStyle = "#111"; for (let i = 0; i < 6; i++) g.fillRect(13 + i * 7, 77, 4, 38);   // a drain grate
+    g.fillStyle = "#e4e4e4"; g.fillRect(6, 70, 52, 52); g.fillStyle = "#9a9a9a"; g.fillRect(11, 75, 42, 42); g.fillStyle = "#3a3a3a"; for (let i = 0; i < 6; i++) g.fillRect(14 + i * 7, 78, 3, 36);   // a drain grate
     g.fillStyle = "#b9b9b9"; g.beginPath(); g.arc(96, 96, 27, 0, 7); g.fill(); g.strokeStyle = "#6a6a6a"; g.lineWidth = 3; g.beginPath(); g.arc(96, 96, 24, 0, 7); g.stroke();
     g.lineWidth = 2; for (let i = -2; i < 3; i++) { g.beginPath(); g.moveTo(78, 96 + i * 8); g.lineTo(114, 96 + i * 8); g.moveTo(96 + i * 8, 78); g.lineTo(96 + i * 8, 114); g.stroke(); }       // a manhole cover
     g.fillStyle = "#6a5a48"; g.beginPath(); g.arc(160, 96, 24, 0, 7); g.fill(); for (let i = 0; i < 13; i++) { const t = i / 13 * 6.2832; g.fillStyle = i % 2 ? "#f1ece0" : "#d9d2c2"; g.beginPath(); g.ellipse(160 + Math.cos(t) * 25, 96 + Math.sin(t) * 25, 6.2, 4.6, t + 1.57, 0, 7); g.fill(); }   // a tree pit ringed with whitewashed stones
@@ -256,7 +256,7 @@
             else if (r < 0.5) decal(r < 0.35 ? CRACK : CRACK2, mx, mz, 3.2, 3.2, rot + r * 40, mul(ASPHALT, 0.5));
             else if (r < 0.6) decal(STAIN, mx, mz, 2.2, 1.8, rot, mul(ASPHALT, 0.6));
             else if (r < 0.68) decal(COVER, mx, mz, 0.8, 0.8, r * 50, lin(0x8f8d86));
-            if (g && hash(seed, j + 150) < 0.3) decal(GRATE, vertical ? X(xa + 3.4) : X((a + b) / 2), vertical ? Z((a + b) / 2) : Z(yb - 3.4), 0.5, 0.5, vertical ? 1.5708 : 0, lin(0x9a9a94));
+            if (g && hash(seed, j + 150) < 0.22) decal(GRATE, vertical ? X(xa + 3.6) : X((a + b) / 2), vertical ? Z((a + b) / 2) : Z(yb - 3.6), 0.46, 0.34, vertical ? 1.5708 : 0, lin(0xb4b2aa));
           }
         }
       }

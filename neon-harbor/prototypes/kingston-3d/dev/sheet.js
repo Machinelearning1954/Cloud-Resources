@@ -12,7 +12,7 @@ const VIEWS = [ // name, what it is for, viewport, options
   ["day-street",   "4:18 PM at a junction, carrying, two delivered: the main gameplay view", PHONE, { dusk: 0.1, delivered: 2, at: [340, 430], carry: true }],
   ["day-midblock", "4:18 PM in the middle of an east-west street: is the street hidden by anything?", PHONE, { dusk: 0.1, delivered: 1, at: [600, 420], carry: true }],
   ["gold-street",  "5:30 PM golden hour on the southern cross street", PHONE, { dusk: 0.5, delivered: 3, at: [860, 940] }],
-  ["night-yard",   "6:51 PM in the soundhall yard, four delivered: lamps, string lights, speakers", PHONE, { dusk: 0.95, delivered: 4, at: [1030, 300], carry: true }],
+  ["night-yard",   "6:51 PM in the soundhall yard, four delivered: lamps, string lights, speakers", PHONE, { dusk: 0.95, delivered: 4, at: [1010, 345] }],
   ["night-street", "6:51 PM on a street with patrols about: can the player read it?", PHONE, { dusk: 0.95, delivered: 4, at: [340, 940] }],
   ["day-quay",     "4:18 PM on the quay: crate pile, boatworks, skiffs, palms, water", PHONE, { dusk: 0.1, delivered: 0, at: [300, 1410] }],
   ["cast",         "the Cast screen: every figure and prop side by side", PHONE, { scene: "cast" }],

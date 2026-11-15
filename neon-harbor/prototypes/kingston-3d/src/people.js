@@ -28,7 +28,14 @@
   const unit = (a) => mul(a, 1 / (Math.hypot(a[0], a[1], a[2]) || 1)), mix = (a, b, t) => add(mul(a, 1 - t), mul(b, t));
   const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
   const rnd = (i, k) => { let h = Math.imul((i + 1) * 374761393 ^ (k + 1) * 668265263, 1274126177); h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; };   // 0..1 from two indices
-  const spline = (pts, m) => new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]))).getPoints(m).map((p) => [p.x, p.y, p.z]);
+  const spline = (pts, m) => { // m + 1 points along a smooth curve through pts
+    const n = pts.length - 1, out = [];
+    for (let i = 0; i <= m; i++) {
+      const u = i / m * n, k = min(n - 1, Math.floor(u)), t = u - k, a = pts[max(0, k - 1)], b = pts[k], c = pts[k + 1], d = pts[min(n, k + 2)];
+      out.push([0, 1, 2].map((q) => 0.5 * (2 * b[q] + (c[q] - a[q]) * t + (2 * a[q] - 5 * b[q] + 4 * c[q] - d[q]) * t * t + (3 * b[q] - a[q] - 3 * c[q] + d[q]) * t * t * t)));
+    }
+    return out;
+  };
 
   /* ---------------- skeleton: [parent, x, y, z] in the bind pose ---------------- */
   const HIPS = 0, CHEST = 1, HEAD = 2, ARM_L = 3, FORE_L = 4, ARM_R = 5, FORE_R = 6, LEG_L = 7, SHIN_L = 8, FOOT_L = 9, LEG_R = 10, SHIN_R = 11, FOOT_R = 12, SWAY = 13;
@@ -145,8 +152,8 @@
 
   /* ---------------- colours ---------------- */
   const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x9a8672), 0.5), EYE = lin(0x0e0a09);
-  const WRAP_A = lin(0x157f8f), WRAP_B = lin(0xf0e2c0), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(0x18233a), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(0x8fa6c4);
-  const BOTTOMS = ["skirt", "shorts", "bermudas", "trousers", "cropped"], HEMS = { shorts: 0.6, bermudas: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
+  const WRAP_A = lin(P.harbour), WRAP_B = lin(P.ink), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(P.patrolBand), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(P.zinc), NAVY = 0x18233a;
+  const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
   const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8a6a45];
 
   /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
@@ -154,7 +161,7 @@
     const h = hash(cast.id), pick = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
     return {
       shirt: lin(cast.shirt), kind: patrol ? "uniform" : boat ? "overalls" : pick(BOTTOMS, 10),
-      legs: lin(patrol ? 0x18233a : boat ? 0x3f5f86 : pick(LEG_COLS, 11)), shoes: lin(patrol || boat ? 0x1c1c20 : pick(SHOE_COLS, 11)),
+      legs: lin(patrol ? NAVY : boat ? 0x3f5f86 : pick(LEG_COLS, 11)), shoes: lin(patrol || boat ? 0x1c1c20 : pick(SHOE_COLS, 11)),
       sw: 0.18 + f(14) * 0.016, hw: 0.152 + f(17) * 0.022, ww: 0.134 + f(20) * 0.02, cd: 0.116 + f(23) * 0.012,
       gait: patrol ? { stride: 0.42, bob: 0.02, twist: 0.04, lean: 0.02, arm: 0.4 } : { stride: 0.44 + f(5) * 0.1, bob: 0.024 + f(9) * 0.014, twist: 0.07 + f(12) * 0.06, lean: 0.04 + f(15) * 0.04, arm: 0.42 + f(18) * 0.13 },
       phase: f(26) * 6,
@@ -210,8 +217,9 @@
   }
 
   /* ---------------- the seven hairstyles: each one its own geometry ---------------- */
-  const locks = (B, pts, r0, uneven, bs) => { const p = spline(pts, 4); tube(B, HAIR, p, p.map((_, i) => r0 * [0.85, 1.08, 1, 0.92, 0.78][i] * (i === uneven ? 1.22 : 1)), 5, { c: HAIRC, b: [HEAD], bs }); };
-  const LOOSE = [[HEAD], [HEAD], [HEAD, SWAY, 0.45], [HEAD, SWAY, 0.8], [HEAD, SWAY, 1]];
+  /* One loc: a tube along a smooth path, thicker in the middle, with one swollen stretch (locs are not even), its free end hung from the SWAY bone */
+  const loc = (B, pts, r0, uneven, m) => { const p = spline(pts, m || 4), n = p.length - 1;
+    tube(B, HAIR, p, p.map((_, i) => r0 * (0.85 + 0.9 * (i / n) * (1 - i / n) - 0.1 * i / n) * (i === uneven ? 1.22 : 1)), 5, { c: HAIRC, bs: p.map((_, i) => [HEAD, SWAY, min(1, max(0, (i / n - 0.3) / 0.5))]) }); };
   const STYLES = {
     /* locs gathered up into a high coiled bun, the swept-up locs showing as ridges, a few left falling at the back */
     "locs-updo"(B, L) {
@@ -221,16 +229,16 @@
       B.done();
       for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.012 + 0.085 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.075 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.042 - 0.012 * t); }
       tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
-      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; locks(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.45 + rnd(i, 3) * 0.05, z * 1.15]], 0.019, 1 + i % 3, LOOSE); }
+      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; loc(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.45 + rnd(i, 3) * 0.05, z * 1.15]], 0.019, 1 + i % 3); }
     },
     /* thick freeform locs of uneven thickness, falling to the shoulders all round */
     "locs-freeform"(B) {
       shell(B, HAIR, 3, 10, -0.5, () => [1.05, HAIRC]);
       for (let i = 0; i < 12; i++) {
         const az = 0.85 + i / 11 * (TAU - 1.7) + (rnd(i, 1) - 0.5) * 0.14, el = i % 2 ? 0.5 : 0.95, side = abs(sin(az)), out = 0.168 + 0.028 * rnd(i, 2) + 0.022 * side, end = side > 0.75 ? 1.45 + 0.02 * rnd(i, 4) : 1.36 + 0.09 * rnd(i, 4);
-        locks(B, [skull(az, el, 0.98), skull(az, el * 0.55, 1.3), [cos(az) * out * 1.05, 1.555, sin(az) * out], [cos(az) * (out + 0.014) * 1.05, end, sin(az) * (out + 0.014)]], 0.025 + 0.015 * rnd(i, 5), 1 + i % 3, LOOSE);
+        loc(B, [skull(az, el, 0.98), skull(az, el * 0.55, 1.3), [cos(az) * out * 1.05, 1.555, sin(az) * out], [cos(az) * (out + 0.014) * 1.05, end, sin(az) * (out + 0.014)]], 0.025 + 0.015 * rnd(i, 5), 1 + i % 3);
       }
-      for (let i = 0; i < 4; i++) { const az = 0.4 + i * 1.6 + rnd(i, 6) * 0.3; locks(B, [skull(az, 1.25, 1), skull(az, 0.9, 1.24), [cos(az) * 0.17, 1.665, sin(az) * 0.165], [cos(az) * 0.2, 1.565 + rnd(i, 7) * 0.04, sin(az) * 0.19]], 0.032 + 0.008 * rnd(i, 8), 2, LOOSE); }
+      for (let i = 0; i < 4; i++) { const az = 0.4 + i * 1.6 + rnd(i, 6) * 0.3; loc(B, [skull(az, 1.25, 1), skull(az, 0.9, 1.24), [cos(az) * 0.17, 1.665, sin(az) * 0.165], [cos(az) * 0.2, 1.565 + rnd(i, 7) * 0.04, sin(az) * 0.19]], 0.032 + 0.008 * rnd(i, 8), 2); }
     },
     /* long locs wound into a tall head wrap: two-tone bands, the locs coiled in the open top, a few ends falling at the back */
     "locs-wrap"(B) {
@@ -244,7 +252,7 @@
       const pts = [], rad = [];
       for (let i = 0; i <= 14; i++) { const t = i / 14, a = t * 1.6 * TAU, R = 0.008 + 0.07 * (1 - t); pts.push([-0.01 + cos(a) * R, 1.866 + 0.012 * t, sin(a) * R]); rad.push(0.028 - 0.004 * t); }
       tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
-      for (let i = 0; i < 3; i++) { const z = (i - 1) * 0.045; locks(B, [[-0.115, 1.868, z * 0.9], [-0.168, 1.868, z], [-0.196, 1.77, z * 1.1], [-0.192, 1.63, z * 1.2], [-0.178, 1.5 + rnd(i, 9) * 0.05, z * 1.25]], 0.019, 1 + i, LOOSE); }
+      for (let i = 0; i < 3; i++) { const z = (i - 1) * 0.045; loc(B, [[-0.07, 1.878, z * 0.6], [-0.135, 1.897, z * 0.9], [-0.18, 1.872, z], [-0.2, 1.77, z * 1.1], [-0.195, 1.63, z * 1.2], [-0.18, 1.5 + rnd(i, 9) * 0.05, z * 1.25]], 0.017, 2 + i, 7); }
       const K0 = [0.132, 1.79, 0.05];   // the knot, tied at the front, and its two ends
       loft(B, CLOTH, [hr(K0[1] - 0.02, 0.024, 0.03, K0[0], K0[2]), hr(K0[1] + 0.004, 0.032, 0.04, K0[0], K0[2]), hr(K0[1] + 0.026, 0.02, 0.026, K0[0], K0[2])], 6, { c: WRAP_B, b: [HEAD], start: [K0[0], K0[1] - 0.03, K0[2]], end: [K0[0], K0[1] + 0.034, K0[2]] });
       for (const sd of [-1, 1]) tube(B, CLOTH, [[K0[0], K0[1], K0[2] + sd * 0.02], [K0[0] + 0.03, K0[1] - 0.02 + sd * 0.02, K0[2] + sd * 0.06], [K0[0] + 0.026, K0[1] - 0.07 + sd * 0.02, K0[2] + sd * 0.085]], [0.02, 0.024, 0.016], 4, { c: sd < 0 ? WRAP_A : WRAP_B, b: [HEAD], flat: 0.4 });

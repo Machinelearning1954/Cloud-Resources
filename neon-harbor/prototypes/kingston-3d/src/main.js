@@ -30,16 +30,19 @@
   let S = sim.create(), scn = "title", keys = {}, stick = null, muted = false, lastToast = "", toastUntil = 0, typed = "";
 
   /* Seen through walls: a tilted camera hides whatever stands right behind a building. Each actor gets a plain
-     shape that is drawn only where something is in front of it, so nobody can hide from the player's eye. */
-  const ghostMat = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthFunc: THREE.GreaterDepth, depthWrite: false });
+     shape that is drawn only where something is in front of it, so nobody can hide from the player's eye.
+     Draw order does the work: the block first (order 0), then these shapes (1), then the actors themselves (2).
+     A shape is tested before its own actor is drawn, so an actor's crate or hair can never trigger its own shape. */
+  const ghostMat = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, depthFunc: THREE.GreaterDepth, depthWrite: false });
+  const actor = (obj) => { obj.traverse((o) => { if (o.isMesh && !o.userData.ghost) o.renderOrder = 2; }); return obj; };
   const ghostGeo = { person: new THREE.CapsuleGeometry(0.42, 1.1, 3, 8).translate(0, 0.97, 0), car: new THREE.BoxGeometry(4.5, 1.7, 2.0).translate(0, 0.85, 0), crate: new THREE.BoxGeometry(1.1, 1.1, 1.1).translate(0, 0.55, 0) };
-  const ghostMats = { you: ghostMat(P.go, 0.6), patrol: ghostMat(P.heat, 0.55), other: ghostMat(P.ink, 0.28), crate: ghostMat(P.sodium, 0.6) };
-  function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.renderOrder = 9; parent.add(m); return m; }
+  const ghostMats = { you: ghostMat(0x2fb58a, 1), patrol: ghostMat(0xd8475a, 1), other: ghostMat(0x8f939c, 1), crate: ghostMat(0xd9872e, 1) };
+  function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
   const player = person(0, "you");
-  const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(carried);
+  const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(actor(carried));
   const peds = S.peds.map((q) => person(q.cast));
   const npcs = sim.NPCS.map((n) => { const p = person(n.cast); NH.put(p.group, n.x, n.y, 0); NH.face(p.group, n.ang); return p; });
   const patrolViews = [];                       // grows as the rules add patrols
@@ -48,7 +51,7 @@
     if (!g.foot) { ghost(v.group, "car", "patrol"); scene.add(v.group); }
     v.cone = NH.props.visionCone(tune.seeRange * U, tune.seeHalfAngle * Math.PI / 180); scene.add(v.cone.mesh);
     v.coneGhost = v.cone.mesh.clone(true); v.coneGhostMat = ghostMat(0xfff0be, 0.16);          // the same sector, shown faintly where a building covers it
-    v.coneGhost.traverse((o) => { if (o.isMesh) { o.material = v.coneGhostMat; o.renderOrder = 8; } }); scene.add(v.coneGhost);
+    v.coneGhost.traverse((o) => { if (o.isMesh) { o.material = v.coneGhostMat; o.renderOrder = 8; } }); scene.add(v.coneGhost);   // see-through, so it is drawn late with the other see-through things
     return v;
   }
   const stash = NH.props.crate(); stash.visible = false; ghost(stash, "crate", "crate"); scene.add(stash);

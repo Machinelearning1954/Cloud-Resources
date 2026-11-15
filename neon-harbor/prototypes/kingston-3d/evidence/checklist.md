@@ -6,12 +6,17 @@ with software WebGL: the pictures are correct, its speed says nothing about a ph
 
 ## State at this commit (2026-11-15)
 
-The four visual modules are being rebuilt by builder agents, and this commit is a
-checkpoint of that work in progress: `src/world.js` and `src/people.js` are the builders'
-current, unreviewed versions; `src/props.js` and `src/lighting.js` are still the first
-crude versions. The page built from them was run through the browser checks below (25 of
-25) but nobody has yet reviewed how it looks. This file is updated when the modules are
-reviewed and integrated.
+The builder agents were stopped part-way by the account's usage limit. Where that left things:
+
+- `src/world.js` (the block) and `src/people.js` (characters and hairstyles) are the builders'
+  versions. Each builder worked from its own screenshots, but the planned second-agent review
+  and fix pass did **not** run for either.
+- `src/props.js` and `src/lighting.js` are still the first crude versions: their builders
+  never started.
+- The independent review of the main loop, the lock and the tooling did **not** run either.
+
+The page built from these sources passes the browser checks below (25 of 25) and draws the
+standard views in under 100 draw calls and about 60,000 triangles (software renderer count).
 
 | What | How it was checked | Result |
 |---|---|---|
