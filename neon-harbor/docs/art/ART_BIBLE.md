@@ -32,7 +32,7 @@ Grounded realism is the base. The one heightening is light and colour at night.
 | --- | --- | --- | --- |
 | Free roam, day (Kingston) | Open, hot, alive | Hard overhead sun, short shadows, warm bounce off zinc and limestone | Heat shimmer over roofs, saturated paint, deep blue shade |
 | Free roam, night (Kingston) | Electric, close | Sodium orange street light, coloured string lights, cool moonlit sea | Wet asphalt reflections, moths at lamps, speaker glow |
-| Carrying / under watch | Tight, exposed | Same scene, patrol light bars add cold blue-white | Long hard shadows from headlights, view cones in dust |
+| Carrying / under watch *(depends on the Crate Run mechanic, which awaits a play verdict)* | Tight, exposed | Same scene, patrol light bars add cold blue-white | Long hard shadows from headlights, view cones in dust |
 | Venue interior (soundhall, studio) | Warm, loud, safe | Low warm practicals, haze, coloured wash from the stage | Bodies in silhouette against light, sweat sheen |
 | Story beats | Still, heavy | One motivated key light, deep fill | Faces; background falls to near black |
 | Silver Spring / Alexandria / Washington | Temperate, brick-and-river | Soft overcast or low golden sun, cool dusk | Wet brick, bare or turning trees, long blue twilight |
@@ -72,7 +72,7 @@ Grounded realism is the base. The one heightening is light and colour at night.
   highland districts neutral and clear; Dubai cool-on-warm.
 - **Colour-blind safety:** red (heat) versus green (go) never stands alone. Heat also
   shows as a filling bar and a pulsing edge; goals also show as a dashed ring and an
-  arrow. The prototype already does this.
+  arrow. The Crate Run prototype does the bar, ring and arrow; it has no pulsing edge yet.
 
 ## 5. Character design direction
 
@@ -151,5 +151,7 @@ measurement in a build.
 ## Open items
 
 - Sign-off on section 1 by the user. Everything else flows from it.
+- **Imani's look is a proposal.** Her hairstyle was a guess made for the prototype, and
+  her age, build and clothing are first suggestions. All await the user.
 - Concept art for the vertical slice (one Kingston block).
 - Asset specs: `docs/art/ASSET_SPECS_kingston_slice.md`.

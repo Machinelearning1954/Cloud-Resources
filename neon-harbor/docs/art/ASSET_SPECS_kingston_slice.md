@@ -10,7 +10,7 @@ one venue. It is the same block as the Crate Run prototype. Nothing here exists 
 
 **16 assets.** Rules come from `docs/art/ART_BIBLE.md` (§ numbers below).
 
-## ASSET-001 — Imani Vassell — body and head
+## ASSET-001 — Imani Vassell — body and head *(look PROPOSED, awaiting the user)*
 
 | Field | Value |
 | --- | --- |
@@ -25,7 +25,7 @@ one venue. It is the same block as the Crate Run prototype. Nothing here exists 
 
 **Status:** Needed
 
-## ASSET-002 — Imani — hair: locs pinned up
+## ASSET-002 — Imani — hair: locs pinned up *(style PROPOSED, awaiting the user)*
 
 | Field | Value |
 | --- | --- |
@@ -160,7 +160,7 @@ one venue. It is the same block as the Crate Run prototype. Nothing here exists 
 
 **Status:** Needed
 
-## ASSET-011 — Speaker crate
+## ASSET-011 — Speaker crate *(only needed if the Crate Run mechanic is kept)*
 
 | Field | Value |
 | --- | --- |
