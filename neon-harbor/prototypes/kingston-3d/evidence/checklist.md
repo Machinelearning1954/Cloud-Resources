@@ -6,9 +6,12 @@ with software WebGL: the pictures are correct, its speed says nothing about a ph
 
 ## State at this commit (2026-11-15)
 
-The page runs and plays with the first, crude version of each visual module (boxes for
-houses, capsules for people, one sun). The four visual modules are being rebuilt by
-builder agents; this file is updated when they are integrated.
+The four visual modules are being rebuilt by builder agents, and this commit is a
+checkpoint of that work in progress: `src/world.js` and `src/people.js` are the builders'
+current, unreviewed versions; `src/props.js` and `src/lighting.js` are still the first
+crude versions. The page built from them was run through the browser checks below (25 of
+25) but nobody has yet reviewed how it looks. This file is updated when the modules are
+reviewed and integrated.
 
 | What | How it was checked | Result |
 |---|---|---|

@@ -380,53 +380,916 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script>
 <script>/* src/world.js */
-/* world (BASELINE PLACEHOLDER): the static block — ground, pavements, buildings, quay, water.
-   API: NH.world.build(env) -> { group, update(S, tod) }.  Replace the insides, keep the API. */
+/* world: everything static about the block — streets, lots (fence, yard, house), the two venues, quay, harbour,
+   and the neighbouring roofs and hills past the edge of the map.
+   API: NH.world.build(env) -> { group, update(S, tod), stats }
+     env    = { scene, camera, renderer, sim, quality }
+     group  = THREE.Group holding the whole world; main.js adds it to the scene
+     update = called once a frame with the rules' state S and tod = NH.tod(dusk): drifts and tints the water,
+              lights the windows, the signs and the pools of window light as tod.night rises. It allocates nothing.
+     stats  = { meshes, triangles } of what was built (optional extra, for whoever checks the budget)
+   Static geometry is merged by hand into one mesh per material. Walkable ground is flat at y = 0 and nothing solid
+   stands on it; overlays lie under 0.03 m. The harbour surface is at y = -0.35, where main.js floats the skiffs. */
 (function () {
   "use strict";
   const NH = window.NH, sim = NH.sim, U = NH.U, P = NH.PALETTE;
+  const X = (sx) => (sx - sim.W / 2) * U, Z = (sy) => (sy - sim.H / 2) * U;
+  const hash = (i, k) => { let h = Math.imul(i + 7 | 0, 374761393) + Math.imul(k + 13 | 0, 668265263) | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+  const lin = (c) => { const k = new THREE.Color(c); return [k.r, k.g, k.b]; };
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const rich = (a, k) => { const g = a[0] * 0.3 + a[1] * 0.55 + a[2] * 0.15; return [g + (a[0] - g) * k, g + (a[1] - g) * k, g + (a[2] - g) * k]; };   // the same colour, more or less saturated
+  const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+  /* ---- merging by hand: a bag collects the vertices of everything that shares one material ---- */
+  const bag = (uv) => ({ p: [], n: [], c: [], u: [], i: [], count: 0, uv: uv || [0, 0, 0, 0] });
+  const vtx = (b, x, y, z, nx, ny, nz, c, u, v) => { b.p.push(x, y, z); b.n.push(nx, ny, nz); b.c.push(c[0], c[1], c[2]); b.u.push(u, v); return b.count++; };
+  // a quad listed counter-clockwise as seen from its front. uv = [u0, v0, u1, v1] puts u0,v0 at a and u1,v1 at c, or gives all four corners. cTop colours c and d.
+  function quad(b, ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col, uv, cTop) {
+    let nx = (cy - ay) * (dz - bz) - (cz - az) * (dy - by), ny = (cz - az) * (dx - bx) - (cx - ax) * (dz - bz), nz = (cx - ax) * (dy - by) - (cy - ay) * (dx - bx);
+    const l = Math.hypot(nx, ny, nz) || 1, q = uv || b.uv, k = b.count; nx /= l; ny /= l; nz /= l;
+    if (q.length === 8) { vtx(b, ax, ay, az, nx, ny, nz, col, q[0], q[1]); vtx(b, bx, by, bz, nx, ny, nz, col, q[2], q[3]); vtx(b, cx, cy, cz, nx, ny, nz, cTop || col, q[4], q[5]); vtx(b, dx, dy, dz, nx, ny, nz, cTop || col, q[6], q[7]); }
+    else { vtx(b, ax, ay, az, nx, ny, nz, col, q[0], q[1]); vtx(b, bx, by, bz, nx, ny, nz, col, q[2], q[1]); vtx(b, cx, cy, cz, nx, ny, nz, cTop || col, q[2], q[3]); vtx(b, dx, dy, dz, nx, ny, nz, cTop || col, q[0], q[3]); }
+    b.i.push(k, k + 1, k + 2, k, k + 2, k + 3);
+  }
+  function tri(b, ax, ay, az, bx, by, bz, cx, cy, cz, col) {
+    let nx = (by - ay) * (cz - az) - (bz - az) * (cy - ay), ny = (bz - az) * (cx - ax) - (bx - ax) * (cz - az), nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    const l = Math.hypot(nx, ny, nz) || 1, k = b.count, q = b.uv; nx /= l; ny /= l; nz /= l;
+    vtx(b, ax, ay, az, nx, ny, nz, col, q[0], q[1]); vtx(b, bx, by, bz, nx, ny, nz, col, q[0], q[1]); vtx(b, cx, cy, cz, nx, ny, nz, col, q[0], q[1]); b.i.push(k, k + 1, k + 2);
+  }
+  // an upright box without its bottom; cTop, if given, colours the top face
+  function box(b, x0, y0, z0, x1, y1, z1, col, cTop) {
+    quad(b, x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, col); quad(b, x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0, col);
+    quad(b, x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1, col); quad(b, x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, col);
+    quad(b, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0, cTop || col);
+  }
+  // a flat strip from a to b, w wide, facing up
+  function ribbon(b, ax, ay, az, bx, by, bz, w, col, uv) {
+    const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, px = -dz / l * w / 2, pz = dx / l * w / 2;
+    quad(b, ax + px, ay, az + pz, bx + px, by, bz + pz, bx - px, by, bz - pz, ax - px, ay, az - pz, col, uv);
+  }
+  // a three.js geometry, moved by matrix m, in one colour
+  const _v = new THREE.Vector3(), _n = new THREE.Vector3(), _m3 = new THREE.Matrix3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3();
+  function solid(b, g, m, col) {
+    const pos = g.attributes.position, nor = g.attributes.normal, idx = g.index, base = b.count; _m3.getNormalMatrix(m);
+    for (let i = 0; i < pos.count; i++) { _v.fromBufferAttribute(pos, i).applyMatrix4(m); _n.fromBufferAttribute(nor, i).applyMatrix3(_m3).normalize(); vtx(b, _v.x, _v.y, _v.z, _n.x, _n.y, _n.z, col, b.uv[0], b.uv[1]); }
+    if (idx) for (let i = 0; i < idx.count; i++) b.i.push(base + idx.getX(i)); else for (let i = 0; i < pos.count; i++) b.i.push(base + i);
+  }
+  const at = (x, y, z, sx, sy, sz, rx, ry, rz) => _m.compose(_v.set(x, y, z), _q.setFromEuler(_e.set(rx || 0, ry || 0, rz || 0)), _s.set(sx, sy === undefined ? sx : sy, sz === undefined ? sx : sz));
+  function toMesh(b, mat, cast, order) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(b.p, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(b.n, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(b.c, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(b.u, 2)); g.setIndex(b.i);
+    const m = new THREE.Mesh(g, mat); m.castShadow = !!cast; m.receiveShadow = true; m.matrixAutoUpdate = false; if (order) m.renderOrder = order; return m;
+  }
+
+  /* ---- textures: each drawn once on a canvas of 256 px ---- */
+  const lat = (x, y, px, py, s) => hash(((x % px) + px) % px + (((y % py) + py) % py) * 131, s);
+  function noise(x, y, px, py, s) { // value noise that repeats every px by py cells, so the textures tile
+    const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy, ax = fx * fx * (3 - 2 * fx), ay = fy * fy * (3 - 2 * fy);
+    const a = lat(ix, iy, px, py, s), b = lat(ix + 1, iy, px, py, s), c = lat(ix, iy + 1, px, py, s), d = lat(ix + 1, iy + 1, px, py, s);
+    return a + (b - a) * ax + (c - a + (a - b + d - c) * ax) * ay;
+  }
+  const fbm = (u, v, per, s) => (noise(u * per, v * per, per, per, s) * 4 + noise(u * per * 2, v * per * 2, per * 2, per * 2, s + 1) * 2 + noise(u * per * 4, v * per * 4, per * 4, per * 4, s + 2)) / 7;
+  const canvas = () => { const c = document.createElement("canvas"); c.width = c.height = 256; return c; };
+  function pixels(f) { // paint every pixel from f(x, y, out)
+    const c = canvas(), g = c.getContext("2d"), im = g.createImageData(256, 256), d = im.data, o = [0, 0, 0, 255];
+    for (let y = 0, k = 0; y < 256; y++) for (let x = 0; x < 256; x++, k += 4) { f(x, y, o); d[k] = o[0]; d[k + 1] = o[1]; d[k + 2] = o[2]; d[k + 3] = 255; }
+    g.putImageData(im, 0, 0); return c;
+  }
+  function texture(c, tile, data) {
+    const t = new THREE.CanvasTexture(c); if (tile) t.wrapS = t.wrapT = THREE.RepeatWrapping; if (!data) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  }
+  const cell = (x, y, w, h) => [(x + 0.5) / 256, 1 - (y + h - 0.5) / 256, (x + w - 0.5) / 256, 1 - (y + 0.5) / 256];   // a rectangle of an atlas as a uv box
+
+  const TW = 5.28;   // the zinc tile is 16 corrugations of 0.33 m
+  const lapOf = (x, y) => (y + (x >> 6 & 1 ? 0 : 128)) & 255;   // sheets are four corrugations wide; each has one end lap per tile
+  function zincPixel(x, y, o) {
+    const u = x / 256, v = y / 256, crest = 0.5 + 0.5 * Math.cos((x % 16) / 16 * 6.2832), lap = lapOf(x, y);
+    let s = 0.8 + 0.17 * Math.pow(crest, 0.8) + (hash(x >> 6, 3) - 0.5) * 0.04 + (noise(u * 6, v * 6, 6, 6, 41) - 0.5) * 0.06;
+    if (lap < 2) s *= 0.7; if (x % 64 === 8) s *= 0.88;
+    const old = 0.12 + 0.88 * (smooth(118, 140, y) - smooth(244, 256, y) + 1 - smooth(0, 10, y));   // the lower half of the tile is the rusty one
+    let r = smooth(0.56, 0.95, noise(u * 9, v * 3, 9, 3, 42) * 0.6 + noise(u * 32, v * 5, 32, 5, 43) * 0.4) * old;
+    if (lap >= 2 && lap < 30) r = Math.max(r, (1 - (lap - 2) / 28) * 0.45 * hash(x >> 2, 44) * (0.4 + 0.6 * old));   // rust bleeding down the slope from a lap
+    o[0] = 255 * s * (1 - r * 0.2); o[1] = 255 * s * (1 - r * 0.46); o[2] = 255 * s * (1 - r * 0.62);
+  }
+  function zincNormalPixel(x, y, o) {
+    const nx = 0.5 * Math.sin((x % 16) / 16 * 6.2832), ny = lapOf(x, y) < 3 ? 0.5 : 0, l = Math.hypot(nx, ny, 1);
+    o[0] = 128 + 127 * nx / l; o[1] = 128 + 127 * ny / l; o[2] = 128 + 127 / l;
+  }
+  function grainPixel(x, y, o) { // asphalt, concrete and packed earth all take their speckle from this
+    const sp = hash(x + y * 256, 51); let s = 0.9 + (fbm(x / 256, y / 256, 5, 52) - 0.5) * 0.22 + (sp - 0.5) * 0.09;
+    if (sp > 0.986) s += 0.08; else if (sp < 0.014) s -= 0.2; o[0] = 255 * s; o[1] = 253 * s; o[2] = 248 * s;
+  }
+  function plasterPixel(x, y, o) { // 6 m by 6 m of rendered wall; the bottom row is the ground. The top rows stay white for untextured things.
+    if (y < 12) { o[0] = o[1] = o[2] = 255; return; }
+    const u = x / 256, v = y / 256, m = (255 - y) / 256 * 6, g = 1 - smooth(0, 0.3 + 0.45 * noise(u * 16, 0, 16, 1, 22), m);
+    const s = (0.95 + (fbm(u, v, 4, 21) - 0.5) * 0.11 - smooth(0.7, 0.92, noise(u * 48, v * 3, 48, 3, 23)) * 0.1) * (1 - 0.3 * g);
+    o[0] = 255 * s; o[1] = 255 * s * (1 - 0.06 * g); o[2] = 255 * s * (1 - 0.16 * g);
+  }
+  function waterPixel(x, y, o) { // long thin glints lying east-west on a calm harbour
+    const u = x / 256, v = y / 256, a = noise(u * 7, v * 40, 7, 40, 31), b = noise(u * 13, v * 64, 13, 64, 32), c = noise(u * 3, v * 6, 3, 6, 33);
+    const s = 0.82 + 0.18 * smooth(0.7, 0.95, a) * smooth(0.25, 0.7, c) + 0.1 * smooth(0.74, 0.95, b) + (c - 0.5) * 0.1; o[0] = 255 * s * 0.96; o[1] = 255 * s; o[2] = 255 * s;
+  }
+
+  // the atlas of fronts: glass louvres, shutters, breeze blocks, doors, a gate, flyers. Light greys take the colour of the vertex.
+  const GLASS = cell(0, 0, 64, 64), SHUT = cell(64, 0, 64, 64), VENT = cell(128, 0, 64, 64), CURTAIN = cell(192, 0, 64, 64), DOOR = cell(0, 64, 48, 96), PLANK = cell(48, 64, 48, 96),
+        INSIDE = cell(96, 64, 64, 96), GATE = cell(160, 64, 96, 96), FLYER = [0, 1, 2, 3, 4, 5].map((k) => cell(k * 42, 160, 42, 56));
+  function frontAtlas(glow) {
+    const c = canvas(), g = c.getContext("2d"), R = (col, x, y, w, h) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+    const grad = (x, y, w, h, a, b) => { const q = g.createLinearGradient(0, y, 0, y + h); q.addColorStop(0, a); q.addColorStop(1, b); g.fillStyle = q; g.fillRect(x, y, w, h); };
+    R(glow ? "#000" : "#888", 0, 0, 256, 256);
+    for (const x of [0, 192]) { // louvre windows: the second has a curtain behind the glass
+      R(glow ? "#ffb45a" : "#1a2730", x, 0, 64, 64);
+      if (glow) { const q = g.createRadialGradient(x + 32, 30, 4, x + 32, 30, 44); q.addColorStop(0, "#ffe2a8"); q.addColorStop(1, "#d9812e"); g.fillStyle = q; g.fillRect(x, 0, 64, 64); }
+      if (x) { g.fillStyle = glow ? "#ff9d5a" : "#7d5a52"; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 30, 0); g.quadraticCurveTo(x + 22, 40, x, 56); g.fill(); g.beginPath(); g.moveTo(x + 64, 0); g.lineTo(x + 34, 0); g.quadraticCurveTo(x + 42, 40, x + 64, 56); g.fill(); }
+      for (let k = 0; k < 8; k++) { if (glow) R("rgba(60,20,0,0.45)", x, k * 8 + 6, 64, 2); else { grad(x, k * 8, 64, 6, "rgba(205,226,236,0.95)", "rgba(92,124,142,0.8)"); } }
+      R(glow ? "#3a1c08" : "#e9e4d6", x + 30, 0, 4, 64);
+    }
+    if (!glow) {
+      for (let k = 0; k < 10; k++) grad(64, k * 6.4, 64, 6.4, "#f4f4f4", "#a9a9a9"); R("#6a6a6a", 95, 0, 2, 64);                 // shutters
+      R("#e9e9e9", 128, 0, 64, 64); g.fillStyle = "#3d3d3d";                                                                // breeze blocks
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.beginPath(); g.moveTo(136 + i * 16, 2 + j * 16); g.lineTo(142 + i * 16, 8 + j * 16); g.lineTo(136 + i * 16, 14 + j * 16); g.lineTo(130 + i * 16, 8 + j * 16); g.fill(); }
+      R("#dedede", 0, 64, 48, 96); for (const [x, y, w, h] of [[6, 70, 15, 34], [27, 70, 15, 34], [6, 112, 15, 40], [27, 112, 15, 40]]) { R("#a8a8a8", x, y, w, h); R("#cfcfcf", x + 2, y + 3, w - 3, h - 4); }
+      R("#3a3a3a", 40, 108, 4, 6);                                                                                          // a panelled door
+      R("#d6d6d6", 48, 64, 48, 96); for (let k = 1; k < 6; k++) R("#9c9c9c", 48 + k * 8, 64, 1, 96); g.strokeStyle = "#b4b4b4"; g.lineWidth = 5; g.beginPath(); g.moveTo(50, 74); g.lineTo(94, 74); g.lineTo(50, 150); g.lineTo(94, 150); g.stroke();   // a plank door
+      for (let k = 0; k < 12; k++) grad(160 + k * 8, 64, 8, 96, "#f0f0f0", "#f0f0f0"), R("#b6b6b6", 160 + k * 8, 64, 3, 96);   // a zinc gate in a frame
+      g.strokeStyle = "#5c5c5c"; g.lineWidth = 5; g.strokeRect(163, 67, 90, 90); g.beginPath(); g.moveTo(208, 64); g.lineTo(208, 160); g.moveTo(163, 112); g.lineTo(253, 112); g.stroke();
+      const ink = ["#ff9d3c", "#0b1420", "#f3ead8", "#ff4d5e", "#3ed6a4", "#f2c14e", "#1f6f86"];   // flyers: shapes only, a speaker, a sun, bars
+      for (let k = 0; k < 6; k++) { const x = k * 42, a = ink[k % 7], b = ink[(k + 2) % 7], d = ink[(k + 4) % 7]; R(a, x, 160, 42, 56); g.fillStyle = b;
+        if (k % 3 === 0) { g.beginPath(); g.arc(x + 21, 182, 13, 0, 7); g.fill(); g.fillStyle = d; g.beginPath(); g.arc(x + 21, 182, 6, 0, 7); g.fill(); }
+        else if (k % 3 === 1) for (let j = 0; j < 5; j++) g.fillRect(x + 5 + j * 7, 196 - j * 6, 5, 8 + j * 6);
+        else { g.beginPath(); for (let j = 0; j < 10; j++) { const r = j % 2 ? 6 : 15, t = j * 0.6283; g.lineTo(x + 21 + Math.sin(t) * r, 182 - Math.cos(t) * r); } g.fill(); }
+        R(d, x + 4, 204, 34, 4); R(b, x + 4, 210, 22, 3); }
+    }
+    grad(96, 64, 64, 96, glow ? "#ffd28a" : "#15181c", glow ? "#e06a3a" : "#2c2620");                                           // an open doorway
+    if (glow) for (const [x, w, h] of [[104, 9, 30], [120, 12, 44], [140, 10, 36]]) { g.fillStyle = "rgba(40,10,10,0.75)"; g.beginPath(); g.arc(x + w / 2, 160 - h, w * 0.42, 0, 7); g.fill(); g.fillRect(x, 160 - h + 3, w, h); }
+    return c;
+  }
+
+  // decals for the ground: patches, cracks, ironwork, worn paint. Drawn in white and grey, with alpha, and tinted by the vertex.
+  const PATCH = cell(0, 0, 64, 64), CRACK = cell(64, 0, 64, 64), CRACK2 = cell(128, 0, 64, 64), STAIN = cell(192, 0, 64, 64), GRATE = cell(0, 64, 64, 64), COVER = cell(64, 64, 64, 64),
+        PIT = cell(128, 64, 64, 64), BLOB = cell(192, 64, 64, 64), BAR = cell(0, 128, 128, 32), DASH = cell(0, 160, 128, 32), HOP = cell(128, 128, 64, 64), JOINT = cell(192, 128, 64, 64),
+        SOLID = cell(4, 196, 24, 24), FADE = cell(36, 196, 24, 56), RUBBLE = cell(128, 192, 64, 64);
+  function decalAtlas() {
+    const c = canvas(), g = c.getContext("2d"); let k = 0; const r = () => hash(k++, 61);
+    const rough = (x, y, w, h, col, n) => { g.fillStyle = col; g.beginPath(); for (let i = 0; i < n; i++) { const t = i / n * 6.2832, e = 0.82 + 0.18 * r(), cx = Math.cos(t), cy = Math.sin(t), q = Math.max(Math.abs(cx), Math.abs(cy)); g.lineTo(x + w / 2 + cx / q * w / 2 * e, y + h / 2 + cy / q * h / 2 * e); } g.fill(); };
+    const crack = (x, y, a, len, w) => { g.lineWidth = w; g.beginPath(); g.moveTo(x, y); for (let i = 0; i < len; i++) { a += (r() - 0.5) * 1.1; x += Math.cos(a) * 5; y += Math.sin(a) * 5; g.lineTo(x, y); if (w > 1.2 && r() < 0.22) { g.stroke(); crack(x, y, a + (r() < 0.5 ? 1 : -1), len * 0.45 | 0, w * 0.6); g.lineWidth = w; g.beginPath(); g.moveTo(x, y); } } g.stroke(); };
+    const soft = (x, y, rad, col) => { const q = g.createRadialGradient(x, y, 0, x, y, rad); q.addColorStop(0, col); q.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = q; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); };
+    rough(5, 7, 54, 50, "rgba(255,255,255,0.8)", 40);                                                                                                // a resurfaced patch
+    g.strokeStyle = "rgba(255,255,255,0.9)"; crack(68, 30, 0.1, 11, 2.2); crack(132, 6, 1.3, 12, 2.4); crack(150, 60, -1.2, 6, 1.6);                  // cracks
+    for (let i = 0; i < 5; i++) soft(224 + (r() - 0.5) * 22, 32 + (r() - 0.5) * 22, 12 + r() * 14, "rgba(255,255,255,0.5)");                          // a stain
+    g.fillStyle = "#cfcfcf"; g.fillRect(6, 70, 52, 52); g.fillStyle = "#555"; g.fillRect(10, 74, 44, 44); g.fillStyle = "#111"; for (let i = 0; i < 6; i++) g.fillRect(13 + i * 7, 77, 4, 38);   // a drain grate
+    g.fillStyle = "#b9b9b9"; g.beginPath(); g.arc(96, 96, 27, 0, 7); g.fill(); g.strokeStyle = "#6a6a6a"; g.lineWidth = 3; g.beginPath(); g.arc(96, 96, 24, 0, 7); g.stroke();
+    g.lineWidth = 2; for (let i = -2; i < 3; i++) { g.beginPath(); g.moveTo(78, 96 + i * 8); g.lineTo(114, 96 + i * 8); g.moveTo(96 + i * 8, 78); g.lineTo(96 + i * 8, 114); g.stroke(); }       // a manhole cover
+    g.fillStyle = "#6a5a48"; g.beginPath(); g.arc(160, 96, 24, 0, 7); g.fill(); for (let i = 0; i < 13; i++) { const t = i / 13 * 6.2832; g.fillStyle = i % 2 ? "#f1ece0" : "#d9d2c2"; g.beginPath(); g.ellipse(160 + Math.cos(t) * 25, 96 + Math.sin(t) * 25, 6.2, 4.6, t + 1.57, 0, 7); g.fill(); }   // a tree pit ringed with whitewashed stones
+    soft(224, 96, 31, "rgba(255,255,255,1)");
+    g.fillStyle = "rgba(255,255,255,0.92)"; g.fillRect(4, 135, 120, 18); g.globalCompositeOperation = "destination-out";                                                                   // a worn stop bar
+    for (let i = 0; i < 34; i++) { g.fillStyle = `rgba(0,0,0,${0.3 + 0.6 * r()})`; g.fillRect(2 + r() * 122, 133 + r() * 20, 2 + r() * 9, 1 + r() * 4); } g.globalCompositeOperation = "source-over";
+    g.fillStyle = "rgba(255,255,255,0.85)"; for (let j = 0; j < 3; j++) for (let i = 0; i < 28; i += 2) if (r() > 0.2) g.fillRect(8 + j * 42 + i, 170 + r() * 2, 2, 9 + r() * 3);                                                      // worn dashes
+    g.strokeStyle = "rgba(255,255,255,0.8)"; g.lineWidth = 1.6; for (const [x, y] of [[152, 130], [152, 142], [144, 154], [160, 154], [152, 166], [144, 178], [160, 178]]) g.strokeRect(x, y, 12, 12);   // chalk squares
+    g.fillStyle = "rgba(255,255,255,0.9)"; g.fillRect(222, 128, 3, 64); g.fillRect(192, 158, 64, 2);                                                                                           // slab joints
+    g.fillStyle = "#fff"; g.fillRect(0, 192, 32, 32); const q = g.createLinearGradient(0, 192, 0, 256); q.addColorStop(0.1, "#fff"); q.addColorStop(0.9, "rgba(255,255,255,0)"); g.fillStyle = q; g.fillRect(32, 192, 32, 64);
+    for (let i = 0; i < 60; i++) { const s = 120 + 135 * r() | 0; g.fillStyle = `rgba(${s},${s},${s},0.95)`; const a = r() * 6.2832, d = 24 * Math.sqrt(r()); g.fillRect(160 + Math.cos(a) * d, 224 + Math.sin(a) * d, 2 + r() * 4, 2 + r() * 3); }   // rubble and leaves
+    return c;
+  }
+
+  // the two painted signs, in the project's own hand: capitals built from brush strokes on a 4 by 6 grid
+  const GLYPH = { Z: "0,6 4,6 0,0 4,0", I: "2,6 2,0|1,6 3,6|1,0 3,0", N: "0,0 0,6 4,0 4,6", C: "4,5 3,6 1,6 0,5 0,1 1,0 3,0 4,1", R: "0,0 0,6 3,6 4,5 4,4 3,3 0,3|2,3 4,0", O: "1,0 0,1 0,5 1,6 3,6 4,5 4,1 3,0 1,0",
+    F: "0,0 0,6 4,6|0,3 3,3", S: "4,5 3,6 1,6 0,5 0,4 1,3 3,3 4,2 4,1 3,0 1,0 0,1", U: "0,6 0,1 1,0 3,0 4,1 4,6", D: "0,0 0,6 3,6 4,5 4,1 3,0 0,0", H: "0,0 0,6|4,0 4,6|0,3 4,3", A: "0,0 0,4 2,6 4,4 4,0|0,2.4 4,2.4",
+    L: "0,6 0,0 4,0", K: "0,0 0,6|4,6 0,2.6|1.5,3.7 4,0", E: "4,6 0,6 0,0 4,0|0,3 3,3", W: "0,6 1,0 2,4 3,0 4,6", G: "4,5 3,6 1,6 0,5 0,1 1,0 3,0 4,1 4,3 2.2,3", T: "0,6 4,6|2,6 2,0", B: "0,0 0,6 3,6 4,5 4,4 3,3 0,3|3,3 4,2 4,1 3,0 0,0" };
+  const WORDS = ["ZINC ROOF", "SOUNDHALL", "KEELWRIGHT", "BOATWORKS"], WORD = WORDS.map((w, i) => cell(0, i * 64, 256, 64));
+  function signAtlas() {
+    const c = canvas(), g = c.getContext("2d"); g.lineCap = g.lineJoin = "round";
+    WORDS.forEach((text, row) => {
+      const adv = 5.7, total = text.length * adv - 1.7, k = Math.min(246 / total, 50 / 6.6), ox = (256 - total * k) / 2, oy = row * 64 + 32 + 3 * k;
+      for (let pass = 0; pass < 2; pass++) {
+        g.strokeStyle = pass ? "#fff" : "#10141c"; g.lineWidth = k * (pass ? 1.2 : 2.3);
+        for (let i = 0; i < text.length; i++) for (const stroke of (GLYPH[text[i]] || "").split("|")) {
+          if (!stroke) continue; const lean = (hash(row * 20 + i, 8) - 0.5) * 0.5, jy = (hash(row * 20 + i, 7) - 0.5) * k * 0.5; g.beginPath();
+          stroke.split(" ").forEach((pt, j) => { const xy = pt.split(","), px = ox + (i * adv + +xy[0] + +xy[1] * lean * 0.12) * k, py = oy + jy - +xy[1] * k; if (j) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke();
+        }
+      }
+    });
+    return c;
+  }
+
+  /* ---- colours ---- */
+  const ASPHALT = mul(mix(lin(P.asphalt), lin(P.laneMark), 0.4), 1.36), GUTTER = lin(0xb9b4a6), LANE = lin(0xb3a78f), EARTH = lin(0x9a8468), QUAY = mul(mix(lin(P.quay), lin(P.laneMark), 0.3), 1.2), CONCRETE = lin(0xc4bdac);
+  const RUST = lin(0x8a4f2c), NEWZINC = lin(0xd3dadc), TIMBER = lin(0x7a5c3e), WHITE = [1, 1, 1], DARK = lin(0x23262b), ROPE = lin(0xb9a27a), INK = lin(P.ink), SODIUM = lin(P.sodium);
+  const TRIMS = [0xf3ead8, 0xe9edf2, 0x5a4030, 0xf3ead8, 0x2f5f66, 0xe9edf2].map(lin);
+  const ACCENTS = [0x1f7f86, 0xc8573a, 0xd6a23a, 0x3f8a48, 0x2c5fa8, 0x8a2f3a, 0x3aa0c8].map(lin);
+  const ZPAINT = [0xb7c3c8, 0xa06a45, 0x3f8f96, 0x9c4a38, 0x4f7fb5, 0xc3cdd0, 0x5f9c68, 0xb58a5a].map(lin);
+  const GREENS = [0x3f8a48, 0x2f6f3c, 0x5c9a4a, 0x7a8f3a, 0x8f4a3a, 0xb58f3a].map(lin), CLOTH = [0xf3ead8, 0xc8573a, 0x3aa0c8, 0xe8b23a, 0xe07a9a, 0x7fbf6a, 0xf3ead8, 0x2c3f66].map(lin);
+
   NH.world = {
     build(env) {
       const group = new THREE.Group();
-      const slab = (x, y, w, h, top, thick, color, opts) => { // a box given in sim pixels; `top` and `thick` in metres
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w * U, thick, h * U), new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.9 }, opts || {})));
-        NH.put(m, x + w / 2, y + h / 2, top - thick / 2); m.receiveShadow = true; group.add(m); return m;
-      };
-      slab(-4000, -4000, 9200, 4000 + sim.WATER, -0.02, 0.4, 0x4a4d45);                        // land beyond the block
-      slab(0, 0, sim.W, sim.WATER, 0, 0.2, 0x6a6c6e);                                          // streets
-      slab(0, sim.QUAY, sim.W, sim.WATER - sim.QUAY, 0.06, 0.3, P.quay);                       // quay
-      slab(-4000, sim.WATER, 9200, 4000, -0.5, 0.2, P.harbour, { roughness: 0.25, metalness: 0.1 }); // harbour
-      for (const b of sim.B) {
-        const hs = NH.house(b), hgt = hs.height;
-        if (hs.yard) { const yard = slab(b.x, b.y, b.w, hs.yard, 0.9, 0.9, 0x7d8a8f); yard.castShadow = true; }   // stands in for the fenced yard
-        const wall = slab(hs.x, hs.y, hs.w, hs.h, hgt, hgt, b.wall); wall.castShadow = true;
-        const roof = slab(hs.x - 4, hs.y - 4, hs.w + 8, hs.h + 8, hgt + 0.18, 0.18, b.c, { roughness: 0.45, metalness: 0.55 }); roof.castShadow = true;
+      const zincTex = texture(pixels(zincPixel), true), zincNormal = texture(pixels(zincNormalPixel), true, true), grainTex = texture(pixels(grainPixel), true), plasterTex = texture(pixels(plasterPixel), true),
+            waterTex = texture(pixels(waterPixel), true), frontTex = texture(frontAtlas(false)), glowTex = texture(frontAtlas(true)), decalTex = texture(decalAtlas()), signTex = texture(signAtlas());
+      const G = bag(), M = bag([0.5, 0.985, 0.5, 0.985]), ZN = bag(), F = bag(), LIT = [bag(), bag()], D = bag(), SG = bag(), W = bag(), PL = bag();   // ground, matte solids, zinc, fronts, lit windows, decals, signs, water, pools of light
+      const GT = 6.4;   // metres of ground per repeat of the grain
+
+      // flat things on the ground, given in sim pixels
+      const flat = (sx0, sy0, sx1, sy1, y, col) => { const x0 = X(sx0), x1 = X(sx1), z0 = Z(sy0), z1 = Z(sy1); quad(G, x0, y, z1, x1, y, z1, x1, y, z0, x0, y, z0, col, [x0 / GT, z1 / GT, x1 / GT, z0 / GT]); };
+      // a decal lying on the ground: centre and size in metres, turned by rot
+      function decal(uv, x, z, w, d, rot, col, y) {
+        const c = Math.cos(rot || 0) / 2, s = Math.sin(rot || 0) / 2, ax = w * c, az = w * s, bx = -d * s, bz = d * c; y = y === undefined ? 0.014 : y;
+        quad(D, x - ax + bx, y, z - az + bz, x + ax + bx, y, z + az + bz, x + ax - bx, y, z + az - bz, x - ax - bx, y, z - az - bz, col, uv);
       }
-      return { group, update(S, tod) {} };
+      // a wall face from (x0, z0) to (x1, z1), left to right as seen from its front, with the plaster laid on at 6 m a repeat
+      const wallQuad = (x0, z0, x1, z1, y0, y1, col, cTop) => quad(M, x0, y0, z0, x1, y0, z1, x1, y1, z1, x0, y1, z0, col, [(x0 + z0) / 6, y0 / 6, (x1 + z1) / 6, y1 / 6], cTop);
+      function wallBox(x0, y0, z0, x1, y1, z1, col, cTop) {
+        wallQuad(x0, z1, x1, z1, y0, y1, col); wallQuad(x1, z0, x0, z0, y0, y1, col); wallQuad(x1, z1, x1, z0, y0, y1, col); wallQuad(x0, z0, x0, z1, y0, y1, col);
+        quad(M, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0, cTop || col);
+      }
+      // an upright zinc sheet with the corrugations running up it
+      function zincBox(x0, y0, z0, x1, y1, z1, col) {
+        const ew = x1 - x0 > z1 - z0, a0 = (ew ? x0 : z0) / TW, a1 = (ew ? x1 : z1) / TW, v0 = y0 / TW, v1 = y1 / TW;
+        quad(ZN, x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, col, ew ? [a0, v0, a1, v1] : null); quad(ZN, x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0, col, ew ? [a1, v0, a0, v1] : null);
+        quad(ZN, x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1, col, ew ? null : [a1, v0, a0, v1]); quad(ZN, x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, col, ew ? null : [a0, v0, a1, v1]);
+        quad(ZN, x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0, col);
+      }
+      // a roof sheet and, just under it, its underside: the shadow pass draws only faces that look away from the sun
+      const UNDER = lin(0x4a443c);
+      function roofQuad(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col, uv) {
+        quad(ZN, ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col, uv);
+        quad(ZN, dx, dy - 0.08, dz, cx, cy - 0.08, cz, bx, by - 0.08, bz, ax, ay - 0.08, az, UNDER);
+      }
+      const startV = (seed, k, rusty) => (hash(seed, 400 + k) < rusty ? 0.02 : 0.52) + 0.1 * hash(seed, 440 + k);   // where on the zinc tile a sheet starts: its rusty half or its clean half
+      function sheetColour(base, seed, k) { // every sheet a little different; now and then a rusty, a new or a painted one
+        const r = hash(seed, 300 + k), c = mul(base, 0.93 + 0.14 * hash(seed, 200 + k));
+        return r < 0.07 ? mix(c, RUST, 0.45) : r < 0.13 ? mix(c, NEWZINC, 0.5) : r < 0.16 ? mix(c, ZPAINT[2 + k % 5], 0.4) : c;
+      }
+
+      /* ---- ground: streets, lanes, the land under the lots ---- */
+      const XS = [[-936, -676, 0], [-676, -596, 1], [-596, -336, 0], [-336, -256, 1], [-256, 0, 0], [0, 40, 2], [40, 300, 0], [300, 380, 1], [380, 820, 0], [820, 900, 1], [900, 1160, 0],
+                  [1160, 1200, 2], [1200, 1456, 0], [1456, 1536, 1], [1536, 1796, 0], [1796, 1876, 1], [1876, 2136, 0]];   // 0 lots, 1 street, 2 edge lane
+      const YS = [[-640, -380, 0], [-380, -300, 1], [-300, 0, 0], [0, 40, 2], [40, 380, 0], [380, 460, 1], [460, 900, 0], [900, 980, 1], [980, 1300, 0], [1300, 1380, 1]];
+      function street(xa, xb, ya, yb, vertical, gutter, seed) { // asphalt in pieces of about 4 m, each a slightly different grey, with a concrete gutter on each lot line
+        const s0 = vertical ? ya : xa, len = (vertical ? yb : xb) - s0, n = Math.ceil(len / 80), g = gutter ? 6 : 0;
+        for (let j = 0; j < n; j++) {
+          const a = s0 + len * j / n, b = s0 + len * (j + 1) / n, col = mul(ASPHALT, 0.94 + 0.12 * hash(seed, j)), gc = mul(GUTTER, 0.92 + 0.12 * hash(seed, j + 50));
+          if (vertical) { flat(xa + g, a, xb - g, b, 0, col); if (g) { flat(xa, a, xa + g, b, 0, gc); flat(xb - g, a, xb, b, 0, gc); } }
+          else { flat(a, ya + g, b, yb - g, 0, col); if (g) { flat(a, ya, b, ya + g, 0, gc); flat(a, yb - g, b, yb, 0, gc); } }
+          if (xa > -400 && xb < 1600 && ya > -400) { // what years of patching leave behind
+            const r = hash(seed, j + 100), mx = X(vertical ? xa + 16 + 48 * hash(seed, j + 110) : (a + b) / 2), mz = Z(vertical ? (a + b) / 2 : ya + 16 + 48 * hash(seed, j + 110)), rot = (vertical ? 1.5708 : 0) + (hash(seed, j + 120) - 0.5) * 0.5;
+            if (r < 0.2) decal(PATCH, mx, mz, 1.4 + 1.6 * hash(seed, j + 130), 1.1 + hash(seed, j + 140), rot, mul(ASPHALT, r < 0.1 ? 0.72 : 1.16));
+            else if (r < 0.5) decal(r < 0.35 ? CRACK : CRACK2, mx, mz, 3.2, 3.2, rot + r * 40, mul(ASPHALT, 0.5));
+            else if (r < 0.6) decal(STAIN, mx, mz, 2.2, 1.8, rot, mul(ASPHALT, 0.6));
+            else if (r < 0.68) decal(COVER, mx, mz, 0.8, 0.8, r * 50, lin(0x8f8d86));
+            if (g && hash(seed, j + 150) < 0.3) decal(GRATE, vertical ? X(xa + 3.4) : X((a + b) / 2), vertical ? Z((a + b) / 2) : Z(yb - 3.4), 0.5, 0.5, vertical ? 1.5708 : 0, lin(0x9a9a94));
+          }
+        }
+      }
+      flat(-2200, -720, 3400, sim.WATER, -0.03, EARTH);
+      XS.forEach(([xa, xb, tx], ix) => YS.forEach(([ya, yb, ty], iy) => {
+        const seed = ix * 31 + iy, mapX = xa >= 0 && xb <= sim.W, mapY = ya >= 0;
+        if (tx === 1 && ty === 1) street(xa, xb, ya, yb, true, false, seed);
+        else if (tx === 1) street(xa, xb, ya, yb, true, ty === 0 || !mapX, seed);
+        else if (ty === 1) street(xa, xb, ya, yb, false, tx === 0 || !mapY, seed);
+        else if (mapX && mapY) {
+          if (tx === 2 || ty === 2) flat(xa, ya, xb, yb, 0, mul(LANE, 0.95));
+          else if (xa === 900 && ya === 40) flat(xa, ya, xb, 190, 0, LANE);   // the dance yard takes the rest of this one
+          else flat(xa, ya, xb, yb, 0, LANE);
+        }
+      }));
+      for (const [jx, jy] of [[340, 420], [860, 420], [340, 940], [860, 940], [340, 1340], [860, 1340]]) { // worn stop bars where the cross streets meet the two long ones
+        for (const side of [-1, 1]) decal(BAR, X(jx + side * 47), Z(jy), 3.3, 0.45, 1.5708, mul(lin(P.laneMark), 0.9));
+        decal(DASH, X(jx), Z(jy - 62), 3.0, 0.5, 1.5708, mul(lin(P.laneMark), 0.8)); decal(DASH, X(jx), Z(jy + 62), 3.0, 0.5, 1.5708, mul(lin(P.laneMark), 0.8));
+      }
+      for (const [sx, sy, rot] of [[20, 610, 0], [600, 800, 1.5708], [170, 300, 0], [1180, 760, 0]]) decal(HOP, X(sx), Z(sy), 1.5, 1.5, rot, lin(0xf3ead8));   // chalk games in the lanes
+      for (let k = 0; k < 44; k++) { const sx = 40 + hash(k, 71) * 1120, sy = 40 + hash(k, 72) * 1300; if (sx < 880 || sy > 400) decal(k % 3 ? RUBBLE : STAIN, X(sx), Z(sy), 1.2 + hash(k, 73), 1.2 + hash(k, 74), k, k % 3 === 1 ? mul(GREENS[k % 4], 0.9) : mul(LANE, k % 3 ? 0.78 : 0.7)); }   // litter and damp: it shows where it lands in a lane or on a street
+
+      /* ---- one roofed volume: x0..x1 west to east, z0..z1 north to south (z1 is the front), walls h metres high ---- */
+      function unit(x0, z0, x1, z1, h, o) {
+        const tp = Math.tan(o.pitch), cp = Math.cos(o.pitch), wall = o.wall, low = mul(wall, 0.84);
+        if (o.dado) { wallQuad(x0, z1, x1, z1, 0, 0.85, mul(o.dado, 0.8), o.dado); wallQuad(x0, z1, x1, z1, 0.85, h, wall); } else wallQuad(x0, z1, x1, z1, 0, h, low, wall);
+        wallQuad(x1, z0, x0, z0, 0, h, low, wall); wallQuad(x1, z1, x1, z0, 0, h, low, wall); wallQuad(x0, z0, x0, z1, 0, h, low, wall);
+        const xa = x0 - o.oW, xb = x1 + o.oE, zs = z1 + o.oS, zn = z0 - o.oN, yw = h + 0.05, hip = o.hip;
+        const zr = hip ? (zs + zn) / 2 : (z0 + z1) / 2, ys = yw - o.oS * tp, yn = hip ? ys : yw - o.oN * tp, R = zs - zr, RN = zr - zn, yr = ys + R * tp;
+        const cuts = [xa], n = Math.max(1, Math.round((xb - xa) / o.sheet)); if (hip) cuts.push(xa + R);
+        for (let k = 1; k < n; k++) { const x = xa + (xb - xa) * k / n; if (!hip || (x > xa + R + 0.2 && x < xb - R - 0.2)) cuts.push(x); }
+        if (hip) cuts.push(xb - R); cuts.push(xb);
+        const up = (x) => hip ? Math.min(R, x - xa, xb - x) : 1e9;   // how far up the slope the roof reaches at x, measured on plan
+        for (let k = 0; k + 1 < cuts.length; k++) {
+          const xs = cuts[k], xe = cuts[k + 1], ds = Math.min(R, up(xs)), de = Math.min(R, up(xe)), dn = Math.min(RN, up(xs)), den = Math.min(RN, up(xe)), f = 1 / cp / TW;
+          const v = startV(o.seed, k, o.rusty), w = startV(o.seed, k + 40, o.rusty);
+          roofQuad(xs, ys, zs, xe, ys, zs, xe, ys + de * tp, zs - de, xs, ys + ds * tp, zs - ds, sheetColour(o.roof, o.seed, k), [xs / TW, v, xe / TW, v, xe / TW, v + de * f, xs / TW, v + ds * f]);
+          roofQuad(xe, yn, zn, xs, yn, zn, xs, yn + dn * tp, zn + dn, xe, yn + den * tp, zn + den, sheetColour(o.roof, o.seed, k + 40), [xe / TW, w, xs / TW, w, xs / TW, w + dn * f, xe / TW, w + den * f]);
+        }
+        const cap = mix(mul(o.roof, 0.6), NEWZINC, 0.3);
+        if (hip) {
+          const ve = R / cp / TW, un = zn / TW, us = zs / TW, um = zr / TW;
+          roofQuad(xa, ys, zn, xa, ys, zs, xa + R, yr, zr, xa + R, yr, zr, sheetColour(o.roof, o.seed, 90), [un, 0, us, 0, um, ve, um, ve]);
+          roofQuad(xb, ys, zs, xb, ys, zn, xb - R, yr, zr, xb - R, yr, zr, sheetColour(o.roof, o.seed, 91), [us, 0, un, 0, um, ve, um, ve]);
+          for (const [ex, ez, rx] of [[xa, zs, xa + R], [xa, zn, xa + R], [xb, zs, xb - R], [xb, zn, xb - R]]) ribbon(M, ex, ys + 0.03, ez, rx, yr + 0.05, zr, 0.26, cap);
+          ribbon(M, xa + R, yr + 0.05, zr, xb - R, yr + 0.05, zr, 0.3, cap);
+        } else {
+          tri(M, x1, h, z1, x1, h, z0, x1, yr - 0.05, zr, wall); tri(M, x0, h, z0, x0, h, z1, x0, yr - 0.05, zr, wall);
+          ribbon(M, xa, yr + 0.04, zr, xb, yr + 0.04, zr, 0.32, cap);
+        }
+        if (o.oS > 0.05) box(M, xa, ys - 0.17, zs - 0.03, xb, ys + 0.015, zs + 0.03, o.trim);   // fascia board on the front eave
+        if (o.lite) return;
+        for (let k = 0, m = Math.floor(hash(o.seed, 800) * 3.4); k < m; k++) { // what ends up on a roof: blocks and old tyres holding the sheets down, now and then a water tank
+          const px = xa + 0.7 + (xb - xa - 1.4) * hash(o.seed, 810 + k), south = hash(o.seed, 830 + k) < 0.6, d = 0.5 + (Math.min(R, RN) - 1) * hash(o.seed, 820 + k), t = hash(o.seed, 840 + k);
+          if (hip && d > up(px) - 0.4) continue;
+          const z = south ? zs - d : zn + d, y = (south ? ys : yn) + d * tp;
+          if (t < 0.55) box(M, px - 0.2, y - 0.05, z - 0.1, px + 0.2, y + 0.17, z + 0.1, mul(CONCRETE, 0.8 + 0.2 * t));
+          else if (t < 0.86) solid(M, TYRE, at(px, y + 0.09, z, 1, 1, 1, south ? o.pitch - 1.5708 : -o.pitch - 1.5708), DARK);
+          else if (!hip && R > 2.2) { const tz = zr + 0.75, ty = ys + (zs - tz) * tp; box(M, px - 0.5, ty - 0.3, tz - 0.5, px + 0.5, ty + 0.12, tz + 0.5, mul(CONCRETE, 0.85)); solid(M, CYL, at(px, ty + 0.62, tz, 0.48, 1.0, 0.48), lin(0x1c2622)); solid(M, CYL, at(px, ty + 1.15, tz, 0.2, 0.08, 0.2), lin(0x2c3a34)); }
+        }
+      }
+
+      /* ---- the front of a house: a door with a step, windows either side. z is the wall face, looking south ---- */
+      function opening(uv, x0, x1, y0, y1, z, tint, trim, lit, pool) {
+        quad(M, x0 - 0.08, y0 - 0.06, z + 0.012, x1 + 0.08, y0 - 0.06, z + 0.012, x1 + 0.08, y1 + 0.08, z + 0.012, x0 - 0.08, y1 + 0.08, z + 0.012, trim);
+        quad(lit < 0 ? F : LIT[lit], x0, y0, z + 0.024, x1, y0, z + 0.024, x1, y1, z + 0.024, x0, y1, z + 0.024, tint, uv);
+        if (lit >= 0) { const k = pool || 0.34, wm = [1.0 * k, 0.62 * k, 0.26 * k], e = 0.5 + (x1 - x0) * 0.2; quad(PL, x0 - e, 0.03, z + 1.7 + (x1 - x0) * 0.3, x1 + e, 0.03, z + 1.7 + (x1 - x0) * 0.3, x1, 0.03, z + 0.04, x0, 0.03, z + 0.04, [0, 0, 0], null, wm); }
+      }
+      function front(x0, x1, z, h, s, o) {
+        const w = x1 - x0, n = Math.max(1, Math.floor((w - 0.4) / 1.75)), slot = (w - 0.4) / n, door = Math.floor(hash(s, 60) * n), top = Math.min(2.05, h - 0.85);
+        for (let k = 0; k < n; k++) {
+          const cx = x0 + 0.2 + slot * (k + 0.5), r = hash(s, 61 + k);
+          if (k === door) {
+            opening(o.style === 1 ? PLANK : DOOR, cx - 0.46, cx + 0.46, 0.14, 2.06, z, o.accent, o.trim, -1);
+            if (!o.lite) box(M, cx - 0.7, 0, z, cx + 0.7, 0.14, z + 0.24, mul(CONCRETE, 0.9));
+          } else if (r > 0.16) {
+            const ww = Math.min(0.56, slot * 0.36), lit = o.style !== 1 && hash(s, 70 + k) < 0.7 ? (hash(s, 75 + k) < 0.5 ? 0 : 1) : -1;
+            if (r > 0.9 && !o.lite) opening(VENT, cx - 0.4, cx + 0.4, 1.3, 2.0, z, mul(o.wall, 1.05), o.trim, -1);
+            else opening(o.style === 1 ? SHUT : lit === 1 ? CURTAIN : GLASS, cx - ww, cx + ww, 0.95, top, z, o.style === 1 ? o.accent : WHITE, o.trim, lit);
+            if (!o.lite) box(M, cx - ww - 0.12, 0.86, z, cx + ww + 0.12, 0.92, z + 0.09, o.trim);
+          }
+        }
+      }
+      // a lean-to verandah along a front: slab, posts, a low wall between them, its own roof
+      function verandah(x0, x1, zw, zf, h, s, o) {
+        const w = x1 - x0, ytop = h - 0.38, ylow = ytop - (zf + 0.2 - zw) * 0.16, n = Math.max(2, Math.round(w / 2.3) + 1), bay = Math.floor(hash(s, 80) * (n - 1)), col = mix(o.roof, hash(s, 81) < 0.5 ? RUST : NEWZINC, 0.3), sheets = Math.max(1, Math.round(w / 1.1));
+        box(M, x0, 0, zw, x1, 0.18, zf, mul(CONCRETE, 0.92));
+        for (let k = 0; k < sheets; k++) { const xs = x0 - 0.1 + (w + 0.2) * k / sheets, xe = x0 - 0.1 + (w + 0.2) * (k + 1) / sheets, v = startV(s, 90 + k, 0.5); roofQuad(xs, ylow, zf + 0.2, xe, ylow, zf + 0.2, xe, ytop, zw, xs, ytop, zw, sheetColour(col, s, 60 + k), [xs / TW, v, xe / TW, v + (zf + 0.2 - zw) / TW]); }
+        box(M, x0 - 0.1, ylow - 0.15, zf + 0.17, x1 + 0.1, ylow + 0.015, zf + 0.23, o.trim);
+        for (let k = 0; k < n; k++) {
+          const px = x0 + 0.07 + (w - 0.14) * k / (n - 1); box(M, px - 0.06, 0.18, zf - 0.14, px + 0.06, ylow - 0.05, zf - 0.02, o.trim);
+          if (k < n - 1 && k !== bay) wallBox(px + 0.06, 0.18, zf - 0.11, px + (w - 0.14) / (n - 1) - 0.06, 0.84, zf - 0.04, mul(o.wall, 0.8), o.trim);
+          else if (k === bay) box(M, px + 0.3, 0, zf, px + (w - 0.14) / (n - 1) - 0.3, 0.09, zf + 0.24, mul(CONCRETE, 0.88));
+        }
+      }
+
+      /* ---- a fence along a lot line from (ax, az) to (bx, bz); `inward` is +1 or -1: which way the lot lies ---- */
+      function fence(ax, az, bx, bz, inward, kind, h, seed, lite) {
+        const ew = az === bz, s0 = ew ? ax : az, len = (ew ? bx : bz) - s0, fixed = ew ? az : ax, body = lin(0xd6cdb9), paint = ZPAINT[(seed * 3 + 1) % ZPAINT.length];
+        const run = (f, a, b, y0, y1, d0, d1, col, cTop) => { // a piece from a to b along the line, d0..d1 metres into the lot
+          const lo = fixed + Math.min(d0 * inward, d1 * inward), hi = fixed + Math.max(d0 * inward, d1 * inward);
+          if (ew) f(a, y0, lo, b, y1, hi, col, cTop); else f(lo, y0, a, hi, y1, b, col, cTop);
+        };
+        const mbox = (x0, y0, z0, x1, y1, z1, col, cTop) => box(M, x0, y0, z0, x1, y1, z1, col, cTop);
+        const sheets = (y0, uneven, tone) => { const n = Math.max(1, Math.round(len / (lite ? 1.72 : 0.86)));
+          for (let k = 0; k < n; k++) { const r = hash(seed, 500 + k), col = mul(r < tone ? mix(paint, RUST, 0.6) : r > 0.9 ? ZPAINT[(seed + k) % ZPAINT.length] : paint, 0.86 + 0.24 * hash(seed, 600 + k));
+            run(zincBox, s0 + len * k / n, s0 + len * (k + 1) / n, y0, h - uneven * hash(seed, 700 + k), 0, 0.06, col); } };
+        if (kind === 1) { // rendered block wall with a painted band and a cap
+          const band = mix(body, ACCENTS[seed % ACCENTS.length], 0.7);
+          run(wallBox, s0, s0 + len, 0, h * 0.36, 0, 0.18, band); run(wallBox, s0, s0 + len, h * 0.36, h - 0.07, 0, 0.18, body); run(mbox, s0, s0 + len, h - 0.07, h, -0.02, 0.21, mul(body, 0.8));
+          if (!lite) for (let k = 0, n = Math.max(1, Math.round(len / 3.2)); k <= n; k++) { const a = Math.min(s0 + len - 0.26, s0 + len * k / n); run(wallBox, a, a + 0.26, 0, h + 0.06, -0.02, 0.24, body); }
+        } else if (kind === 3) { // low block wall with zinc above it
+          run(wallBox, s0, s0 + len, 0, 0.62, 0, 0.16, body, mul(body, 0.8)); sheets(0.62, 0.1, 0.12);
+        } else { // zinc sheets: raw and hand-cut to uneven heights, or painted and neat
+          sheets(0, kind === 2 ? 0.05 : 0.24, kind === 2 ? 0.06 : 0.3);
+          if (!lite) { run(mbox, s0, s0 + len, h * 0.7, h * 0.7 + 0.07, 0.06, 0.11, TIMBER); run(mbox, s0, s0 + len, h * 0.2, h * 0.2 + 0.07, 0.06, 0.11, TIMBER);
+            for (let k = 0, n = Math.max(1, Math.round(len / 1.72)); k <= n; k++) { const a = Math.min(s0 + len - 0.09, s0 + len * k / n); run(mbox, a, a + 0.09, 0, h - 0.2, 0.06, 0.15, TIMBER); } }
+        }
+        if (ew && !lite && hash(seed, 9) < 0.6) { // a gate that is only drawn: two pillars and a painted leaf, seen from the yard side
+          const gx = ax + len * (0.25 + 0.5 * hash(seed, 10)), gw = 1.25, gh = Math.min(h, 1.5), t = kind === 1 ? 0.19 : 0.07;
+          quad(F, gx - gw, 0.05, az + t * inward, gx + gw, 0.05, az + t * inward, gx + gw, gh, az + t * inward, gx - gw, gh, az + t * inward, ACCENTS[(seed + 3) % ACCENTS.length], GATE);
+          for (const sx of [-1, 1]) wallBox(gx + sx * gw - 0.13, 0, az - 0.02, gx + sx * gw + 0.13, h + 0.04, az + 0.26, body, mul(body, 0.8));
+        }
+      }
+
+      /* ---- what stands in a yard: nothing over 1.7 m ---- */
+      const CYL = new THREE.CylinderGeometry(1, 1, 1, 10), ICO = new THREE.IcosahedronGeometry(1, 0), TYRE = new THREE.TorusGeometry(0.27, 0.11, 5, 10), POST = new THREE.CylinderGeometry(1, 1, 1, 6);
+      function bush(x, z, r, s) { solid(M, ICO, at(x, r * 0.62, z, r, r * 0.8, r, 0, s), mul(GREENS[s % GREENS.length], 0.8 + 0.4 * hash(s, 91))); }
+      function yardThings(x0, x1, z0, z1, s) {
+        const n = Math.floor((x1 - x0) / 2.3), zc = (z0 + z1) / 2;
+        for (let k = 0; k < n; k++) {
+          const cx = x0 + (x1 - x0) * (k + 0.3 + 0.4 * hash(s, 100 + k)) / n, cz = zc + (hash(s, 110 + k) - 0.5) * (z1 - z0 - 1.1), t = Math.floor(hash(s, 120 + k) * 9), q = s * 17 + k;
+          if (t === 0) solid(M, CYL, at(cx, 0.45, cz, 0.29, 0.9, 0.29), lin(hash(q, 1) < 0.6 ? 0x2f6fb5 : 0x8a4f2c));
+          else if (t <= 2) { bush(cx, cz, 0.5 + 0.3 * hash(q, 2), q); if (t === 2) bush(cx + 0.6, cz + 0.2, 0.4, q + 1); }
+          else if (t === 3 && k + 1 < n) { // a washing line
+            const xe = cx + (x1 - x0) / n * 0.9; box(M, cx - 0.04, 0, cz - 0.04, cx + 0.04, 1.62, cz + 0.04, TIMBER); box(M, xe - 0.04, 0, cz - 0.04, xe + 0.04, 1.62, cz + 0.04, TIMBER); box(M, cx, 1.55, cz - 0.012, xe, 1.575, cz + 0.012, DARK);
+            for (let j = 0, m = Math.floor((xe - cx - 0.3) / 0.55); j < m; j++) { const a = cx + 0.2 + j * 0.55, wd = 0.3 + 0.2 * hash(q, 20 + j), y0 = 0.7 + 0.4 * hash(q, 30 + j), col = CLOTH[Math.floor(hash(q, 40 + j) * CLOTH.length)];
+              quad(M, a, y0, cz + 0.02, a + wd, y0, cz + 0.02, a + wd, 1.56, cz + 0.02, a, 1.56, cz + 0.02, col); quad(M, a + wd, y0, cz - 0.02, a, y0, cz - 0.02, a, 1.56, cz - 0.02, a + wd, 1.56, cz - 0.02, col); }
+            k++;
+          } else if (t === 4) { box(M, cx - 0.7, 0.38, cz - 0.16, cx + 0.7, 0.44, cz + 0.16, TIMBER); box(M, cx - 0.6, 0, cz - 0.12, cx - 0.45, 0.38, cz + 0.12, CONCRETE); box(M, cx + 0.45, 0, cz - 0.12, cx + 0.6, 0.38, cz + 0.12, CONCRETE); }
+          else if (t === 5) { box(M, cx - 0.4, 0, cz - 0.2, cx + 0.4, 0.2, cz + 0.2, mul(CONCRETE, 0.8)); box(M, cx - 0.3, 0.2, cz - 0.2, cx + 0.3, 0.4, cz + 0.2, mul(CONCRETE, 0.72)); box(M, cx - 0.1, 0.4, cz - 0.2, cx + 0.3, 0.6, cz + 0.2, mul(CONCRETE, 0.8)); }
+          else if (t === 6) { solid(M, TYRE, at(cx, 0.11, cz, 1, 1, 1, 1.5708), DARK); solid(M, TYRE, at(cx + 0.1, 0.33, cz + 0.05, 1, 1, 1, 1.5708), DARK); }
+          else if (t === 7) { bush(cx, cz, 0.42, q + 4); solid(M, CYL, at(cx, 0.2, cz, 0.3, 0.4, 0.3), lin(0xa0553a)); }
+        }
+      }
+
+      /* ---- an ordinary lot: yard strip and fence on the north side, house flush with the south edge ---- */
+      function lot(b, lite) {
+        const hs = NH.house(b), H = hs.height, s = b.i, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y), zS = Z(b.y + b.h), w = x1 - x0, d = zS - zH;
+        const roof = mul(rich(lin(b.c), 1.5), 1.22), wall = mul(lin(b.wall), 1.08), trim = TRIMS[(s * 5 + 2) % TRIMS.length], accent = ACCENTS[(s * 3 + 1) % ACCENTS.length], style = s % 3;
+        const dado = hash(s, 6) < 0.62 ? mix(wall, accent, 0.5) : null;
+        if (hs.yard) {
+          flat(b.x, b.y, b.x + b.w, hs.y, 0.02, mul(EARTH, 0.85 + 0.25 * hash(s, 1)));
+          const kind = [0, 1, 2, 3, 0, 2, 1, 0, 3][(s * 4 + (s >> 2)) % 9], fh = 1.15 + 0.3 * hash(s, 2);
+          fence(x0, zN, x1, zN, 1, kind, fh, s, lite); fence(x0, zN, x0, zH, 1, kind, fh + 0.06, s + 77, lite); fence(x1, zN, x1, zH, -1, kind, fh + 0.06, s + 131, lite);
+          if (!lite) yardThings(x0 + 0.5, x1 - 0.5, zN + 0.3, zH - 0.2, s); else if (hash(s, 3) < 0.6) bush(x0 + w * (0.2 + 0.6 * hash(s, 4)), (zN + zH) / 2, 0.7, s);
+        }
+        const nx = lite ? 1 : w >= 17 ? 3 : w >= 11 ? 2 : 1, nz = d >= 13 ? 3 : d >= 8.6 ? 2 : 1, lead = Math.floor(hash(s, 5) * nx), xb = [x0], zb = [zS];
+        for (let k = 1; k < nx; k++) xb.push(x0 + w * (k + (hash(s, 10 + k) - 0.5) * 0.3) / nx);
+        for (let k = 1; k < nz; k++) zb.push(zS - d * (k + (hash(s, 20 + k) - 0.5) * 0.25) / nz);
+        xb.push(x1); zb.push(zH);
+        for (let ix = 0; ix < nx; ix++) for (let iz = 0; iz < nz; iz++) {
+          const ux0 = xb[ix], ux1 = xb[ix + 1], uz1 = zb[iz], uz0 = zb[iz + 1], q = s * 9 + ix * 3 + iz;
+          const h = H - (ix === lead ? 0 : 0.2 + 0.35 * hash(s, 30 + ix)) - iz * (0.15 + 0.3 * hash(s, 40 + iz + ix * 3));
+          const hip = hash(q, 50) < 0.3 && ux1 - ux0 > uz1 - uz0 + 2, ver = !iz && !lite && uz1 - uz0 > 4.6 && hash(q, 52) < 0.36, vd = ver ? 1.25 : 0;
+          const o = { wall, dado, roof: iz ? mix(roof, RUST, 0.1 * iz) : roof, trim, accent, style, lite, seed: q, hip, rusty: 0.08 + 0.6 * hash(q, 53) * hash(s, 54) + 0.2 * iz, pitch: (12 + 7 * hash(q, 51)) * Math.PI / 180, sheet: lite ? 2 : 1,
+            oS: ver ? 0.1 : hip ? 0.1 : iz ? 0 : 0.3, oN: hip ? 0.1 : iz === nz - 1 ? 0.05 : 0, oW: ix ? 0 : 0.22, oE: ix === nx - 1 ? 0.22 : 0 };
+          unit(ux0, uz0, ux1, uz1 - vd, h, o);
+          if (ver) verandah(ux0, ux1, uz1 - vd, uz1, h, q, o); else if (!iz) front(ux0, ux1, uz1, h, q, o);
+        }
+      }
+
+      /* ---- Zinc Roof Soundhall: a hall with a painted false front, a wide doorway and the dance yard south of it ---- */
+      function hall(b) {
+        const hs = NH.house(b), H = hs.height, x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zH = Z(hs.y), zS = Z(b.y + b.h), xm = (x0 + x1) / 2, wall = mul(lin(b.wall), 1.08), trim = TRIMS[0];
+        const top = H + 1.0, band = lin(0x16283c), teal = lin(P.harbour), dx0 = X(1052), dx1 = X(1132), paint = mul(SODIUM, 1.3);
+        flat(b.x, b.y, b.x + b.w, hs.y, 0.02, EARTH);
+        fence(x0, zN, x1, zN, 1, 2, 1.45, 6); fence(x0, zN, x0, zH, 1, 2, 1.5, 83); fence(x1, zN, x1, zH, -1, 2, 1.5, 137); yardThings(x0 + 0.5, x1 - 0.5, zN + 0.3, zH - 0.2, 606);
+        unit(x0, zH, x1, zS - 0.2, H, { wall, roof: mul(rich(lin(b.c), 1.5), 1.22), trim, seed: 606, hip: false, rusty: 0.3, pitch: 0.26, sheet: 1, oS: 0, oN: 0.05, oW: 0.22, oE: 0.22 });
+        wallBox(x0 - 0.12, 0, zS - 0.2, x1 + 0.12, 0.55, zS, mul(teal, 0.85)); wallBox(x0 - 0.12, 0.55, zS - 0.2, x1 + 0.12, 2.5, zS, wall);
+        box(M, x0 - 0.12, 2.5, zS - 0.2, x1 + 0.12, 2.62, zS + 0.01, SODIUM); box(M, x0 - 0.12, 2.62, zS - 0.2, x1 + 0.12, 2.74, zS + 0.01, teal);
+        box(M, x0 - 0.12, 2.74, zS - 0.2, x1 + 0.12, top, zS, band); box(M, xm - 3.6, top, zS - 0.2, xm + 3.6, top + 0.34, zS, band);
+        box(M, x0 - 0.16, top, zS - 0.24, xm - 3.6, top + 0.07, zS + 0.04, INK); box(M, xm + 3.6, top, zS - 0.24, x1 + 0.16, top + 0.07, zS + 0.04, INK); box(M, xm - 3.64, top + 0.34, zS - 0.24, xm + 3.64, top + 0.41, zS + 0.04, INK);
+        [[xm - 5.75, xm - 0.4], [xm + 0.4, xm + 5.75]].forEach(([a, c], k) => quad(SG, a, 2.9, zS + 0.02, c, 2.9, zS + 0.02, c, 4.24, zS + 0.02, a, 4.24, zS + 0.02, INK, WORD[k]));
+        box(M, xm - 0.13, 3.44, zS, xm + 0.13, 3.7, zS + 0.02, SODIUM);
+        opening(INSIDE, dx0, dx1, 0, 2.4, zS, WHITE, trim, 0, 0.9);                                                   // the wide doorway, its zinc doors slid open
+        zincBox(dx0 - 1.5, 0.05, zS + 0.03, dx0 - 0.08, 2.42, zS + 0.09, paint); zincBox(dx1 + 0.08, 0.05, zS + 0.03, x1 + 0.1, 2.42, zS + 0.09, paint);
+        box(M, dx0 - 1.55, 2.42, zS + 0.02, x1 + 0.12, 2.5, zS + 0.13, DARK);
+        for (let k = 0; k < 4; k++) { const fx = x0 + 0.3 + k * 0.5, fy = 1.0 + 0.12 * hash(k, 95); quad(F, fx, fy, zS + 0.015, fx + 0.42, fy, zS + 0.015, fx + 0.42, fy + 0.56, zS + 0.015, fx, fy + 0.56, zS + 0.015, WHITE, FLYER[(k * 2 + 1) % 6]); }
+        for (const sx of [912, 1146]) box(M, X(sx) - 0.03, 3.5, zS, X(sx) + 0.03, 3.58, zS + 0.54, DARK);            // brackets for the string of lights
+        box(M, x0 + 0.25, 0.36, zS + 0.04, x0 + 1.75, 0.42, zS + 0.4, TIMBER); box(M, x0 + 0.35, 0, zS + 0.08, x0 + 0.5, 0.36, zS + 0.36, CONCRETE); box(M, x0 + 1.5, 0, zS + 0.08, x0 + 1.65, 0.36, zS + 0.36, CONCRETE);   // a bench, drinks crates, a cooler
+        [[0x3aa0c8, 0], [0xc8573a, 0.3], [0xe8b23a, 0.6]].forEach(([c, y], j) => box(M, x1 - 0.62 + (j & 1) * 0.04, y, zS + 0.12, x1 - 0.18 + (j & 1) * 0.04, y + 0.28, zS + 0.44, lin(c)));
+        box(M, x1 - 1.3, 0, zS + 0.12, x1 - 0.75, 0.4, zS + 0.44, lin(0x2c5fa8), INK);
+        for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) flat(900 + i * 65, 190 + j * 190 / 3, 965 + i * 65, 190 + (j + 1) * 190 / 3, 0, mul(CONCRETE, 0.9 + 0.12 * hash(i * 3 + j, 77)));
+        for (const [ax, ay, bx, by] of [[900, 374, 985, 380], [1085, 374, 1160, 380], [900, 196, 906, 250], [900, 320, 906, 374], [1154, 196, 1160, 374]]) box(M, X(ax), 0, Z(ay), X(bx), 0.05, Z(by), lin(0xe9e3d4));   // a whitewashed kerb, low enough to step over
+        const cable = [[1070, 196], [1058, 226], [1030, 242], [1000, 246]]; for (let k = 0; k + 1 < cable.length; k++) ribbon(D, X(cable[k][0]), 0.016, Z(cable[k][1]), X(cable[k + 1][0]), 0.016, Z(cable[k + 1][1]), 0.07, DARK, SOLID);
+        ribbon(D, X(1076), 0.016, Z(196), X(1106), 0.016, Z(236), 0.07, DARK, SOLID);
+        decal(PATCH, X(979), Z(224), 5.4, 2.0, 0, mul(CONCRETE, 0.78));                                               // the stand the speakers go on
+      }
+
+      /* ---- Keelwright Boatworks: an open-sided shed, its front bay bare rafters over a hull on trestles, and the slip ---- */
+      function boatworks(b) {
+        const x0 = X(b.x), x1 = X(b.x + b.w), zN = Z(b.y), zS = Z(b.y + b.h), xm = (x0 + x1) / 2, w = x1 - x0, hS = 2.8, hN = 2.05, k = (hS - hN) / (zS - zN), zc = zN + 1.9, yc = hN + (zc - zN) * k;
+        const roof = mul(rich(lin(b.c), 1.5), 1.22), hx = xm - 0.25, hz = zS - 1.12, zE = Z(1566), yE = -(zE - zS) * 0.24;
+        flat(b.x, b.y, b.x + b.w, b.y + b.h, 0.02, mul(QUAY, 0.8));
+        for (const px of [x0 + 0.09, xm, x1 - 0.09]) { box(M, px - 0.08, 0, zS - 0.16, px + 0.08, hS - 0.1, zS, TIMBER); box(M, px - 0.08, 0, zN, px + 0.08, hN - 0.05, zN + 0.16, TIMBER); }
+        for (let j = 0; j < 9; j++) { const xs = x0 - 0.2 + (w + 0.4) * j / 9, xe = x0 - 0.2 + (w + 0.4) * (j + 1) / 9, v = startV(23, j, 0.45);
+          roofQuad(xe, hN - 0.05 * k, zN - 0.05, xs, hN - 0.05 * k, zN - 0.05, xs, yc, zc, xe, yc, zc, sheetColour(roof, 23, j), [xe / TW, v, xs / TW, v, xs / TW, v + 1.95 / TW, xe / TW, v + 1.95 / TW]);
+          ribbon(M, xs + 0.4, yc - 0.03, zc - 0.1, xs + 0.4, hS - 0.02, zS - 0.05, 0.1, mul(TIMBER, 1.15)); }
+        box(M, x0 - 0.2, hS - 0.2, zS - 0.14, x1 + 0.2, hS, zS, TIMBER); box(M, x0 - 0.2, yc + 0.28 * k - 0.1, zc + 0.68, x1 + 0.2, yc + 0.28 * k, zc + 0.78, TIMBER);
+        zincBox(x0, 0, zN, x0 + 0.06, hN, zS - 0.2, mix(ZPAINT[1], ZPAINT[0], 0.5)); zincBox(x0, 0, zN, x1, hN - 0.1, zN + 0.06, ZPAINT[0]);
+        [[xm - 4.25, xm - 0.2], [xm + 0.2, xm + 4.25]].forEach(([a, c], j) => { const za = zc - 0.22, zb = zN + 0.2, ya = hN + (za - zN) * k + 0.03, yb = hN + (zb - zN) * k + 0.03;   // the name, painted on the roof where the harbour can read it
+          quad(SG, a, ya, za, c, ya, za, c, yb, zb, a, yb, zb, lin(0xf6e7c0), WORD[2 + j]); });
+        // the hull: hard-chined, stern to the west, built up from stations
+        const N = 9, L = 5.6, st = [], wood = lin(0xc49a62), primer = lin(0x9c4a38), inside = lin(0x9a7448);
+        for (let j = 0; j <= N; j++) { const t = j / N, hb = 0.85 * (t < 0.45 ? 0.7 + 0.3 * Math.sin(t / 0.45 * 1.5708) : Math.pow(Math.max(0, Math.cos((t - 0.45) / 0.55 * 1.5708)), 0.75)), keel = 0.56 + (t > 0.78 ? (t - 0.78) * 2.6 : 0), sheer = 1.36 + 0.3 * t * t;
+          st.push([hx - L / 2 + t * L, hb, keel, keel + (sheer - keel) * 0.36, sheer]); }
+        for (let j = 0; j < N; j++) for (const sd of [-1, 1]) { const a = st[j], c = st[j + 1], za = hz + sd * a[1], zb = hz + sd * c[1], zca = hz + sd * a[1] * 0.62, zcb = hz + sd * c[1] * 0.62, f = sd > 0;
+          const pan = (p, q, r, t, col, flip) => f !== flip ? quad(M, p[0], p[1], p[2], q[0], q[1], q[2], r[0], r[1], r[2], t[0], t[1], t[2], col) : quad(M, t[0], t[1], t[2], r[0], r[1], r[2], q[0], q[1], q[2], p[0], p[1], p[2], col);
+          const k0 = [a[0], a[2], hz], k1 = [c[0], c[2], hz], c0 = [a[0], a[3], zca], c1 = [c[0], c[3], zcb], s0 = [a[0], a[4], za], s1 = [c[0], c[4], zb];
+          pan(k0, k1, c1, c0, primer, false); pan(c0, c1, s1, s0, mul(wood, 0.92 + 0.16 * hash(j, 96)), false); pan(k0, k1, c1, c0, inside, true); pan(c0, c1, s1, s0, mul(inside, 1.15), true); }
+        { const a = st[0]; quad(M, a[0], a[2], hz, a[0], a[3], hz - a[1] * 0.62, a[0], a[4], hz - a[1], a[0], a[4], hz + a[1], wood); tri(M, a[0], a[2], hz, a[0], a[4], hz + a[1], a[0], a[3], hz + a[1] * 0.62, wood); }
+        for (const t of [2, 4, 6]) box(M, st[t][0] - 0.1, st[t][4] - 0.2, hz - st[t][1] * 0.9, st[t][0] + 0.1, st[t][4] - 0.15, hz + st[t][1] * 0.9, mul(wood, 0.8));
+        for (const tx of [hx - 1.6, hx + 1.2]) { box(M, tx - 0.07, 0.42, hz - 0.8, tx + 0.07, 0.56, hz + 0.8, TIMBER); for (const sd of [-1, 1]) box(M, tx - 0.06, 0, hz + sd * 0.7 - 0.06, tx + 0.06, 0.42, hz + sd * 0.7 + 0.06, TIMBER); }
+        solid(M, CYL, at(x1 - 0.6, 0.45, zS - 0.55, 0.29, 0.9, 0.29), lin(0x2f6fb5)); solid(M, TYRE, at(x1 - 1.3, 0.1, zS - 0.5, 1.1, 1.1, 1.1, 1.5708), ROPE);
+        // the slip: a ramp into the water with four timber ways
+        quad(G, X(64), yE, zE, X(186), yE, zE, X(186), 0, zS, X(64), 0, zS, mul(QUAY, 0.62), null, mul(QUAY, 0.95));
+        quad(G, X(64), yE, zE, X(64), 0, zS, X(64), -1.5, zS, X(64), -1.5, zE, mul(QUAY, 0.5)); quad(G, X(186), 0, zS, X(186), yE, zE, X(186), -1.5, zE, X(186), -1.5, zS, mul(QUAY, 0.5));
+        for (const wx of [-2.2, -0.75, 0.75, 2.2]) { ribbon(M, hx + wx, 0.05, zS - 2.1, hx + wx, 0.05, zS, 0.16, mul(TIMBER, 0.8)); ribbon(M, hx + wx, 0.05, zS, hx + wx, yE + 0.05, zE, 0.16, mul(TIMBER, 0.8)); }
+        decal(FADE, X(125), zS + 3.2, 6.1, 3.6, 0, lin(0x6fb0b0), -0.34);                                                // the ramp showing through the shallows
+      }
+
+      for (const b of sim.B) { if (b === sim.SOUNDHALL) hall(b); else if (b === sim.BOATWORKS) boatworks(b); else lot(b, false); }
+
+      /* ---- quay and harbour ---- */
+      const SLIP0 = 64, SLIP1 = 186, zQ = Z(sim.WATER);
+      for (let x = -936; x < 2136; x += 64) for (const [ya, yb] of [[sim.QUAY, 1420], [1420, 1460]]) { // concrete slabs; the slip cuts through them
+        const c = mul(QUAY, 0.92 + 0.14 * hash(x, ya)); if (ya > 1400 && x + 64 > SLIP0 && x < SLIP1 + 26) { if (x < SLIP0) flat(x, ya, SLIP0, yb, 0, c); else if (x + 64 > SLIP1) flat(SLIP1, ya, x + 64, yb, 0, c); flat(Math.max(x, SLIP0), ya, Math.min(x + 64, SLIP1), 1458, 0, c); }
+        else flat(x, ya, x + 64, yb, 0, c); }
+      for (let x = -936; x < 2136; x += 6) if (x + 6 <= SLIP0 || x >= SLIP1) flat(x, 1460, x + 6, sim.WATER, 0, mul(TIMBER, 0.95 + 0.5 * hash(x, 81)));   // a timber capping, plank by plank
+      for (const [xa, xb] of [[-936, SLIP0], [SLIP1, 2136]]) { quad(G, X(xa), -1.5, zQ, X(xb), -1.5, zQ, X(xb), 0, zQ, X(xa), 0, zQ, mul(QUAY, 0.4), null, mul(TIMBER, 0.8)); decal(FADE, X((xa + xb) / 2), zQ + 1.1, (xb - xa) * U, 2.2, 0, lin(0x7fb0ac), -0.34); }
+      for (let x = 216; x < 1196; x += 44) if (!sim.PALMS.some((q) => Math.abs(q[0] - x - 14) < 30)) decal(SOLID, X(x + 14), Z(1456), 1.4, 0.16, 0, mul(lin(0xe0b040), 0.85 + 0.3 * hash(x, 82)));   // the painted edge stripe, worn
+      for (const [px, py] of sim.PALMS) decal(PIT, X(px), Z(py), py > 1000 ? 1.25 : 1.5, py > 1000 ? 1.25 : 1.5, px, WHITE);
+      const BOLLARDS = [250, 420, 520, 590, 690, 800, 960, 1060, 1160, -60, 1290];
+      for (const bx of BOLLARDS) { solid(M, CYL, at(X(bx), 0.2, Z(1465), 0.15, 0.4, 0.15), DARK); solid(M, CYL, at(X(bx), 0.43, Z(1465), 0.21, 0.08, 0.21), lin(0xd6a23a)); }
+      for (let x = 206; x < 1300; x += 60) { // fender piles, with an old tyre hung between each pair
+        solid(M, POST, at(X(x), -0.5, zQ + 0.15, 0.13, 1.7, 0.13), mul(TIMBER, 0.7)); if (x % 120 === 86) solid(M, TYRE, at(X(x + 30), -0.1, zQ + 0.12, 1.15, 1.15, 1.15), DARK); }
+      sim.SKIFFS.forEach(([sx], i) => { // mooring lines from the bollards to where main.js floats the skiffs
+        for (const sd of [-1, 1]) { const bx = BOLLARDS.reduce((a, c) => Math.abs(c - sx - sd * 50) < Math.abs(a - sx - sd * 50) ? c : a); ribbon(M, X(bx), 0.36, Z(1465), X(sx) + sd * 2.25, -0.08, Z(sim.WATER + 44) + sd * 0.3 * (i - 1), 0.05, ROPE); }
+      });
+      for (let i = 0; i < 14; i++) for (let j = 0; j < 5; j++) { // the harbour: paler in the shallows under the quay, deeper further out
+        const xa = X(-2200 + i * 400), xb = X(-1800 + i * 400), za = zQ + [0, 2.5, 7, 16, 30, 76][j], zb = zQ + [0, 2.5, 7, 16, 30, 76][j + 1], tone = (jj, ii) => mul(WHITE, [1.12, 1, 0.9, 0.8, 0.72, 0.66][jj] * (0.95 + 0.1 * hash(ii * 7 + jj, 83)));
+        const a = W.count; quad(W, xa, -0.35, zb, xb, -0.35, zb, xb, -0.35, za, xa, -0.35, za, WHITE, [xa / 7, zb / 7, xb / 7, za / 7]);
+        [tone(j + 1, i), tone(j + 1, i + 1), tone(j, i + 1), tone(j, i)].forEach((c, q) => { W.c[(a + q) * 3] = c[0]; W.c[(a + q) * 3 + 1] = c[1]; W.c[(a + q) * 3 + 2] = c[2]; });
+      }
+
+      for (let k = 0; k < 7; k++) solid(M, ICO, at(X(150 + k * 170 + 90 * hash(k, 97)), -0.3, zQ + 6.5 + 5 * hash(k, 98), 0.2 + 0.05 * (k % 2)), k % 2 ? INK : lin(0xe0703a));   // mooring buoys
+
+      /* ---- beyond the map: neighbouring lots, the streets running on behind barricades, and low hills to the north ---- */
+      let extra = 100;
+      function neighbours(cx, cy, cw, ch) {
+        const rows = Math.max(1, Math.round(ch / 215)), rh = (ch - 40 * (rows - 1)) / rows;
+        for (let r = 0; r < rows; r++) { const cols = cw > 300 ? 2 + (hash(extra, 1) < 0.4 ? 1 : 0) : hash(extra, 2) < 0.45 ? 2 : 1, lw = (cw - 40 * (cols - 1)) / cols;
+          for (let c = 0; c < cols; c++) { const i = extra++; lot({ i, x: cx + c * (lw + 40), y: cy + r * (rh + 40), w: lw, h: rh, c: sim.ROOF[i % 6], tall: 1 + (i * 37 % 10) / 14, wall: sim.WALL[i % 5] }, true); } }
+      }
+      for (const [xa, xb] of [[-936, -676], [-596, -336], [-256, -4], [1204, 1456], [1536, 1796], [1876, 2136]]) for (const [ya, yb] of [[-640, -380], [-300, 380], [460, 900], [980, 1300]]) neighbours(xa, ya, xb - xa, yb - ya);
+      for (const [xa, xb] of [[4, 300], [380, 820], [900, 1196]]) for (const [ya, yb] of [[-640, -380], [-300, -4]]) neighbours(xa, ya, xb - xa, yb - ya);
+      for (const [sx, i] of [[-250, 90], [1250, 91], [1560, 92], [-560, 93]]) lot({ i, x: sx, y: 1388, w: 200, h: 74, c: sim.ROOF[i % 6], tall: 1, wall: sim.WALL[i % 5] }, true);   // sheds along the quay
+      fence(X(-1), Z(sim.QUAY + 4), X(-1), Z(sim.WATER - 2), -1, 0, 1.6, 201); fence(X(sim.W + 1), Z(sim.QUAY + 4), X(sim.W + 1), Z(sim.WATER - 2), 1, 0, 1.6, 202);
+      function barricade(x, z, alongX) { // two drums and a striped board across a street nobody can walk down
+        for (const sd of [-1, 1]) { const px = x + (alongX ? sd * 1.25 : 0), pz = z + (alongX ? 0 : sd * 1.25); solid(M, CYL, at(px, 0.45, pz, 0.3, 0.9, 0.3), lin(0xc8573a)); solid(M, CYL, at(px, 0.5, pz, 0.31, 0.22, 0.31), INK); }
+        for (let j = 0; j < 7; j++) { const a = -1.75 + j * 0.5, col = j % 2 ? DARK : lin(0xe8b23a); if (alongX) box(M, x + a, 0.95, z - 0.03, x + a + 0.5, 1.15, z + 0.03, col); else box(M, x - 0.03, 0.95, z + a, x + 0.03, 1.15, z + a + 0.5, col); }
+      }
+      for (const sy of sim.STREETS.horizontal) { barricade(X(-16), Z(sy), false); barricade(X(sim.W + 16), Z(sy), false); }
+      for (const sx of sim.STREETS.vertical) barricade(X(sx), Z(-16), true);
+      const hillAt = (x, z) => smooth(-74, -150, z) * (9 + 6 * Math.sin(x * 0.045 + 1.3) + 4 * Math.sin(x * 0.11 + z * 0.06)), SCRUB = lin(0x7c8a55), SCRUB2 = lin(0x55703f);
+      for (let i = 0; i < 16; i++) for (let j = 0; j < 8; j++) {
+        const xa = -112 + i * 14, xb = xa + 14, za = -74 - j * 14, zb = za - 14, c = mix(SCRUB, SCRUB2, hash(i * 9 + j, 85)), c2 = mix(SCRUB, SCRUB2, hash(i * 9 + j, 86));
+        tri(G, xa, hillAt(xa, za), za, xb, hillAt(xb, za), za, xb, hillAt(xb, zb), zb, c); tri(G, xa, hillAt(xa, za), za, xb, hillAt(xb, zb), zb, xa, hillAt(xa, zb), zb, c2);
+      }
+      for (let k = 0; k < 70; k++) { const x = -105 + 210 * hash(k, 87), z = -76 - 46 * hash(k, 88) * hash(k, 89), r = 1.1 + 1.3 * hash(k, 90); solid(M, ICO, at(x, hillAt(x, z) + r * 0.5, z, r, r * 0.8, r, 0, k), mul(GREENS[k % 3], 0.75 + 0.3 * hash(k, 91))); }
+
+      /* ---- materials and meshes ---- */
+      const std = (o) => new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.92, metalness: 0 }, o));
+      const lay = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+      const water = std({ map: waterTex, roughness: 0.32 });
+      const lit = LIT.map(() => std(Object.assign({ map: frontTex, emissive: 0xffffff, emissiveMap: glowTex, emissiveIntensity: 0 }, lay)));
+      const signs = std(Object.assign({ map: signTex, transparent: true, depthWrite: false, emissive: 0xffffff, emissiveMap: signTex, emissiveIntensity: 0 }, lay));
+      const pools = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+      const meshes = [toMesh(G, std({ map: grainTex }), false), toMesh(M, std({ map: plasterTex }), true),
+        toMesh(ZN, std({ map: zincTex, normalMap: zincNormal, roughness: 0.5, metalness: 0.35 }), true), toMesh(F, std(Object.assign({ map: frontTex }, lay)), false),
+        toMesh(LIT[0], lit[0], false), toMesh(LIT[1], lit[1], false), toMesh(D, std(Object.assign({ map: decalTex, transparent: true, depthWrite: false }, lay)), false, -3),
+        toMesh(W, water, false), toMesh(PL, pools, false, -1)];
+      if (SG.count) meshes.push(toMesh(SG, signs, false, -2));
+      let triangles = 0; for (const m of meshes) { triangles += m.geometry.index.count / 3; group.add(m); }
+      const dayWater = new THREE.Color(0x2f93ab), goldWater = new THREE.Color(0xc9925a), nightWater = new THREE.Color(0x0d2436);
+      return {
+        group, stats: { meshes: meshes.length, triangles },
+        update(S, tod) {
+          const n = tod.night, t = S.t;
+          waterTex.offset.set(t * 0.011 + Math.sin(t * 0.6) * 0.006, t * 0.017);
+          water.color.copy(dayWater).lerp(goldWater, tod.warm * 0.45).lerp(nightWater, n);
+          lit[0].emissiveIntensity = 2.4 * Math.min(1, n * 2.5); lit[1].emissiveIntensity = 2.4 * Math.max(0, Math.min(1, n * 2.5 - 0.9));
+          signs.emissiveIntensity = 0.5 * n; pools.opacity = 0.9 * n;
+        },
+      };
     },
   };
 })();
 
 </script>
 <script>/* src/people.js */
-/* people (BASELINE PLACEHOLDER): one character built from primitives.
+/* people: every character in the game. Each one is a single skinned figure with its own hairstyle.
    API: NH.people.make(cast) -> { group, carry, update(dt, st) }
-     cast  = an entry of NH.sim.CAST ({ id, name, hair, skin, shirt })
-     group = THREE.Group, feet at y = 0, 1.8 m tall, facing +X
-     carry = THREE.Object3D inside the group where a carried crate is parented (in front of the chest)
-     st    = { moving: bool, carrying: bool, walk: number (phase that grows as the person walks) } */
+     cast  = an entry of NH.sim.CAST ({ id, name, hair, skin, shirt, note })
+     group = THREE.Group, feet at y = 0, 1.8 m tall, facing +X (main.js scales it by NH.HERO)
+     carry = THREE.Object3D inside the group where a carried crate is parented (in front of the chest). It rests at
+             (0.55, 1.05, 0) in the group's space and rides on the chest bone, so the crate moves with the hands that hold it
+     st    = { moving: bool, carrying: bool, walk: number (phase that grows as the person walks) }
+   Extra fields on the returned object (optional, nothing depends on them): mesh (the THREE.SkinnedMesh), hair (the cast's hair id).
+   cast.hair must be one of: locs-updo, locs-freeform, locs-wrap, waves, afro, canerows, cap. An unknown id throws:
+   a hairstyle is part of who a person is (ADR 0051), so there is no generic shape to fall back to.
+
+   How it is drawn: one THREE.SkinnedMesh per person with three material groups, so three draw calls each:
+     skin  - a MeshStandardMaterial whose colour is cast.skin, untouched (shared by everyone with that skin)
+     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap
+     hair  - one shared vertex-coloured material, NH.PALETTE.hair throughout; only the 360 waves add a second,
+             lighter tone of the same hair on the crests of the ripples so the pattern reads from above
+   The geometry is merged by hand once per cast id and shared; the skeleton is per person. Everything stays inside
+   the capsule main.js uses for its seen-through-walls shape (radius 0.42 m, top at 1.94 m), which is why tall hair stops there. */
 (function () {
   "use strict";
-  const NH = window.NH, P = NH.PALETTE;
+  const NH = window.NH, P = NH.PALETTE, PI = Math.PI, TAU = PI * 2;
+  const sin = Math.sin, cos = Math.cos, abs = Math.abs, max = Math.max, min = Math.min, sqrt = Math.sqrt;
+
+  /* ---------------- build-time helpers (plain arrays as vectors; none of this runs per frame) ---------------- */
+  const lin = (hex) => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };   // vertex colours live in the renderer's linear working space
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const unit = (a) => mul(a, 1 / (Math.hypot(a[0], a[1], a[2]) || 1)), mix = (a, b, t) => add(mul(a, 1 - t), mul(b, t));
+  const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+  const rnd = (i, k) => { let h = Math.imul((i + 1) * 374761393 ^ (k + 1) * 668265263, 1274126177); h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; };   // 0..1 from two indices
+  const spline = (pts, m) => new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]))).getPoints(m).map((p) => [p.x, p.y, p.z]);
+
+  /* ---------------- skeleton: [parent, x, y, z] in the bind pose ---------------- */
+  const HIPS = 0, CHEST = 1, HEAD = 2, ARM_L = 3, FORE_L = 4, ARM_R = 5, FORE_R = 6, LEG_L = 7, SHIN_L = 8, FOOT_L = 9, LEG_R = 10, SHIN_R = 11, FOOT_R = 12, SWAY = 13;
+  const SH = 0.212, HP = 0.092, HIP_Y = 0.95;   // shoulder and hip joints sit this far either side of the centre line (left is -Z)
+  const REST = [[-1, 0, HIP_Y, 0], [HIPS, 0, 1.13, 0], [CHEST, 0, 1.47, 0],
+    [CHEST, 0, 1.40, -SH], [ARM_L, 0, 1.13, -SH], [CHEST, 0, 1.40, SH], [ARM_R, 0, 1.13, SH],
+    [HIPS, 0, 0.90, -HP], [LEG_L, 0, 0.50, -HP], [SHIN_L, 0, 0.08, -HP], [HIPS, 0, 0.90, HP], [LEG_R, 0, 0.50, HP], [SHIN_R, 0, 0.08, HP],
+    [HEAD, -0.03, 1.68, 0]];   // SWAY: loose ends of hair hang from here
+  const INVERSE = REST.map((r) => new THREE.Matrix4().makeTranslation(-r[1], -r[2], -r[3])), IDENTITY = new THREE.Matrix4();
+  const BOUNDS = new THREE.Sphere(new THREE.Vector3(0, 0.95, 0), 1.25);
+  const CARRY = (() => { // both palms flat on the sides of the crate: solved once for the right arm, mirrored for the left
+    const S = new THREE.Vector3(0, 1.40, SH), T = new THREE.Vector3(0.36, 1.0, 0.357), down = new THREE.Vector3(0, -1, 0), LU = 0.27, LF = 0.32;
+    const d = T.clone().sub(S), len = d.length(), a = (LU * LU - LF * LF + len * len) / (2 * len), h = sqrt(max(0, LU * LU - a * a));
+    const dir = d.clone().normalize(), pole = new THREE.Vector3(-0.3, -1, 0.6); pole.addScaledVector(dir, -pole.dot(dir)).normalize();
+    const E = S.clone().addScaledVector(dir, a).addScaledVector(pole, h);
+    const up = new THREE.Quaternion().setFromUnitVectors(down, E.clone().sub(S).normalize());
+    const fore = new THREE.Quaternion().setFromUnitVectors(down, T.clone().sub(E).normalize().applyQuaternion(up.clone().invert()));
+    const mirror = (q) => new THREE.Quaternion(-q.x, -q.y, q.z, q.w);
+    return { armR: up, foreR: fore, armL: mirror(up), foreL: mirror(fore) };
+  })();
+
+  /* ---------------- geometry builder: positions, normals, colours and bone weights, merged by hand ---------------- */
+  const SKIN = 0, CLOTH = 1, HAIR = 2;
+  function builder() {
+    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0;
+    return {
+      get n() { return pos.length / 3; },
+      v(p, c, b) { const w = b[2] || 0; pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
+      ring(r, n, c, b) { // n points round p, along u and v; e < 1 squares the oval off
+        const first = pos.length / 3, e = r.e || 1;
+        for (let j = 0; j < n; j++) {
+          const a = j / n * TAU + (r.a || 0), cs = cos(a), sn = sin(a), x = e === 1 ? cs : Math.sign(cs) * Math.pow(abs(cs), e), z = e === 1 ? sn : Math.sign(sn) * Math.pow(abs(sn), e);
+          this.v([r.p[0] + r.u[0] * x + r.v[0] * z, r.p[1] + r.u[1] * x + r.v[1] * z, r.p[2] + r.u[2] * x + r.v[2] * z], r.c || c, r.legs ? [HIPS, sn < 0 ? LEG_L : LEG_R, r.legs * min(1, abs(sn) * 2.2)] : r.b || b);
+        }
+        return first;
+      },
+      strip(g, lo, hi, n, open) { const T = tri[g]; for (let j = 0; j < (open ? n - 1 : n); j++) { const k = (j + 1) % n; T.push(lo + j, hi + j, lo + k, lo + k, hi + j, hi + k); } },
+      fan(g, apex, a, n, end) { const T = tri[g]; for (let j = 0; j < n; j++) { const k = (j + 1) % n; if (end) T.push(a + j, apex, a + k); else T.push(apex, a + j, a + k); } },
+      done() { // smooth normals for everything added since the last call, so separate parts keep a crease between them
+        for (let g = 0; g < 3; g++) {
+          const T = tri[g];
+          for (let i = t0[g]; i < T.length; i += 3) {
+            const a = T[i] * 3, b = T[i + 1] * 3, c = T[i + 2] * 3, ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2], vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            for (const k of [a, b, c]) { nor[k] += nx; nor[k + 1] += ny; nor[k + 2] += nz; }
+          }
+          t0[g] = T.length;
+        }
+        for (let i = v0 * 3; i < nor.length; i += 3) { const l = Math.hypot(nor[i], nor[i + 1], nor[i + 2]) || 1; nor[i] /= l; nor[i + 1] /= l; nor[i + 2] /= l; }
+        v0 = pos.length / 3;
+      },
+      geometry() {
+        const g = new THREE.BufferGeometry(), f = (a, n) => new THREE.Float32BufferAttribute(a, n); let at = 0;
+        g.setAttribute("position", f(pos, 3)); g.setAttribute("normal", f(nor, 3)); g.setAttribute("color", f(col, 3));
+        g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(bone, 4)); g.setAttribute("skinWeight", f(wgt, 4));
+        g.setIndex(tri[0].concat(tri[1], tri[2])); tri.forEach((T, i) => { g.addGroup(at, T.length, i); at += T.length; });
+        return g;
+      },
+    };
+  }
+  /* Rings stitched into a skin. The faces point outward when the rings advance along v x u (for level rings: upward).
+     o = { c, b, start, end }: default colour and bones; start / end are points that close the two ends. A ring with `cut` starts a new skin. */
+  function loft(B, g, rings, n, o) {
+    let prev = -1, first = -1;
+    for (const r of rings) { const cur = B.ring(r, n, o.c, o.b); if (prev >= 0 && !r.cut) B.strip(g, prev, cur, n); if (first < 0) first = cur; prev = cur; }
+    if (o.start) B.fan(g, B.v(o.start, rings[0].c || o.c, rings[0].b || o.b), first, n, false);
+    if (o.end) { const r = rings[rings.length - 1]; B.fan(g, B.v(o.end, r.c || o.c, r.b || o.b), prev, n, true); }
+    B.done();
+  }
+  const hr = (y, rx, rz, cx, cz, more) => Object.assign({ p: [cx || 0, y, cz || 0], u: [rx, 0, 0], v: [0, 0, rz] }, more);   // a level oval
+  /* A tube along a path; rad[i] is its radius at pts[i]. o = { c, b, bs (bones per point), ref, flat, root } */
+  function tube(B, g, pts, rad, n, o) {
+    const m = pts.length - 1, rings = []; let u = null, t = null;
+    for (let i = 0; i <= m; i++) {
+      t = unit(sub(pts[min(m, i + 1)], pts[max(0, i - 1)]));
+      u = unit(u ? sub(u, mul(t, dot(u, t))) : cross(o.ref || (abs(t[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]), t));
+      rings.push({ p: pts[i], u: mul(u, rad[i]), v: mul(cross(u, t), rad[i] * (o.flat || 1)), b: o.bs && o.bs[i] });
+    }
+    loft(B, g, rings, n, { c: o.c, b: o.b, start: o.root ? add(pts[0], mul(unit(sub(pts[0], pts[1])), rad[0] * 0.7)) : null, end: add(pts[m], mul(t, rad[m] * 0.8)) });
+  }
+  /* A flat oval facing along nrm */
+  function oval(B, g, p, nrm, ru, rv, n, c, b) {
+    const u = unit(cross([0, 1, 0], nrm)), first = B.ring({ p, u: mul(u, ru), v: mul(cross(nrm, u), rv) }, n, c, b);
+    B.fan(g, B.v(p, c, b), first, n, false); B.done();
+  }
+  /* Recolour a stack of level rings below height y, with a clean edge at y */
+  function dip(rings, y, c) {
+    const out = [];
+    rings.forEach((r, i) => {
+      const q = rings[i - 1];
+      if (q && q.p[1] < y && r.p[1] >= y) { const t = (y - q.p[1]) / (r.p[1] - q.p[1]), m = { p: mix(q.p, r.p, t), u: mix(q.u, r.u, t), v: mix(q.v, r.v, t), e: r.e, b: t < 0.5 ? q.b : r.b }; out.push(Object.assign({}, m, { c }), Object.assign({}, m, { c: r.c, cut: true })); }
+      out.push(r.p[1] < y ? Object.assign({}, r, { c }) : r);
+    });
+    return out;
+  }
+
+  /* ---------------- the head as an oval ball: hair is laid on this ---------------- */
+  const HC = [-0.002, 1.632, 0], HR = [0.128, 0.136, 0.107];   // centre and radii of the skull: a head about a quarter larger than life
+  const skull = (az, el, s) => [HC[0] + cos(el) * cos(az) * HR[0] * s, HC[1] + sin(el) * HR[1] * s, HC[2] + cos(el) * sin(az) * HR[2] * s];   // az 0 = face, el = up from the ears
+  // where the hair stops, as a height on the skull: square across the forehead, a step down at the temples, over the ears, low at the nape
+  const hairline = (az, nape) => { const a = abs(az > PI ? az - TAU : az); return a < 0.85 ? 0.6 : a < 1.0 ? 0.6 - (a - 0.85) / 0.15 * 0.42 : a < 2.0 ? 0.18 : a < 2.5 ? 0.18 - (a - 2.0) / 0.5 * (0.18 - nape) : nape; };
+  /* A shell over the skull from the crown down to the hairline. fn(k, j) -> [scale, colour] for ring k (0 = crown .. K = hairline) and column j.
+     With `level` the rings are true circles round the crown that the hairline cuts across; without it they follow the hairline's shape. */
+  function shell(B, g, K, n, nape, fn, level) {
+    const b = [HEAD], top = B.v(skull(0, PI / 2, fn(0, 0)[0]), fn(0, 0)[1], b); let prev = -1;
+    for (let k = 1; k <= K + 1; k++) { // the last ring tucks the edge back under
+      const cur = B.n, kk = min(k, K);
+      for (let j = 0; j < n; j++) { const az = j / n * TAU, f = fn(kk, j), edge = hairline(az, nape), el = level && kk < K ? max(edge, PI / 2 - kk / K * (PI / 2 - nape)) : PI / 2 - kk / K * (PI / 2 - edge); B.v(skull(az, el, k > K ? 0.99 : f[0]), f[1], b); }
+      if (prev < 0) B.fan(g, top, cur, n, true); else B.strip(g, cur, prev, n);
+      prev = cur;
+    }
+    B.done();
+  }
+
+  /* ---------------- colours ---------------- */
+  const WHITE = [1, 1, 1], HAIRC = lin(P.hair), WAVE = mix(HAIRC, lin(0x9a8672), 0.5), EYE = lin(0x0e0a09);
+  const WRAP_A = lin(0x157f8f), WRAP_B = lin(0xf0e2c0), CAP_TOP = lin(P.patrolBody), CAP_BAND = lin(0x18233a), PEAK = lin(0x0d1017), BELT = lin(0x101216), TRIM = lin(0x8fa6c4);
+  const BOTTOMS = ["skirt", "shorts", "bermudas", "trousers", "cropped"], HEMS = { shorts: 0.6, bermudas: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
+  const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8a6a45];
+
+  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
+  function lookFor(cast) {
+    const h = hash(cast.id), pick = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
+    return {
+      shirt: lin(cast.shirt), kind: patrol ? "uniform" : boat ? "overalls" : pick(BOTTOMS, 10),
+      legs: lin(patrol ? 0x18233a : boat ? 0x3f5f86 : pick(LEG_COLS, 11)), shoes: lin(patrol || boat ? 0x1c1c20 : pick(SHOE_COLS, 11)),
+      sw: 0.18 + f(14) * 0.016, hw: 0.152 + f(17) * 0.022, ww: 0.134 + f(20) * 0.02, cd: 0.116 + f(23) * 0.012,
+      gait: patrol ? { stride: 0.42, bob: 0.02, twist: 0.04, lean: 0.02, arm: 0.4 } : { stride: 0.44 + f(5) * 0.1, bob: 0.024 + f(9) * 0.014, twist: 0.07 + f(12) * 0.06, lean: 0.04 + f(15) * 0.04, arm: 0.42 + f(18) * 0.13 },
+      phase: f(26) * 6,
+    };
+  }
+
+  /* ---------------- the body: one continuous figure, coloured per ring ---------------- */
+  function body(B, L) {
+    const S = L.shirt, e = 0.82, tucked = L.kind === "uniform", sw = L.sw, hw = L.hw, ww = L.ww, cd = L.cd;
+    // head, neck, face
+    const hd = (el) => ({ p: [HC[0], HC[1] + sin(el) * HR[1], 0], u: [cos(el) * HR[0], 0, 0], v: [0, 0, cos(el) * HR[2]] });
+    loft(B, SKIN, [hr(1.497, 0.074, 0.06, 0.024), hr(1.532, 0.105, 0.087, 0.014), hr(1.585, 0.123, 0.102, 0.004), hd(0), hd(0.45), hd(0.85), hd(1.2)], 10,
+      { c: WHITE, b: [HEAD], start: [0.04, 1.468, 0], end: [HC[0], HC[1] + HR[1], 0] });
+    loft(B, SKIN, [hr(1.44, 0.054, 0.054, -0.004, 0, { b: [CHEST] }), hr(1.53, 0.05, 0.05, 0, 0, { b: [HEAD] })], 8, { c: WHITE });
+    loft(B, SKIN, [{ p: [0.118, 1.592, 0], u: [0, 0.03, 0], v: [0, 0, -0.02] }], 4, { c: WHITE, b: [HEAD], end: [0.153, 1.58, 0] });   // nose
+    for (const sd of [-1, 1]) {
+      loft(B, SKIN, [{ p: [-0.012, 1.6, sd * 0.098], u: [0.021, 0, 0], v: [0, -sd * 0.031, 0] }, { p: [-0.02, 1.603, sd * 0.118], u: [0.017, 0, 0], v: [0, -sd * 0.026, 0] }], 6, { c: WHITE, b: [HEAD], end: [-0.022, 1.603, sd * 0.124] });   // ear
+      const az = sd * 0.37, el = -0.1, out = (a, l) => unit([cos(l) * cos(a) / HR[0], sin(l) / HR[1], cos(l) * sin(a) / HR[2]]);
+      oval(B, CLOTH, skull(az, el, 1.035), out(az, el), 0.017, 0.011, 8, EYE, [HEAD]); oval(B, HAIR, skull(az * 1.04, 0.17, 1.03), out(az, 0.17), 0.024, 0.0065, 6, HAIRC, [HEAD]);
+    }
+    // torso: shirt from hem to collar; a tucked shirt gets a belt, overalls come up to the waist
+    let T = [hr(0.905, 0.113, hw + 0.014, 0, 0, { b: [HIPS], e }), hr(0.96, 0.108, hw + 0.008, 0, 0, { b: [HIPS], e }), hr(1.02, 0.103, ww + 0.008, 0, 0, { b: [HIPS, CHEST, 0.35], e }), hr(1.1, 0.1, ww, 0, 0, { b: [HIPS, CHEST, 0.75], e }),
+      hr(1.24, cd - 0.008, sw - 0.024, 0.006, 0, { e }), hr(1.35, cd, sw - 0.004, 0.01, 0, { e }), hr(1.422, cd - 0.02, sw + 0.004, 0.004, 0, { e }), hr(1.455, 0.074, sw - 0.055), hr(1.48, 0.058, 0.064)];
+    if (tucked) T = dip(dip(T, 1.02, BELT), 0.985, L.legs); else if (L.kind === "overalls") T = dip(T, 1.07, L.legs);
+    loft(B, CLOTH, T, 12, { c: S, b: [CHEST] });
+    if (L.kind === "skirt") loft(B, CLOTH, [hr(0.5, 0.176, hw + 0.05, 0, 0, { legs: 1 }), hr(0.7, 0.14, hw + 0.024, 0, 0, { legs: 0.6 }), hr(0.9, 0.11, hw + 0.002), hr(0.965, 0.105, hw - 0.006)], 12, { c: L.legs, b: [HIPS] });   // each side of the hem swings with its leg
+    else loft(B, CLOTH, [hr(0.83, 0.09, hw - 0.03, 0, 0, { e }), hr(0.885, 0.11, hw + 0.009, 0, 0, { e }), hr(0.965, 0.106, hw, 0, 0, { e })], 10, { c: L.legs, b: [HIPS], start: [0, 0.8, 0] });   // fills the shirt's hem, so nothing shows through at the hip
+    for (const sd of [-1, 1]) {
+      const z = sd * HP, LEG = sd < 0 ? LEG_L : LEG_R, SHIN = LEG + 1, FOOT = LEG + 2, ARM = sd < 0 ? ARM_L : ARM_R, FORE = ARM + 1, az = sd * (SH + 0.002);
+      // legs: bare below whatever the bottoms cover
+      const hem = HEMS[L.kind] || 0.07, lr = (y, rx, rz, cx) => hr(y, rx, rz, cx, z, { b: [LEG, SHIN, min(1, max(0, (0.6 - y) / 0.2))] });   // the knee bends between 0.4 and 0.6
+      const bare = [lr(0.085, 0.037, 0.035, 0), lr(0.2, 0.044, 0.042, -0.004), lr(0.34, 0.058, 0.054, -0.008), lr(0.5, 0.056, 0.054, 0.002), lr(0.62, 0.068, 0.064, 0), lr(0.78, 0.084, 0.078, 0)];
+      const cloth = [[0.07, 0.064, 0.06], [0.29, 0.068, 0.064], [0.5, 0.073, 0.069], [0.72, 0.09, 0.084], [0.9, 0.094, 0.086]].filter((r) => r[0] > hem + 0.03).map((r) => lr(r[0], r[1], r[2], 0));
+      if (hem > 0.07) { loft(B, SKIN, bare.filter((r) => r.p[1] < hem + 0.1), 8, { c: WHITE }); if (hem < 1) cloth.unshift(lr(hem, 0.094 - (0.9 - hem) * 0.036, 0.088 - (0.9 - hem) * 0.036, 0)); }   // a loose hem
+      if (hem < 1) loft(B, CLOTH, cloth, 8, { c: L.legs });
+      // shoe: a blunt wedge along +X with a flat sole
+      const sh = (x, y, ry, rz) => ({ p: [x, y, z], u: [0, ry, 0], v: [0, 0, -rz], e: 0.75, a: TAU / 12 });
+      loft(B, CLOTH, [sh(-0.062, 0.04, 0.04, 0.04), sh(-0.02, 0.054, 0.056, 0.05), sh(0.06, 0.046, 0.048, 0.054), sh(0.14, 0.034, 0.036, 0.05), sh(0.185, 0.027, 0.027, 0.038)], 6, { c: L.shoes, b: [FOOT], start: [-0.084, 0.036, z], end: [0.207, 0.022, z] });
+      // arm: short sleeve, then bare to a flat hand, palm inward
+      loft(B, CLOTH, [hr(1.25, 0.054, 0.051, 0, az), hr(1.32, 0.054, 0.05, 0, az), hr(1.38, 0.056, 0.05, 0, az * 0.98), hr(1.412, 0.048, 0.042, 0, az * 0.955), hr(1.43, 0.03, 0.027, 0, az * 0.93)], 7, { c: S, b: [ARM], end: [0, 1.435, az * 0.92] });
+      loft(B, SKIN, [hr(0.742, 0.03, 0.017, 0, az), hr(0.785, 0.044, 0.023, 0, az), hr(0.84, 0.043, 0.025, 0, az), hr(0.895, 0.032, 0.028, 0, az), hr(1.02, 0.047, 0.043, 0, az), hr(1.13, 0.045, 0.042, 0, az, { b: [ARM, FORE, 0.5] }), hr(1.255, 0.05, 0.047, 0, az, { b: [ARM] })], 7,
+        { c: WHITE, b: [FORE], start: [0, 0.724, az] });
+      if (L.kind === "overalls") tube(B, CLOTH, spline([[0.128, 1.3, sd * 0.085], [0.1, 1.43, sd * 0.1], [0, 1.487, sd * 0.108], [-0.09, 1.43, sd * 0.09], [-0.118, 1.24, sd * 0.05], [-0.108, 1.07, sd * 0.02]], 7), [0.026, 0.026, 0.026, 0.026, 0.026, 0.026, 0.026, 0.026], 4, { c: L.legs, b: [CHEST], flat: 0.3, ref: [0, 0, 1], root: true });   // strap over the shoulder
+      if (tucked) loft(B, CLOTH, [{ p: [0, 1.447, sd * 0.15], u: [0.036, 0, 0], v: [0, 0, 0.05], e: 0.5, a: PI / 4 }], 4, { c: TRIM, b: [CHEST], end: [0, 1.452, sd * 0.15] });   // plain shoulder tab, no badge
+    }
+    if (L.kind === "overalls") { // the bib: a panel standing a little proud of the shirt
+      const rows = [1.07, 1.2, 1.32]; let prev = -1;
+      for (const y of rows) { const cur = B.n, t = (y - 1.07) / 0.25, w = 0.72 - 0.2 * t, rx = (0.103 + 0.023 * t) * 1.06, rz = (ww + 0.004 + (sw - ww - 0.02) * t) * 1.06;
+        for (let j = 0; j < 5; j++) { const a = (j / 4 - 0.5) * 2 * w, cs = cos(a), sn = sin(a); B.v([0.008 * t + rx * Math.pow(abs(cs), e), y, rz * Math.sign(sn) * Math.pow(abs(sn), e)], L.legs, [CHEST]); }
+        if (prev >= 0) B.strip(CLOTH, prev, cur, 5, true); prev = cur; }
+      B.done();
+    }
+  }
+
+  /* ---------------- the seven hairstyles: each one its own geometry ---------------- */
+  const locks = (B, pts, r0, uneven, bs) => { const p = spline(pts, 4); tube(B, HAIR, p, p.map((_, i) => r0 * [0.85, 1.08, 1, 0.92, 0.78][i] * (i === uneven ? 1.22 : 1)), 5, { c: HAIRC, b: [HEAD], bs }); };
+  const LOOSE = [[HEAD], [HEAD], [HEAD, SWAY, 0.45], [HEAD, SWAY, 0.8], [HEAD, SWAY, 1]];
+  const STYLES = {
+    /* locs gathered up into a high coiled bun, the swept-up locs showing as ridges, a few left falling at the back */
+    "locs-updo"(B, L) {
+      shell(B, HAIR, 3, 20, -0.25, (k, j) => [1.035 + (j % 2 ? 0.02 : 0), HAIRC]);
+      const pts = [], rad = [], band = [[0.4, 1.03], [0.43, 1.1], [0.8, 1.1], [0.83, 1.03]].map(([el, sc]) => { const at = B.n; for (let j = 0; j < 20; j++) B.v(skull(j / 20 * TAU, el, sc), L.shirt, [HEAD]); return at; });
+      for (let i = 0; i < 3; i++) B.strip(CLOTH, band[i], band[i + 1], 20);   // the band that holds the locs up, in the colour of the shirt
+      B.done();
+      for (let i = 0; i <= 24; i++) { const t = i / 24, a = t * 2.2 * TAU + 0.6, R = 0.012 + 0.085 * Math.pow(1 - t, 0.85); pts.push([-0.045 + cos(a) * R, 1.8 + 0.075 * Math.pow(t, 0.9), sin(a) * R]); rad.push(0.042 - 0.012 * t); }
+      tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
+      for (let i = 0; i < 5; i++) { const z = (i - 2) * 0.036; locks(B, [[-0.1, 1.745, z * 0.8], [-0.156, 1.67, z], [-0.16, 1.56, z * 1.1], [-0.15, 1.45 + rnd(i, 3) * 0.05, z * 1.15]], 0.019, 1 + i % 3, LOOSE); }
+    },
+    /* thick freeform locs of uneven thickness, falling to the shoulders all round */
+    "locs-freeform"(B) {
+      shell(B, HAIR, 3, 10, -0.5, () => [1.05, HAIRC]);
+      for (let i = 0; i < 12; i++) {
+        const az = 0.85 + i / 11 * (TAU - 1.7) + (rnd(i, 1) - 0.5) * 0.14, el = i % 2 ? 0.5 : 0.95, side = abs(sin(az)), out = 0.168 + 0.028 * rnd(i, 2) + 0.022 * side, end = side > 0.75 ? 1.45 + 0.02 * rnd(i, 4) : 1.36 + 0.09 * rnd(i, 4);
+        locks(B, [skull(az, el, 0.98), skull(az, el * 0.55, 1.3), [cos(az) * out * 1.05, 1.555, sin(az) * out], [cos(az) * (out + 0.014) * 1.05, end, sin(az) * (out + 0.014)]], 0.025 + 0.015 * rnd(i, 5), 1 + i % 3, LOOSE);
+      }
+      for (let i = 0; i < 4; i++) { const az = 0.4 + i * 1.6 + rnd(i, 6) * 0.3; locks(B, [skull(az, 1.25, 1), skull(az, 0.9, 1.24), [cos(az) * 0.17, 1.665, sin(az) * 0.165], [cos(az) * 0.2, 1.565 + rnd(i, 7) * 0.04, sin(az) * 0.19]], 0.032 + 0.008 * rnd(i, 8), 2, LOOSE); }
+    },
+    /* long locs wound into a tall head wrap: two-tone bands, the locs coiled in the open top, a few ends falling at the back */
+    "locs-wrap"(B) {
+      const W = (cx, y, rx, rz, tilt, c, cut) => ({ p: [cx, y, 0], u: [rx, rx * tilt, 0], v: [0, 0, rz], c, cut });
+      loft(B, CLOTH, [W(-0.004, 1.64, 0.124, 0.104, 0.48, WRAP_A), W(-0.004, 1.645, 0.137, 0.117, 0.48, WRAP_A), W(-0.006, 1.7, 0.143, 0.124, 0.36, WRAP_A),
+        W(-0.006, 1.7, 0.145, 0.126, 0.36, WRAP_B, true), W(-0.008, 1.735, 0.151, 0.133, 0.22, WRAP_B),
+        W(-0.008, 1.735, 0.151, 0.133, 0.22, WRAP_A, true), W(-0.01, 1.8, 0.158, 0.142, 0.1, WRAP_A),
+        W(-0.01, 1.8, 0.16, 0.144, 0.1, WRAP_B, true), W(-0.01, 1.836, 0.16, 0.146, 0.04, WRAP_B),
+        W(-0.01, 1.836, 0.16, 0.146, 0.04, WRAP_A, true), W(-0.01, 1.876, 0.153, 0.142, 0, WRAP_A), W(-0.01, 1.888, 0.13, 0.12, 0, WRAP_A),
+        W(-0.01, 1.888, 0.13, 0.12, 0, WRAP_B, true), W(-0.01, 1.868, 0.096, 0.09, 0, WRAP_B)], 14, { b: [HEAD] });
+      const pts = [], rad = [];
+      for (let i = 0; i <= 14; i++) { const t = i / 14, a = t * 1.6 * TAU, R = 0.008 + 0.07 * (1 - t); pts.push([-0.01 + cos(a) * R, 1.866 + 0.012 * t, sin(a) * R]); rad.push(0.028 - 0.004 * t); }
+      tube(B, HAIR, pts, rad, 5, { c: HAIRC, b: [HEAD], root: true });
+      for (let i = 0; i < 3; i++) { const z = (i - 1) * 0.045; locks(B, [[-0.115, 1.868, z * 0.9], [-0.168, 1.868, z], [-0.196, 1.77, z * 1.1], [-0.192, 1.63, z * 1.2], [-0.178, 1.5 + rnd(i, 9) * 0.05, z * 1.25]], 0.019, 1 + i, LOOSE); }
+      const K0 = [0.132, 1.79, 0.05];   // the knot, tied at the front, and its two ends
+      loft(B, CLOTH, [hr(K0[1] - 0.02, 0.024, 0.03, K0[0], K0[2]), hr(K0[1] + 0.004, 0.032, 0.04, K0[0], K0[2]), hr(K0[1] + 0.026, 0.02, 0.026, K0[0], K0[2])], 6, { c: WRAP_B, b: [HEAD], start: [K0[0], K0[1] - 0.03, K0[2]], end: [K0[0], K0[1] + 0.034, K0[2]] });
+      for (const sd of [-1, 1]) tube(B, CLOTH, [[K0[0], K0[1], K0[2] + sd * 0.02], [K0[0] + 0.03, K0[1] - 0.02 + sd * 0.02, K0[2] + sd * 0.06], [K0[0] + 0.026, K0[1] - 0.07 + sd * 0.02, K0[2] + sd * 0.085]], [0.02, 0.024, 0.016], 4, { c: sd < 0 ? WRAP_A : WRAP_B, b: [HEAD], flat: 0.4 });
+    },
+    /* 360 waves: cut close, ripples in rings out from the crown, a squared-off hairline */
+    waves(B) { shell(B, HAIR, 6, 18, -0.42, (k) => [1.026 + (k % 2 ? 0.016 : 0), k % 2 ? WAVE : HAIRC], true); },
+    /* a rounded natural afro, clearly larger than the head, opening round the face */
+    afro(B) {
+      const C = [-0.03, 1.71, 0], R = 0.222, n = 20, K = 10, b = [HEAD];
+      const pt = (k, j) => {
+        const el = PI / 2 - k / K * PI, az = j / n * TAU, s = R * (1 + (rnd(k, j) - 0.5) * 0.07), p = [C[0] + cos(el) * cos(az) * s, C[1] + sin(el) * s * 0.95, C[2] + cos(el) * sin(az) * s];
+        const d = sub(p, HC), fa = Math.atan2(d[2], d[0]), fe = Math.asin(d[1] / Math.hypot(d[0], d[1], d[2]));   // seen from the middle of the head:
+        return abs(fa) < 0.95 && fe < 0.56 ? skull(fa, 0.56, 1) : fe < -0.5 ? skull(fa, fe, 0.96) : p;           // whatever would cover the face goes back to the hairline; the underside tucks in
+      };
+      const top = B.v(pt(0, 0), HAIRC, b); let prev = -1;
+      for (let k = 1; k < K; k++) { const cur = B.n; for (let j = 0; j < n; j++) B.v(pt(k, j), HAIRC, b); if (prev < 0) B.fan(HAIR, top, cur, n, true); else B.strip(HAIR, cur, prev, n); prev = cur; }
+      B.done();
+    },
+    /* straight-back canerows: raised plaited rows from the hairline to the nape, the scalp itself showing in the partings */
+    canerows(B) {
+      [0, 0.046, -0.046, 0.088, -0.088].forEach((z, i) => {
+        const side = i > 2, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
+        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0128 * (k % 2 ? 1.16 : 0.9)); bs.push([HEAD]); }
+        const tail = side ? [[-0.088, 1.585, z * 0.95], [-0.1, 1.52, z * 0.95], [-0.108, 1.45, z * 1.05]] : [[-0.112, 1.5, z * 0.95], [-0.124, 1.45, z * 1.1], [-0.128, 1.39 + rnd(i, 2) * 0.02, z * 1.25]];
+        tail.forEach((p, k) => { pts.push(p); rad.push(0.0125 - 0.0015 * k); bs.push([HEAD, SWAY, min(1, 0.4 + 0.3 * k)]); });
+        tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.12, root: true });
+      });
+    },
+    /* the foot patrol: a peaked cap with a pale flat top, short hair showing under it at the sides and back */
+    cap(B) {
+      shell(B, HAIR, 2, 12, -0.42, () => [1.025, HAIRC]);
+      const W = (cx, y, rx, rz, tilt, c, cut) => ({ p: [cx, y, 0], u: [rx, rx * tilt, 0], v: [0, 0, rz], c, cut });
+      loft(B, CLOTH, [W(0, 1.68, 0.126, 0.106, 0.1, CAP_BAND), W(0, 1.682, 0.136, 0.116, 0.1, CAP_BAND), W(0, 1.728, 0.138, 0.118, 0.1, CAP_BAND),
+        W(0, 1.728, 0.138, 0.118, 0.1, CAP_TOP, true), W(0.006, 1.776, 0.172, 0.156, 0.16, CAP_TOP),
+        W(0.006, 1.776, 0.172, 0.156, 0.16, CAP_TOP, true), W(0.004, 1.79, 0.11, 0.1, 0.12, CAP_TOP)], 14, { b: [HEAD], end: [0.004, 1.797, 0] });
+      const rows = [];
+      for (const drop of [0, -0.007]) for (const reach of [0, 1]) { rows.push(B.n); for (let j = 0; j < 7; j++) { const a = (0.5 - j / 6) * 2.1, k = cos(a * 0.75); B.v([cos(a) * 0.134 + reach * 0.105 * k * k, 1.69 + cos(a) * 0.012 - reach * 0.024 + drop, sin(a) * (0.115 + reach * 0.012)], PEAK, [HEAD]); } }
+      B.strip(CLOTH, rows[0], rows[1], 7, true); B.strip(CLOTH, rows[3], rows[2], 7, true); B.done();
+    },
+  };
+
+  /* ---------------- one kit (geometry + materials) per cast id, shared by everyone made from it ---------------- */
+  const KITS = {}, SKINS = {};
+  const CLOTH_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), HAIR_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }), HAIR_MATTE = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  function kitFor(cast) {
+    if (KITS[cast.id]) return KITS[cast.id];
+    if (!STYLES[cast.hair]) throw new Error("people: no model for the hairstyle '" + cast.hair + "'");
+    const B = builder(), look = lookFor(cast); body(B, look); STYLES[cast.hair](B, look);
+    const skin = SKINS[cast.skin] || (SKINS[cast.skin] = new THREE.MeshStandardMaterial({ color: cast.skin, roughness: 0.62 }));   // the cast's skin colour as-is
+    return (KITS[cast.id] = { geo: B.geometry(), mats: [skin, CLOTH_MAT, cast.hair === "afro" ? HAIR_MATTE : HAIR_MAT], look });   // coils scatter light: no sheen on the afro
+  }
+
   NH.people = {
     make(cast) {
-      const group = new THREE.Group(), mat = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 });
-      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.85, 4, 10), mat(cast.shirt)); body.position.y = 0.95; body.castShadow = true;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 10), mat(cast.skin)); head.position.y = 1.62; head.castShadow = true;
-      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), mat(P.hair)); hair.position.y = 1.64; hair.castShadow = true;
-      const carry = new THREE.Object3D(); carry.position.set(0.55, 1.05, 0);
-      group.add(body, head, hair, carry);
-      return { group, carry, update(dt, st) { body.position.y = 0.95 + (st.moving ? Math.abs(Math.sin(st.walk)) * 0.04 : 0); } };
+      const kit = kitFor(cast), G = kit.look.gait, group = new THREE.Group(), bones = REST.map(() => new THREE.Bone());
+      REST.forEach((r, i) => { const q = REST[r[0]]; bones[i].position.set(r[1] - (q ? q[1] : 0), r[2] - (q ? q[2] : 0), r[3] - (q ? q[3] : 0)); if (q) bones[r[0]].add(bones[i]); });
+      const mesh = new THREE.SkinnedMesh(kit.geo, kit.mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.boundingSphere = BOUNDS;
+      mesh.add(bones[HIPS]); mesh.bind(new THREE.Skeleton(bones, INVERSE), IDENTITY); group.add(mesh);
+      const carry = new THREE.Object3D(); carry.position.set(0.55, 1.05 - REST[CHEST][2], 0); bones[CHEST].add(carry);
+      const hips = bones[HIPS], chest = bones[CHEST], head = bones[HEAD], armL = bones[ARM_L], foreL = bones[FORE_L], armR = bones[ARM_R], foreR = bones[FORE_R];
+      const legL = bones[LEG_L], shinL = bones[SHIN_L], footL = bones[FOOT_L], legR = bones[LEG_R], shinR = bones[SHIN_R], footR = bones[FOOT_R], sway = bones[SWAY];
+      let t = kit.look.phase, go = 0, hold = 0;
+      return {
+        group, carry, mesh, hair: cast.hair,
+        update(dt, st) {
+          t += dt;
+          go = st.moving ? 1 : max(0, go - dt * 6);            // into a stride or a carry at once (the crate appears at once), out of it with an ease
+          hold = st.carrying ? 1 : max(0, hold - dt * 5);
+          const s = sin(st.walk), c = cos(st.walk), still = 1 - go, breath = sin(t * 1.9), shift = sin(t * 0.63);
+          const A = G.stride * (1 - 0.3 * hold) * go, tw = G.twist * (1 - 0.6 * hold) * s * go, lean = G.lean * go * (1 - hold);
+          hips.position.y = HIP_Y - (G.bob * s * s + 0.012 * hold) * go - 0.012 * hold - 0.004 * still * (1 + shift);
+          hips.rotation.set(0.025 * shift * still, -tw, -lean - 0.02 * hold);
+          chest.rotation.set(-0.02 * shift * still, tw * 1.9, 0.012 * breath * still + 0.06 * hold - lean * 0.4);
+          head.rotation.set(0, -tw * 0.9, lean * 0.9 - 0.03 * hold - 0.008 * breath * still);
+          sway.rotation.set(0.03 * shift * still, 0, (0.07 * sin(st.walk * 2 + 0.9) - 0.05) * go + 0.012 * breath * still);
+          // legs: the thigh swings, the knee folds as the leg comes through, the foot stays near level
+          const kL = (0.2 + 0.8 * max(0, c)) * A / 0.55 + 0.06 * hold + 0.03 * still, kR = (0.2 + 0.8 * max(0, -c)) * A / 0.55 + 0.06 * hold + 0.05 * still * (1 + shift);
+          const tL = s * A + 0.1 * go + 0.03 * hold, tR = -s * A + 0.1 * go + 0.03 * hold + 0.03 * still * (1 + shift);
+          legL.rotation.set(0.02, 0, tL); shinL.rotation.z = -kL; footL.rotation.z = (kL - tL) * 0.75;
+          legR.rotation.set(-0.02, 0, tR); shinR.rotation.z = -kR; footR.rotation.z = (kR - tR) * 0.75;
+          // arms: swing against the legs, or come forward to hold the crate
+          if (hold < 1) {
+            const aw = s * A * G.arm, out = 0.05 + (0.04 + 0.012 * breath) * still;   // a small swing: the hands stay inside the seen-through-walls capsule
+            armL.rotation.set(out, 0, -aw + 0.04 * still); foreL.rotation.set(0, 0, 0.14 + 0.1 * go);
+            armR.rotation.set(-out, 0, aw + 0.04 * still); foreR.rotation.set(0, 0, 0.14 + 0.1 * go);
+          }
+          if (hold > 0) {
+            if (hold < 1) { armL.quaternion.slerp(CARRY.armL, hold); foreL.quaternion.slerp(CARRY.foreL, hold); armR.quaternion.slerp(CARRY.armR, hold); foreR.quaternion.slerp(CARRY.foreR, hold); }
+            else { armL.quaternion.copy(CARRY.armL); foreL.quaternion.copy(CARRY.foreL); armR.quaternion.copy(CARRY.armR); foreR.quaternion.copy(CARRY.foreR); }
+          }
+        },
+      };
     },
   };
 })();
