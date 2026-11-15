@@ -2213,7 +2213,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const tmp = new THREE.Vector3(), camAt = new THREE.Object3D(), LINEUP_PITCH = 0.75;
   function layoutLineup() { // as many columns as the screen shape allows, close enough to read a hairstyle
     const cols = camera.aspect < 0.8 ? 3 : camera.aspect < 1.5 ? 4 : 6, rows = Math.ceil(tags.length / cols), dx = 3.6, dz = 5.4;
-    tags.forEach((t, i) => t.v.group.position.set((i % cols - (cols - 1) / 2) * dx, 0.01, (Math.floor(i / cols) - (rows - 1) / 2) * dz));
+    tags.forEach((t, i) => { const row = Math.floor(i / cols), inRow = Math.min(cols, tags.length - row * cols);   // a short last row is centred
+      t.v.group.position.set((i % cols - (inRow - 1) / 2) * dx, 0.01, (row - (rows - 1) / 2) * dz); });
     const wide = cols * dx / 2 + 0.6, deep = (rows * dz / 2 + 2.4) * Math.sin(LINEUP_PITCH), a = camera.aspect;
     lineup.userData.half = a < 1 ? Math.max(wide, deep * a) : Math.max(deep, wide / a);
   }

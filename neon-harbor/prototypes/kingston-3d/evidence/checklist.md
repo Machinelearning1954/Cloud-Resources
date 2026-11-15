@@ -6,17 +6,22 @@ with software WebGL: the pictures are correct, its speed says nothing about a ph
 
 ## State at this commit (2026-11-15)
 
-The builder agents were stopped part-way by the account's usage limit. Where that left things:
+All four visual modules are builder agents' versions; the usage limit stopped the runs
+twice, so the second-agent review and fix pass has **not** run for any of them yet:
 
-- `src/world.js` (the block) and `src/people.js` (characters and hairstyles) are the builders'
-  versions. Each builder worked from its own screenshots, but the planned second-agent review
-  and fix pass did **not** run for either.
-- `src/props.js` and `src/lighting.js` are still the first crude versions: their builders
-  never started.
+- `src/world.js` (the block) and `src/people.js` (characters and hairstyles): built in the
+  first run.
+- `src/lighting.js` (sun arc, sky, golden hour, moon, four night lights): its builder
+  finished and reported.
+- `src/props.js` (palms, patrol car, skiffs, crates, speakers, lamps, cones): its builder
+  was cut off mid-work; this is its last saved version.
 - The independent review of the main loop, the lock and the tooling did **not** run either.
 
-The page built from these sources passes the browser checks below (25 of 25) and draws the
-standard views in under 100 draw calls and about 60,000 triangles (software renderer count).
+Looked at by the orchestrating session at this commit (day, golden hour and night street,
+the yard at night, the cast screen, a phone-real close-up, and a vision cone half behind a
+building): streets read fence to fence, lamps light real pools at night, cones show through
+walls, and the cast screen's short last row is now centred. The standard views draw 34 to 86
+draw calls and 57,000 to 81,000 triangles (contract budget: 220 and 120,000).
 
 | What | How it was checked | Result |
 |---|---|---|
@@ -28,13 +33,13 @@ standard views in under 100 draw calls and about 60,000 triangles (software rend
 | Win card, heat loss, time loss | same | passes |
 | Slow frames lower the drawing resolution | same | passes |
 | Narrow cover screen (344x882), unfolded (690x829), sideways (844x390): canvas fills, HUD and Drop stay on screen | same | passes |
-| Streets are not hidden by buildings | lots with the house at the south edge and a yard behind; looked at `day-midblock` | visible fence to fence with the crude modules; to be re-checked after the rebuild |
+| Streets are not hidden by buildings | lots with the house at the south edge and a yard behind; looked at `day-midblock`, `gold-street`, `night-street` | visible fence to fence |
 | Saved-run counting (clean wins only, best run, damaged record repaired) | `node test/save.test.js` | 9 of 9 |
 | Lock crypto: round trip, wrong key, tampering, fresh nonce every time, AES-256 confirmed by an independent implementation | `node test/lock.test.js` | 13 of 13 |
 | Lock end to end: lock, reload, locked, unlock, refuse, passkey deleted, device without key derivation, no screen lock, opened from a file | `node dev/lock-check.js`, headless, **software authenticator** | 21 of 21 |
 | Lock on a real phone, with a real fingerprint or face | not possible from here | **not assessed** |
 | Frame rate on a phone | not possible from here | **not assessed** |
-| How it looks | screenshots of the crude modules only | **not assessed** until the rebuild is in |
+| How it looks | the orchestrating session's own look at the standard views; no independent review yet | **partly assessed** |
 | Sound | carried over from the flat prototype, not listened to | **not assessed** |
 | Played by a person | no | **not yet** |
 

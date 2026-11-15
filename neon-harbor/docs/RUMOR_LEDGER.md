@@ -730,6 +730,40 @@ binding.)
 - **Refused, as before:** any claim of matching or beating another title's graphics.
 - **Close:** REFERENCE + POLICY. No clip was generated and nothing was spent.
 
+## Row 84 — User directive: a pasted guide to "GTA 6-level graphics" with an AI agent, Unreal 5.8, an Unreal MCP bridge and text-to-3D, then "Use this to implement"
+
+- **Class:** REFERENCE (method) + PENDING (unverified claims) + POLICY + ADOPT (its review step)
+- **Received (2026-11-15):** a long guide pasted by the user, ending "Use this to implement".
+  Earlier in the same turn the user linked a repository ("mesny-dev/ThreeRT"; the real name
+  found by search is meshy-dev/ThreeRT, a hardware ray-traced three.js-style engine, MIT).
+  It was cloned read-only outside this repository; the user stopped the read of its README,
+  so it is **parked**: nothing from it was run or copied.
+- **What the guide says, in short:** use an AI agent as a technical artist that drives
+  Unreal 5.8 (Lumen, Nanite, virtual shadow maps) through an Unreal MCP bridge, generates
+  props and characters with a text-to-3D service, writes post-process and weather logic,
+  and checks its own work with an independent "blind review" against reference images.
+- **PENDING — claims not verified, not repeated as fact:** that an official Unreal MCP
+  server exists and what it can do; the named text-to-3D service's agent canvas and its
+  skeleton binding; a figure of about $15,000 in API cost for one level of a fan-made
+  shooter clone; that the named model "cannot see the final frame" (in this session it
+  does look at screenshots it takes).
+- **Blocked, unchanged since rows 78 to 81:** every Unreal step needs the engine on a
+  computer with a graphics card, and none is connected. No Unreal script or MCP
+  configuration was written from memory: it could not be run or checked against Epic's
+  documentation here, so it would be an unverifiable artifact (rule 7). The guide's step 2
+  (Lumen, Nanite, virtual shadow maps, hardware ray tracing) is already what
+  `Config/DefaultEngine.ini` sets (rows 69 and 70).
+- **POLICY — the guide's step 1:** it suggests trailer frames of the genre leader's next
+  game as the colour reference. Refused: rule 8 and the original-IP rule. The reference is
+  the art bible and the project's own ray-traced stills (row 82).
+- **POLICY — text-to-3D:** costs credits on the user's connected account; the user asked
+  for free routes (row 82). Offered, not used.
+- **ADOPT — step 5, independent review:** it is the review pass that the usage limit cut
+  off twice (row 80). It now runs on the four visual modules of
+  `prototypes/kingston-3d/`, from screenshots, against the art bible and the ray-traced
+  stills.
+- **Close:** REFERENCE + PENDING + POLICY + ADOPT (review only).
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
