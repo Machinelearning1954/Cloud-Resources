@@ -1506,8 +1506,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           // each light stays on its lamp while that lamp is one of the nearest two; a lamp is at zero strength when it is tied with the third nearest, so a move never shows
           if (atA !== n1 && atA !== n2) atA = atB === n1 ? n2 : n1;
           if (atB !== n1 && atB !== n2 || atB === atA) atB = atA === n1 ? n2 : n1;
-          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 46 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 5);
-          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 46 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 5);
+          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 5);
+          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 5);
         },
       };
     },
