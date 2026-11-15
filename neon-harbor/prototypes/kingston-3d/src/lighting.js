@@ -23,13 +23,13 @@
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
-    [0.00, 0xfff2dc, 3.50, 0xbdd8ff, 0x9c8a6e, 1.45, 0xcfe2ee, 0x4c8fd6, 1.00, 190],
-    [0.30, 0xffe4bc, 3.60, 0xb6cef8, 0xa88a5e, 1.45, 0xdfe5de, 0x4f8ccf, 1.00, 170],
-    [0.50, 0xffbf78, 4.20, 0xaabff4, 0xc08a52, 1.50, 0xf6d9a2, 0x6c98d2, 1.03, 130],
-    [0.62, 0xff9450, 3.60, 0x9aa9ec, 0xb4704c, 1.80, 0xf2a874, 0x5a78c0, 1.05, 120],
-    [0.72, 0xff6a3c, 3.00, 0x8ea2f0, 0x7c5a6c, 1.55, 0xb47c90, 0x3c4f9c, 1.06, 125],
-    [0.84, 0xff6a3c, 3.00, 0x7088dc, 0x3a4868, 1.45, 0x4c5ea2, 0x1d2c6a, 1.06, 140],
-    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x2a3a58, 1.05, 0x263a72, 0x0f1a44, 1.06, 150],
+    [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
+    [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
+    [0.50, 0xffb264, 4.70, 0xa6bcf6, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
+    [0.62, 0xff8c48, 4.00, 0x90a8f0, 0xb4704c, 1.72, 0xf2a874, 0x5a78c0, 1.05, 125],
+    [0.72, 0xff6a3c, 3.00, 0x809cf0, 0x74586e, 1.60, 0xa87c98, 0x3c4f9c, 1.06, 130],
+    [0.84, 0xff6a3c, 3.00, 0x6c86dc, 0x3a4868, 1.45, 0x4c5ea2, 0x1d2c6a, 1.06, 145],
+    [1.00, 0xff6a3c, 3.00, 0x627cd0, 0x2a3a58, 1.05, 0x263a72, 0x0f1a44, 1.06, 155],
   ].map((k) => ({ at: k[0], sun: new THREE.Color(k[1]), power: k[2], sky: new THREE.Color(k[3]), ground: new THREE.Color(k[4]), fill: k[5],
                   horizon: new THREE.Color(k[6]), zenith: new THREE.Color(k[7]), exposure: k[8], haze: k[9] }));
   const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.45, MOON_EL = 50 * RAD, MOON_AZ = 38 * RAD;   // the moon stands still in the south-east, so night shadows never move

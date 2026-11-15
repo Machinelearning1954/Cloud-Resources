@@ -677,6 +677,38 @@ binding.)
   stopped by the account's usage limit; they were restarted for props and lighting.
 - **Close:** POLICY. No new architecture.
 
+## Row 82 — User directives: "use 1 from a cloud rtx", "Find a free way", and three AI video tool names
+
+- **Class:** ADOPT (free offline ray tracing) + REFERENCE (AI video tools) + POLICY
+- **Received (2026-11-15), in order:**
+  - "use 1 from a cloud rtx" (in reply to the two ways of reaching Unreal in row 81).
+  - Asked to approve a rented graphics card at 98 credits an hour for offline renders, the
+    user answered: "Find a free way".
+  - Then, pasted with no words of their own: "LTX-2.5: LTX's Latest AI Open-Source
+    Foundation Model | LTX", "Wan 2.6 AI Video Generator | DaVinci AI", "Video Arena:
+    Compare the Best AI Video Generators". No links were given; nothing could be opened.
+- **Nothing was rented and no credits were spent.**
+- **ADOPT — the free way: ray tracing on this session's own CPU.**
+  - `prototypes/kingston-3d/dev/raytrace/export.js` writes the game's scene to a file;
+    `render.py` ray-traces it in Blender Cycles (installed here as a free Python package).
+  - It is offline rendering of the game's own geometry and colours, tens of seconds a
+    picture on a CPU. It is not a graphics card with hardware ray tracing, not Unreal, and
+    not the game running. The same script uses such a card if one is ever present.
+  - First previews (street at golden hour, soundhall yard, quay) were sent to the user.
+- **REFERENCE — the three AI video tools.** They generate video clips from text or a
+  picture. They do not make a playable game or a game's graphics.
+  - Checked on the user's own connected video account (read-only, nothing generated):
+    one of the named models (Wan 2.6) is offered there at 7.5 credits for a 5-second clip;
+    the other (LTX) is not offered; the account has no free allowance. So it is not free.
+  - An open-source video model still needs a large graphics card to run, which is the
+    rented hardware the user declined.
+  - Possible use, if the user ever wants it: a clip grown from one of the ray-traced
+    stills as **concept footage**.
+- **POLICY for any generated footage:** it is concept material only. It is never shown as
+  gameplay or as the game's graphics (rule 7), it does not enter architecture (ADR 0014),
+  and no prompt names or imitates another game (rules 1 and 8).
+- **Close:** ADOPT + REFERENCE + POLICY. No clip was generated.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
