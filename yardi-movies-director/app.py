@@ -9,6 +9,8 @@ import json
 import os
 import queue
 import random
+import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -29,6 +31,7 @@ MAX_BATCH = 4
 MAX_CLIPS = 60
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_UPLOAD_SIDE = 2048
+TRASH_SECONDS = 30       # how long a deleted take can be restored with Undo
 
 
 def read_context(body: dict, kind: str) -> tuple[str, str | None]:
@@ -43,6 +46,14 @@ def read_context(body: dict, kind: str) -> tuple[str, str | None]:
     if len(context) > MAX_CONTEXT:
         return "", f"The context box holds up to {MAX_CONTEXT} characters."
     return context, None
+
+
+def read_settings(body: dict) -> tuple[str, str, list[str]]:
+    """The scene text, look key and direction chips as chosen, before they are joined into the prompt."""
+    scene = str(body.get("scene") or "").strip()[:MAX_PROMPT]
+    look = str(body.get("look") or "")[:200]
+    directions = [str(d)[:80] for d in (body.get("directions") or []) if d][:20]
+    return scene, look, directions
 
 
 def model_prompt(job: dict) -> str:
@@ -64,6 +75,20 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
     lock = threading.Lock()
     jobs: dict[str, dict] = {}
     pending: queue.Queue[str] = queue.Queue()
+    trash_dir = os.path.join(out_dir, ".trash")
+    trashed: dict[str, dict] = {}     # job id -> {job, battle, path, at}: deleted takes waiting for Undo
+    shutil.rmtree(trash_dir, ignore_errors=True)   # Undo does not survive a restart, so nothing is left behind
+
+    def purge_trash():
+        now = time.time()
+        for job_id, entry in list(trashed.items()):
+            if now - entry["at"] > TRASH_SECONDS:
+                if entry["path"]:
+                    try:
+                        os.remove(entry["path"])
+                    except OSError:
+                        pass
+                del trashed[job_id]
 
     if os.path.exists(library_path):
         try:
@@ -186,6 +211,8 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         context, problem = read_context(body, spec.kind)
         if problem:
             return jsonify(error=problem), 400
+        # The settings as the person chose them, so Reuse can restore them. The prompt above has them joined in.
+        scene, look, directions = read_settings(body)
         aspect, width, height = "", None, None
         if spec.kind in ASPECTS:
             aspect = body.get("aspect") or "16:9"
@@ -225,6 +252,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                     "model_name": spec.name,
                     "kind": spec.kind,
                     "prompt": prompt,
+                    "scene": scene or prompt, "look": look, "directions": directions,
                     "context": context,
                     "negative_prompt": str(body.get("negative_prompt") or "")[:MAX_PROMPT],
                     "aspect": aspect,
@@ -265,6 +293,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         context, problem = read_context(body, kind)
         if problem:
             return jsonify(error=problem), 400
+        scene, look, directions = read_settings(body)
         aspect = body.get("aspect") or "16:9"
         if aspect not in ASPECTS[kind]:
             return jsonify(error=f"Aspect {aspect} is not available for {kind}."), 400
@@ -295,7 +324,8 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 width, height = spec.sizes.get(aspect) or ASPECTS[kind][aspect]
                 job = {
                     "id": uuid.uuid4().hex, "model": spec.id, "model_name": spec.name, "kind": kind,
-                    "prompt": prompt, "context": context, "negative_prompt": "", "aspect": aspect,
+                    "prompt": prompt, "scene": scene or prompt, "look": look, "directions": directions,
+                    "context": context, "negative_prompt": "", "aspect": aspect,
                     "width": width, "height": height, "seed": seed, "battle": battle_id,
                     "status": "queued", "progress": 0.0, "created": now + offset / 1000,
                 }
@@ -453,6 +483,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
 
     @app.delete("/api/jobs/<job_id>")
     def delete_job(job_id):
+        """Remove a take. A finished take goes to the trash for TRASH_SECONDS, so Undo can bring it back."""
         with lock:
             job = jobs.get(job_id)
             if job is None:
@@ -462,18 +493,103 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
             del jobs[job_id]
             save_library()
             battle = battles.get(job.get("battle"))
+            removed_battle = None
             if battle and not battle["winner"]:      # a battle cannot be judged with one side missing
                 del battles[battle["id"]]
                 save_battles()
-        if job.get("file"):
+                removed_battle = battle
+            purge_trash()
+            can_undo = job["status"] == "done"      # a queued or failed take has no picture to bring back
+            if can_undo:
+                path = None
+                if job.get("file"):
+                    source = os.path.join(out_dir, job["file"])
+                    try:
+                        os.makedirs(trash_dir, exist_ok=True)
+                        path = os.path.join(trash_dir, job["file"])
+                        os.replace(source, path)
+                    except OSError:
+                        path = None
+                trashed[job_id] = {"job": job, "battle": removed_battle, "path": path, "at": time.time()}
+        return jsonify(ok=True, undo=can_undo)
+
+    @app.post("/api/jobs/<job_id>/restore")
+    def restore_job(job_id):
+        """Undo a delete, if the take is still in the trash."""
+        with lock:
+            purge_trash()
+            entry = trashed.get(job_id)
+            if entry is None:
+                return jsonify(error="Nothing to undo: this take is gone for good."), 404
+            job = entry["job"]
             try:
-                os.remove(os.path.join(out_dir, job["file"]))
-            except OSError:
-                pass
-        return jsonify(ok=True)
+                if job.get("file"):
+                    os.replace(entry["path"], os.path.join(out_dir, job["file"]))
+            except (OSError, TypeError):
+                del trashed[job_id]
+                return jsonify(error="The picture was already cleaned up, so the take cannot come back."), 410
+            del trashed[job_id]
+            jobs[job_id] = job
+            if entry["battle"]:
+                battles[entry["battle"]["id"]] = entry["battle"]
+                save_battles()
+            save_library()
+            return jsonify(shown(job))
+
+    @app.post("/api/jobs/<job_id>/last-frame")
+    def last_frame(job_id):
+        """Keep the final frame of a finished video take as a picture, so the next shot can start from it."""
+        from PIL import Image
+
+        with lock:
+            src = jobs.get(job_id)
+            if not (src and src["status"] == "done" and src.get("media") in ("video", "animation")
+                    and src.get("kind") != "movie"):
+                return jsonify(error="Only a finished video take has a last frame to continue from."), 400
+            source_path = os.path.join(out_dir, src["file"])
+            source_prompt, source_placeholder = src["prompt"], bool(src.get("placeholder"))
+        new_id = uuid.uuid4().hex
+        target = os.path.join(out_dir, new_id + ".png")
+        if source_path.endswith(".webp"):
+            # Preview takes are animated WebP, which ffmpeg cannot seek into; Pillow reads the last frame.
+            try:
+                with Image.open(source_path) as anim:
+                    anim.seek(anim.n_frames - 1)
+                    anim.convert("RGB").save(target)
+            except (OSError, ValueError) as exc:
+                app.logger.warning("Last frame failed: %s", exc)
+                return jsonify(error="Could not read the last frame of that take."), 500
+        else:
+            exe = movie.ffmpeg_path()
+            if not exe:
+                return jsonify(error="ffmpeg is not installed, so the last frame cannot be taken."), 400
+            run = subprocess.run(
+                [exe, "-v", "error", "-y", "-sseof", "-0.2", "-i", source_path, "-frames:v", "1", target],
+                capture_output=True, timeout=120,
+            )
+            if run.returncode != 0 or not os.path.exists(target):
+                app.logger.warning("Last frame failed: %s", run.stderr.decode(errors="replace")[-300:])
+                return jsonify(error="Could not read the last frame of that take."), 500
+        with Image.open(target) as img:
+            width, height = img.size
+        job = {
+            "id": new_id, "model": "last-frame", "model_name": "Last frame", "kind": "image",
+            "prompt": f"Last frame of: {source_prompt[:80]}", "aspect": f"{width}×{height}",
+            "width": width, "height": height, "status": "done", "progress": 1.0, "created": time.time(),
+            "file": new_id + ".png", "media": "image",
+            "uploaded": True,       # a picture, not a render: there is no model to run again, so no Reuse
+            "continued_from": job_id, "placeholder": source_placeholder,
+        }
+        with lock:
+            jobs[new_id] = job
+            save_library()
+        return jsonify(dict(job)), 201
 
     @app.get("/media/<path:name>")
     def media(name):
+        # Work folders and the trash are not for the browser; a deleted take must not stay reachable.
+        if any(part.startswith(".") for part in name.split("/")):
+            return jsonify(error="No such file."), 404
         return send_from_directory(out_dir, name)
 
     @app.get("/health")

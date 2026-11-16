@@ -379,6 +379,69 @@ def test_battle_takes_share_the_context(tmp_path):
     assert engine.prompts == ["waves\n\nstormy sea", "waves\n\nstormy sea"]
 
 
+def test_take_keeps_the_settings_it_was_made_with(client):
+    body = {"model": "z-image-turbo", "scene": "a kite", "look": "black-and-white film noir",
+            "directions": ["slow dolly in"], "aspect": "9:16", "prompt": "a kite, black-and-white film noir, slow dolly in"}
+    job = client.post("/api/generate", json=body).get_json()["jobs"][0]
+    assert job["scene"] == "a kite" and job["look"] == "black-and-white film noir"
+    assert job["directions"] == ["slow dolly in"] and job["aspect"] == "9:16"
+
+
+def test_continue_from_a_video_take(client, ffmpeg):
+    job = client.post("/api/generate", json={"model": "wan-2-2", "prompt": "waves", "seconds": 2}).get_json()["jobs"][0]
+    done = wait(client, job["id"])
+    assert done["status"] == "done", done
+    res = client.post(f"/api/jobs/{job['id']}/last-frame", json={})
+    assert res.status_code == 201, res.get_json()
+    picture = res.get_json()
+    assert picture["media"] == "image" and picture["continued_from"] == job["id"]
+    assert picture["placeholder"] == bool(done.get("placeholder"))      # a picture from a placeholder stays flagged
+    assert client.get(f"/media/{picture['file']}").data[:4] == b"\x89PNG"
+    assert client.post(f"/api/jobs/{picture['id']}/last-frame", json={}).status_code == 400   # a picture has no motion
+
+
+def test_last_frame_from_an_mp4_take(tmp_path, ffmpeg):
+    import json
+    import subprocess
+
+    clip = os.path.join(tmp_path, "clip.mp4")
+    subprocess.run([ffmpeg, "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=red:s=64x48:d=1",
+                    "-pix_fmt", "yuv420p", clip], check=True)
+    take = {"id": "clip1", "model": "wan-2-2", "model_name": "Wan 2.2", "kind": "video", "prompt": "red",
+            "status": "done", "progress": 1.0, "created": time.time(), "file": "clip.mp4", "media": "video",
+            "width": 64, "height": 48, "placeholder": False}
+    with open(os.path.join(tmp_path, "library.json"), "w") as f:
+        json.dump([take], f)
+    client = create_app(out_dir=str(tmp_path), engine=PreviewEngine()).test_client()
+    res = client.post("/api/jobs/clip1/last-frame", json={})
+    assert res.status_code == 201, res.get_json()
+    assert client.get(f"/media/{res.get_json()['file']}").data[:4] == b"\x89PNG"
+
+
+def test_deleted_take_comes_back_with_undo(client):
+    job = client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "a kite"}).get_json()["jobs"][0]
+    done = wait(client, job["id"])
+    assert client.delete(f"/api/jobs/{job['id']}").get_json()["undo"] is True
+    assert client.get(f"/api/jobs/{job['id']}").status_code == 404
+    assert client.get(f"/media/{done['file']}").status_code == 404      # the trash is not served to the browser
+    back = client.post(f"/api/jobs/{job['id']}/restore")
+    assert back.status_code == 200 and back.get_json()["id"] == job["id"]
+    assert client.get(f"/media/{done['file']}").data[:4] == b"\x89PNG"
+    assert client.post(f"/api/jobs/{job['id']}/restore").status_code == 404   # one undo only
+
+
+def test_undo_expires_and_the_file_is_removed(client, tmp_path, monkeypatch):
+    import app as app_module
+
+    monkeypatch.setattr(app_module, "TRASH_SECONDS", 0)
+    job = client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "a kite"}).get_json()["jobs"][0]
+    wait(client, job["id"])
+    client.delete(f"/api/jobs/{job['id']}")
+    time.sleep(0.05)
+    assert client.post(f"/api/jobs/{job['id']}/restore").status_code == 404
+    assert os.listdir(os.path.join(tmp_path, ".trash")) == []
+
+
 def test_elo_leaderboard():
     import arena
 

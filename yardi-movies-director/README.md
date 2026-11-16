@@ -32,8 +32,12 @@ your electricity.
   They are added after the scene for pictures, video and music, and the take card
   shows them. Voiceovers speak the scene only, so the box is hidden there.
   See [Context and speech](#context-and-speech).
+- **Continue a shot**: press "Continue" on a finished video take. Its last frame
+  becomes a picture and the start frame of your next shot.
 - **Work the reel**: filter by video or image, open stills full size, download,
-  reuse a scene with its seed, cancel queued takes, delete finished ones.
+  reuse a take (scene, look, direction chips, length, aspect, negative prompt,
+  seed and context all come back), cancel queued takes, delete finished ones.
+  A deleted take can be brought back with Undo for 30 seconds.
 - Ctrl + Enter in the scene box calls "Action!".
 
 ## Models
@@ -176,6 +180,9 @@ authentication before exposing it to a network.
 | GET    | `/api/arena`       | Battles, newest first, and the leaderboard            |
 | POST   | `/api/battles/<id>/vote` | `{winner: "a", "b" or "tie"}`; reveals the models |
 | DELETE | `/api/battles/<id>` | Discard an unvoted battle; its takes stay            |
+| DELETE | `/api/jobs/<id>`   | Delete a take; a finished one waits 30 s in the trash for Undo |
+| POST   | `/api/jobs/<id>/restore` | Undo a delete while the take is still in the trash |
+| POST   | `/api/jobs/<id>/last-frame` | A picture of the final frame of a finished video take |
 | POST   | `/api/movie`       | `{clips: [take ids], voice, music, music_volume, still_seconds, title}` → one MP4 |
 | POST   | `/api/upload`      | Multipart `image`: adds a picture to the reel as a start frame (25 MB max) |
 | GET    | `/api/jobs`        | Every take, newest first                            |

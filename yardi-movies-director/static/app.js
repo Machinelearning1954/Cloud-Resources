@@ -130,7 +130,7 @@ function renderControls() {
 function renderChips() {
   $("chips").replaceChildren(...DIRECTIONS.map((text) => {
     const chip = el("button", { type: "button", className: "chip", textContent: text });
-    chip.setAttribute("aria-pressed", "false");
+    chip.setAttribute("aria-pressed", String(state.directions.has(text)));
     chip.onclick = () => {
       const on = !state.directions.has(text);
       on ? state.directions.add(text) : state.directions.delete(text);
@@ -494,30 +494,23 @@ function takeCard(job, number) {
   const tools = el("div", { className: "tools" });
   const button = (text, onclick) => tools.append(el("button", { type: "button", textContent: text, onclick }));
   if (done && job.media === "image") button("Animate", () => animate(job));
+  if (done && (job.media === "video" || job.media === "animation") && job.kind !== "movie") {
+    button("Continue", () => continueFromVideo(job));   // the last frame becomes the start of the next shot
+  }
   if (done && !sound) button("Add to movie", () => { state.cut.clips.push(job.id); renderCut(); });
   if (done && job.kind === "voice") button("Use as voiceover", () => { state.cut.voice = job.id; renderCut(); });
   if (done && job.kind === "music") button("Use as soundtrack", () => { state.cut.music = job.id; renderCut(); });
   if (src && done) tools.append(el("a", { href: src, download: job.file, textContent: "Download" }));
-  if (!job.uploaded && job.kind !== "movie" && !job.masked) button("Reuse", () => {
-    cancelDictation();
-    $("prompt").value = job.prompt;
-    $("context").value = job.context || "";
-    updateContextCount();
-    if (job.seed !== undefined) $("seed").value = job.seed;
-    state.kind = job.kind; state.model = job.model;
-    state.start = job.start_take && state.jobs.has(job.start_take) ? job.start_take : null;
-    renderControls();
-    if (job.kind === "music") $("lyrics").value = job.lyrics || "";
-    if (job.kind === "voice") { $("voice").value = job.voice; $("speed").value = String(job.speed); }
-    $("prompt").focus();
-  });
+  if (!job.uploaded && !job.masked) button("Reuse", () => reuseTake(job));
   if (job.status !== "running") button(job.status === "queued" ? "Cancel" : "Delete", async () => {
-    try { await api(`/api/jobs/${job.id}`, { method: "DELETE" }); } catch (e) { return showError(e.message); }
+    let result;
+    try { result = await api(`/api/jobs/${job.id}`, { method: "DELETE" }); } catch (e) { return showError(e.message); }
     state.jobs.delete(job.id);
     renderControls();
     renderCut();
     renderTakes();
     if (job.battle) loadArena();
+    if (result.undo) showToast(`Take ${number} deleted.`, () => undoDelete(job));
   });
 
   const meta = el("div", { className: "meta" }, el("p", { textContent: job.prompt }));
@@ -552,6 +545,87 @@ function renderTakes() {
     : "";
 }
 
+// Puts a take's settings back in the form, as they were chosen. Only values the form still offers are set.
+function setOption(select, value) {
+  if (value != null && [...select.options].some((o) => o.value === String(value))) select.value = String(value);
+}
+
+function reuseTake(job) {
+  cancelDictation();
+  if (job.kind === "movie") {
+    const idOf = (file) => file && [...state.jobs.values()].find((j) => j.file === file && isDone(j.id))?.id || null;
+    state.cut = {
+      clips: (job.clips || []).map((c) => c.id).filter(isDone),
+      voice: idOf(job.voice_file), music: idOf(job.music_file),
+      volume: job.music_volume ?? state.cut.volume,
+    };
+    renderCut();
+    $("cut").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
+  state.kind = job.kind; state.model = job.model;
+  state.start = job.start_take && state.jobs.has(job.start_take) ? job.start_take : null;
+  state.directions = new Set(job.directions || []);
+  renderControls();
+  $("prompt").value = job.scene || job.prompt;
+  $("context").value = job.context || "";
+  updateContextCount();
+  $("negative").value = job.negative_prompt || "";
+  if (job.seed !== undefined) $("seed").value = job.seed;
+  if (VISUAL.has(job.kind)) {
+    setOption($("look"), job.look || "");
+    setOption($("aspect"), job.aspect);
+    if (job.kind === "video") setOption($("seconds"), Math.round(job.seconds));
+  }
+  if (job.kind === "music") {
+    $("lyrics").value = job.lyrics || "";
+    setOption($("musicSeconds"), Math.round(job.seconds));
+  }
+  if (job.kind === "voice") { setOption($("voice"), job.voice); setOption($("speed"), String(job.speed)); }
+  renderChips();
+  $("prompt").focus();
+}
+
+async function continueFromVideo(job) {
+  showError("");
+  try {
+    const picture = await postJson(`/api/jobs/${job.id}/last-frame`, {});
+    state.jobs.set(picture.id, picture);
+    renderTakes();
+    animate(picture);
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+async function undoDelete(job) {
+  showError("");
+  hideToast();
+  try {
+    const restored = await api(`/api/jobs/${job.id}/restore`, { method: "POST" });
+    state.jobs.set(restored.id, restored);
+    renderControls();
+    renderCut();
+    renderTakes();
+    if (restored.battle) loadArena();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+let toastTimer = null;
+function hideToast() {
+  clearTimeout(toastTimer);
+  $("toast").hidden = true;
+}
+function showToast(text, undo) {
+  $("toastText").textContent = text;
+  $("toastUndo").onclick = undo;
+  $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 10000);
+}
+
 function showError(message) {
   $("error").textContent = message || "";
   $("error").hidden = !message;
@@ -581,6 +655,9 @@ $("slate").addEventListener("submit", async (event) => {
   const body = { model: state.model, prompt: text };
   if (visual) {
     body.prompt = [text, $("look").value, ...state.directions].filter(Boolean).join(", ");
+    body.scene = text;                       // kept apart so Reuse can restore the settings, not the joined text
+    body.look = $("look").value;
+    body.directions = [...state.directions];
     body.aspect = $("aspect").value;
     body.negative_prompt = model.supports_negative ? $("negative").value : "";
     body.seconds = $("seconds").value;
