@@ -666,7 +666,7 @@ $("slate").addEventListener("submit", async (event) => {
   }
   if (state.kind === "music") { body.lyrics = $("lyrics").value; body.seconds = $("musicSeconds").value; }
   if (state.kind === "voice") { body.voice = $("voice").value; body.speed = $("speed").value; }
-  if (state.kind !== "voice") body.context = $("context").value.trim();
+  if (state.kind !== "voice") body.context = contextWithBrief();
   if (state.kind !== "voice") body.seed = $("seed").value;
 
   const battle = visual && $("battle").checked;
@@ -723,7 +723,31 @@ $("seconds").addEventListener("change", () => { $("seconds").dataset.touched = "
 $("battle").addEventListener("change", renderControls);
 $("viewer").addEventListener("click", (event) => { if (event.target === $("viewer")) $("viewer").close(); });
 
+/* ---------- Project brief: what the whole video is about ---------- */
+
+// Saved in this browser only (a per-viewer convenience), so it can come back empty.
+function readBrief(key, fallback) {
+  try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+}
+function saveBrief(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* private window: keep it for this visit only */ }
+}
+function updateBriefCount() {
+  $("briefCount").textContent = `${$("brief").value.length} / ${$("brief").maxLength}`;
+}
+// The brief, when ticked, goes in front of each take's own context.
+function contextWithBrief() {
+  const own = $("context").value.trim();
+  const brief = $("briefUse").checked ? $("brief").value.trim() : "";
+  return [brief, own].filter(Boolean).join("\n");
+}
+$("brief").addEventListener("input", () => { saveBrief("yardi.brief", $("brief").value); updateBriefCount(); });
+$("briefUse").addEventListener("change", () => saveBrief("yardi.briefUse", $("briefUse").checked ? "1" : ""));
+
 (async function start() {
+  $("brief").value = readBrief("yardi.brief", "");
+  $("briefUse").checked = readBrief("yardi.briefUse", "") === "1";
+  updateBriefCount();
   try {
     state.config = await api("/api/config");
     const { jobs } = await api("/api/jobs");

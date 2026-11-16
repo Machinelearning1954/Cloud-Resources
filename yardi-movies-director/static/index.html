@@ -19,6 +19,20 @@
 
 <p class="notice" id="notice" hidden></p>
 
+<section class="brief" aria-labelledby="briefLabel">
+  <div class="field-head">
+    <span id="briefLabel">Project brief <small>what you are making</small></span>
+    <span class="count" id="briefCount">0 / 300</span>
+  </div>
+  <textarea id="brief" rows="2" maxlength="300" aria-labelledby="briefLabel"
+    aria-describedby="briefHint"
+    placeholder="For example: a two-minute reggae music video about a fishing town at sunrise, shot on a phone, warm and slow"></textarea>
+  <div class="hint-row">
+    <label class="check"><input type="checkbox" id="briefUse"> <span>Add this brief to every take</span></label>
+    <p class="hint" id="briefHint">Saved in this browser only. Brief and context together must fit in 1000 characters.</p>
+  </div>
+</section>
+
 <main>
   <form class="slate" id="slate" autocomplete="off">
     <div class="seg" role="tablist" aria-label="What to make">

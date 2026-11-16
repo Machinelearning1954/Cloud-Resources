@@ -38,6 +38,9 @@ your electricity.
   reuse a take (scene, look, direction chips, length, aspect, negative prompt,
   seed and context all come back), cancel queued takes, delete finished ones.
   A deleted take can be brought back with Undo for 30 seconds.
+- **Project brief**: a box above the form for what the whole video is about.
+  Tick "Add this brief to every take" and it goes in front of each take's context.
+  It is saved in this browser only.
 - Ctrl + Enter in the scene box calls "Action!".
 
 ## Models
