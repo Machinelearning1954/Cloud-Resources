@@ -342,15 +342,29 @@ const SPEECH_ERRORS = {
 };
 let dictation = null;   // the running recogniser, or null while the microphone is off
 
-function setContextStatus(text) {
-  $("contextStatus").textContent = text || "";
-  $("contextStatus").hidden = !text;
+// tone: "live" while listening, "warn" for a limit, "bad" for an error, or "" for plain information.
+function setContextStatus(text, tone = "") {
+  const status = $("contextStatus");
+  status.textContent = text || "";
+  status.className = `hint status ${tone}`.trim();
+  status.hidden = !text;
 }
 
 function setMicOn(on) {
   $("contextMic").setAttribute("aria-pressed", String(on));
-  $("contextMic").textContent = on ? "Stop" : "Speak";
+  $("contextMicLabel").textContent = on ? "Stop" : "Speak";
   $("context").readOnly = on;   // the words are being written in; typing now would be overwritten
+  $("context").classList.toggle("listening", on);
+}
+
+// The counter shows how much of the 1000-character limit is used, so it is not a surprise on submit.
+function updateContextCount() {
+  const box = $("context");
+  const count = $("contextCount");
+  const used = box.value.length;
+  count.textContent = `${used} / ${box.maxLength}`;
+  count.classList.toggle("near", used >= box.maxLength * 0.9 && used < box.maxLength);
+  count.classList.toggle("full", used >= box.maxLength);
 }
 
 // Drops the microphone at once. Anything the recogniser still sends is ignored, so it cannot
@@ -397,16 +411,17 @@ function toggleDictation() {
       spoken = spoken.slice(0, Math.max(0, spoken.length - excess)).trimEnd();
       written = build(spoken);
       full = true;
-      setContextStatus("The context box is full, so dictation has stopped.");
+      setContextStatus("The context box is full, so dictation has stopped.", "warn");
       rec.stop();
     }
     box.value = written.text;
     box.setSelectionRange(written.caret, written.caret);
+    updateContextCount();
   };
   rec.onerror = (event) => {
     if (dictation !== rec) return;
     failed = true;
-    setContextStatus(SPEECH_ERRORS[event.error] || `Speech stopped (${event.error}).`);
+    setContextStatus(SPEECH_ERRORS[event.error] || `Speech stopped (${event.error}).`, "bad");
   };
   rec.onend = () => {
     if (dictation !== rec) return;   // cancelled, or a newer dictation has started
@@ -416,13 +431,13 @@ function toggleDictation() {
   };
   dictation = rec;
   setMicOn(true);
-  setContextStatus("Listening. Press Stop when you are done.");
+  setContextStatus("Listening. Press Stop when you are done.", "live");
   try {
     rec.start();
   } catch (e) {
     dictation = null;
     setMicOn(false);
-    setContextStatus(`Could not start listening: ${e.message}`);
+    setContextStatus(`Could not start listening: ${e.message}`, "bad");
   }
 }
 
@@ -434,6 +449,7 @@ function setupSpeech() {
 }
 
 $("contextMic").onclick = toggleDictation;
+$("context").addEventListener("input", updateContextCount);
 
 /* ---------- Reel ---------- */
 
@@ -486,6 +502,7 @@ function takeCard(job, number) {
     cancelDictation();
     $("prompt").value = job.prompt;
     $("context").value = job.context || "";
+    updateContextCount();
     if (job.seed !== undefined) $("seed").value = job.seed;
     state.kind = job.kind; state.model = job.model;
     state.start = job.start_take && state.jobs.has(job.start_take) ? job.start_take : null;
@@ -650,6 +667,7 @@ $("viewer").addEventListener("click", (event) => { if (event.target === $("viewe
   $("speed").value = "1";
   renderChips();
   setupSpeech();
+  updateContextCount();
   renderControls();
   renderCut();
   renderTakes();

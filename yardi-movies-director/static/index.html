@@ -58,12 +58,19 @@
       <div class="field-head">
         <span id="contextLabel">Context <small>optional</small></span>
         <button type="button" class="mic" id="contextMic" aria-pressed="false"
-          aria-label="Speak to add to the context">Speak</button>
+          title="Dictate into the context box">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          <span id="contextMicLabel">Speak</span>
+        </button>
       </div>
       <textarea id="context" rows="2" maxlength="1000" aria-labelledby="contextLabel"
+        aria-describedby="contextHint contextCount contextStatus"
         placeholder="Mood, setting, who is in it, style. Added to the end of your scene."></textarea>
-      <p class="hint" id="contextHint">Speech turns into text in your browser. Chrome and Edge may send the audio to their speech service.</p>
-      <p class="hint" id="contextStatus" role="status" hidden></p>
+      <div class="hint-row">
+        <p class="hint" id="contextHint">Speak uses your browser's speech recogniser. In Chrome and Edge the audio goes to their speech service.</p>
+        <span class="count" id="contextCount">0 / 1000</span>
+      </div>
+      <p class="hint status" id="contextStatus" role="status" hidden></p>
     </div>
 
     <label class="field" id="lyricsField">

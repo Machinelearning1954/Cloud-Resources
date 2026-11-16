@@ -90,6 +90,9 @@ other computers, so use `localhost` or an `https` address. A recogniser that run
 entirely on this machine would be a separate install, and this studio does not
 include one yet.
 
+The states, copy, error messages and accessibility notes are in
+[docs/context-and-speech.md](docs/context-and-speech.md).
+
 ## Arena
 
 The arena is a blind test between the models installed on your machine, in the

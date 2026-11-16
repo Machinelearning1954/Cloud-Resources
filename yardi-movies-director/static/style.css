@@ -244,11 +244,34 @@ dialog#viewer form { margin-top: 8px; text-align: right; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .field-head > span { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
 .mic {
-  border: 1px solid var(--accent); background: none; color: var(--accent); font: inherit; font-size: 12.5px;
-  border-radius: 999px; padding: 2px 11px; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--accent); background: none;
+  color: var(--accent); font: inherit; font-size: 12.5px; border-radius: 999px; padding: 2px 11px 2px 9px;
+  cursor: pointer; white-space: nowrap;
 }
-.mic[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.mic svg { width: 14px; height: 14px; flex: none; }
+.mic:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+/* Listening: a red button with a pulsing dot, so a live microphone is never mistaken for an idle one. */
+.mic[aria-pressed="true"] { background: var(--rasta-red); border-color: var(--rasta-red); color: #fff; }
+.mic[aria-pressed="true"]::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; margin-left: -2px;
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+@keyframes rec-pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"]::before { animation: none; } }
 .mic:disabled { opacity: .45; cursor: not-allowed; }
-#context { min-height: 64px; }
+#context { min-height: 64px; transition: border-color .15s, box-shadow .15s; }
+#context.listening { border-color: var(--rasta-red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rasta-red) 28%, transparent); }
 .hint { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.hint-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.hint-row .hint { flex: 1 1 auto; min-width: 0; margin-top: 6px; }
+.count { margin-top: 6px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.count.near { color: var(--accent); }
+.count.full { color: var(--bad); font-weight: 600; }
+.hint.status { color: var(--text); font-weight: 600; }
+.hint.status.live::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--rasta-red); margin-right: 7px; vertical-align: 1px;
+}
+.hint.status.warn { color: var(--accent); }
+.hint.status.bad { color: var(--bad); }
 .ctx { margin: 0; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
