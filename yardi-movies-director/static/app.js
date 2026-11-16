@@ -353,6 +353,17 @@ function setMicOn(on) {
   $("context").readOnly = on;   // the words are being written in; typing now would be overwritten
 }
 
+// Drops the microphone at once. Anything the recogniser still sends is ignored, so it cannot
+// overwrite text that was put in the box meanwhile (for example by Reuse).
+function cancelDictation() {
+  const rec = dictation;
+  if (!rec) return;
+  dictation = null;
+  rec.abort();
+  setMicOn(false);
+  setContextStatus("");
+}
+
 function toggleDictation() {
   if (dictation) return dictation.stop();   // the last phrase still arrives, then onend runs
   const box = $("context");
@@ -360,32 +371,48 @@ function toggleDictation() {
   const after = box.value.slice(box.selectionEnd);
   let committed = "";      // finished phrases; the interim guess is shown but not kept
   let failed = false;
+  let full = false;
   const rec = new SpeechRecognizer();
   rec.lang = navigator.language || "en-US";
   rec.continuous = true;
   rec.interimResults = true;
+  const build = (words) => {
+    const lead = words && before && !/\s$/.test(before) ? " " : "";
+    const tail = words && after && !/^\s/.test(after) ? " " : "";
+    return { text: before + lead + words + tail + after, caret: (before + lead + words).length };
+  };
   rec.onresult = (event) => {
+    if (dictation !== rec) return;   // cancelled: ignore what is still arriving
     let interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       if (result.isFinal) committed += result[0].transcript;
       else interim += result[0].transcript;
     }
-    const spoken = (committed + interim).trim();
-    const lead = spoken && before && !/\s$/.test(before) ? " " : "";
-    const tail = spoken && after && !/^\s/.test(after) ? " " : "";
-    box.value = before + lead + spoken + tail + after;
-    const caret = (before + lead + spoken).length;
-    box.setSelectionRange(caret, caret);
+    let spoken = (committed + interim).trim();
+    let written = build(spoken);
+    // Typed text is capped by maxlength, but a value set in code is not, so cap the speech here.
+    const excess = written.text.length - box.maxLength;
+    if (excess > 0) {
+      spoken = spoken.slice(0, Math.max(0, spoken.length - excess)).trimEnd();
+      written = build(spoken);
+      full = true;
+      setContextStatus("The context box is full, so dictation has stopped.");
+      rec.stop();
+    }
+    box.value = written.text;
+    box.setSelectionRange(written.caret, written.caret);
   };
   rec.onerror = (event) => {
+    if (dictation !== rec) return;
     failed = true;
     setContextStatus(SPEECH_ERRORS[event.error] || `Speech stopped (${event.error}).`);
   };
   rec.onend = () => {
+    if (dictation !== rec) return;   // cancelled, or a newer dictation has started
     dictation = null;
     setMicOn(false);
-    if (!failed) setContextStatus("");
+    if (!failed && !full) setContextStatus("");
   };
   dictation = rec;
   setMicOn(true);
@@ -456,6 +483,7 @@ function takeCard(job, number) {
   if (done && job.kind === "music") button("Use as soundtrack", () => { state.cut.music = job.id; renderCut(); });
   if (src && done) tools.append(el("a", { href: src, download: job.file, textContent: "Download" }));
   if (!job.uploaded && job.kind !== "movie" && !job.masked) button("Reuse", () => {
+    cancelDictation();
     $("prompt").value = job.prompt;
     $("context").value = job.context || "";
     if (job.seed !== undefined) $("seed").value = job.seed;
@@ -528,7 +556,7 @@ async function poll() {
 $("slate").addEventListener("submit", async (event) => {
   event.preventDefault();
   showError("");
-  if (dictation) return showError("Press Stop first, so the last words reach the context box.");
+  if (dictation && state.kind !== "voice") return showError("Press Stop first, so the last words reach the context box.");
   const text = $("prompt").value.trim();
   if (!text) return showError(`Write a ${WORDING[state.kind][0].toLowerCase()} first.`);
   const model = currentModel();
