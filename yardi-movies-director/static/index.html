@@ -54,6 +54,18 @@
         placeholder="A lighthouse keeper climbs the spiral stairs at dusk, lantern swinging, storm clouds rolling in over the sea"></textarea>
     </label>
 
+    <div class="field" id="contextField">
+      <div class="field-head">
+        <span id="contextLabel">Context <small>optional</small></span>
+        <button type="button" class="mic" id="contextMic" aria-pressed="false"
+          aria-label="Speak to add to the context">Speak</button>
+      </div>
+      <textarea id="context" rows="2" maxlength="1000" aria-labelledby="contextLabel"
+        placeholder="Mood, setting, who is in it, style. Added to the end of your scene."></textarea>
+      <p class="hint" id="contextHint">Speech turns into text in your browser. Chrome and Edge may send the audio to their speech service.</p>
+      <p class="hint" id="contextStatus" role="status" hidden></p>
+    </div>
+
     <label class="field" id="lyricsField">
       <span>Lyrics <small>leave blank for an instrumental</small></span>
       <textarea id="lyrics" rows="4" maxlength="5000" placeholder="[verse]&#10;Sun come up on the harbour wall&#10;[chorus]&#10;Roll, camera, roll"></textarea>

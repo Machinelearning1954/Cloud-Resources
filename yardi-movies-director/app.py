@@ -23,11 +23,32 @@ from registry import ASPECTS, MODELS
 
 APP_NAME = "Yardi Movies Director"
 MAX_PROMPT = 2000
+MAX_CONTEXT = 1000
 MAX_SCRIPT = 5000
 MAX_BATCH = 4
 MAX_CLIPS = 60
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_UPLOAD_SIDE = 2048
+
+
+def read_context(body: dict, kind: str) -> tuple[str, str | None]:
+    """The context box: extra notes added to a visual or music prompt.
+
+    Voiceovers speak the scene itself, so they take no context.
+    Returns (context, error); error is None when the context is usable.
+    """
+    if kind == "voice":
+        return "", None
+    context = str(body.get("context") or "").strip()
+    if len(context) > MAX_CONTEXT:
+        return "", f"The context box holds up to {MAX_CONTEXT} characters."
+    return context, None
+
+
+def model_prompt(job: dict) -> str:
+    """The text a model is given: the scene as written, then whatever is in the context box."""
+    context = job.get("context")
+    return f"{job['prompt']}\n\n{context}" if context else job["prompt"]
 
 
 def create_app(out_dir: str | None = None, engine=None) -> Flask:
@@ -79,7 +100,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         return view
 
     def battle_view(battle: dict) -> dict:
-        view = {k: battle.get(k) for k in ("id", "kind", "prompt", "a", "b", "winner", "counts", "created")}
+        view = {k: battle.get(k) for k in ("id", "kind", "prompt", "context", "a", "b", "winner", "counts", "created")}
         if battle.get("winner"):
             view["models"] = {s: MODELS[battle[s + "_model"]].name for s in ("a", "b")}
         return view
@@ -107,7 +128,8 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 if job["kind"] == "movie":
                     result = movie.cut(movie.ffmpeg_path(), out_dir, job["id"], job, progress)
                 else:
-                    result = engine.generate(MODELS[job["model"]], job, out_dir, job["id"], progress)
+                    result = engine.generate(MODELS[job["model"]], dict(job, prompt=model_prompt(job)),
+                                             out_dir, job["id"], progress)
                 with lock:
                     job.update(result, status="done", progress=1.0, elapsed=round(time.time() - started, 1))
                     save_library()
@@ -161,6 +183,9 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
         limit = MAX_SCRIPT if spec.kind == "voice" else MAX_PROMPT
         if len(prompt) > limit:
             return jsonify(error=f"That is longer than {limit} characters."), 400
+        context, problem = read_context(body, spec.kind)
+        if problem:
+            return jsonify(error=problem), 400
         aspect, width, height = "", None, None
         if spec.kind in ASPECTS:
             aspect = body.get("aspect") or "16:9"
@@ -200,6 +225,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                     "model_name": spec.name,
                     "kind": spec.kind,
                     "prompt": prompt,
+                    "context": context,
                     "negative_prompt": str(body.get("negative_prompt") or "")[:MAX_PROMPT],
                     "aspect": aspect,
                     "width": width,
@@ -236,6 +262,9 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
             return jsonify(error="Write a prompt first."), 400
         if len(prompt) > MAX_PROMPT:
             return jsonify(error=f"That is longer than {MAX_PROMPT} characters."), 400
+        context, problem = read_context(body, kind)
+        if problem:
+            return jsonify(error=problem), 400
         aspect = body.get("aspect") or "16:9"
         if aspect not in ASPECTS[kind]:
             return jsonify(error=f"Aspect {aspect} is not available for {kind}."), 400
@@ -266,8 +295,8 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 width, height = spec.sizes.get(aspect) or ASPECTS[kind][aspect]
                 job = {
                     "id": uuid.uuid4().hex, "model": spec.id, "model_name": spec.name, "kind": kind,
-                    "prompt": prompt, "negative_prompt": "", "aspect": aspect, "width": width, "height": height,
-                    "seed": seed, "battle": battle_id,
+                    "prompt": prompt, "context": context, "negative_prompt": "", "aspect": aspect,
+                    "width": width, "height": height, "seed": seed, "battle": battle_id,
                     "status": "queued", "progress": 0.0, "created": now + offset / 1000,
                 }
                 if kind == "video":
@@ -278,7 +307,7 @@ def create_app(out_dir: str | None = None, engine=None) -> Flask:
                 jobs[job["id"]] = job
                 takes.append(job)
             battle = {
-                "id": battle_id, "kind": kind, "prompt": prompt, "created": now, "winner": None,
+                "id": battle_id, "kind": kind, "prompt": prompt, "context": context, "created": now, "winner": None,
                 "a": takes[0]["id"], "b": takes[1]["id"], "a_model": pair[0].id, "b_model": pair[1].id,
             }
             battles[battle_id] = battle

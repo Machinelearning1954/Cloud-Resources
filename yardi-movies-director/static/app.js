@@ -89,6 +89,8 @@ function renderControls() {
   $("secondsField").hidden = kind !== "video";
   $("countField").hidden = kind !== "image" || battle;
   $("lyricsField").hidden = kind !== "music";
+  $("contextField").hidden = kind === "voice";   // voiceovers speak the scene itself
+  if (kind === "voice" && dictation) dictation.stop();
   $("musicSecondsField").hidden = kind !== "music";
   $("voiceField").hidden = kind !== "voice";
   $("speedField").hidden = kind !== "voice";
@@ -311,7 +313,10 @@ function renderArena(force) {
         await loadArena();
       } }));
     }
-    return el("div", { className: "duel" }, el("p", { textContent: b.prompt }), sides, votes);
+    const duel = el("div", { className: "duel" }, el("p", { textContent: b.prompt }));
+    if (b.context) duel.append(el("p", { className: "ctx", textContent: `Context: ${b.context}` }));
+    duel.append(sides, votes);
+    return duel;
   }));
 
   const tables = Object.entries(state.leaderboard).map(([kind, rows]) => el("table", {},
@@ -322,6 +327,86 @@ function renderArena(force) {
   $("boardBody").replaceChildren(...(tables.length ? tables
     : [el("p", { textContent: "No counted votes yet. Votes count once the takes are real model output." })]));
 }
+
+/* ---------- Context box and speech input ---------- */
+
+// The browser's own speech recogniser: free, and no model to install. Chrome and Edge send the
+// audio to their speech service; Firefox has no recogniser, so the button is disabled there.
+const SpeechRecognizer = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const SPEECH_ERRORS = {
+  "not-allowed": "The microphone is blocked. Allow it for this page, on localhost or an https address.",
+  "service-not-allowed": "This browser does not allow speech recognition here.",
+  "audio-capture": "No microphone was found.",
+  network: "The browser's speech service could not be reached. Check the connection and try again.",
+  "no-speech": "No speech was heard. Press Speak and try again.",
+};
+let dictation = null;   // the running recogniser, or null while the microphone is off
+
+function setContextStatus(text) {
+  $("contextStatus").textContent = text || "";
+  $("contextStatus").hidden = !text;
+}
+
+function setMicOn(on) {
+  $("contextMic").setAttribute("aria-pressed", String(on));
+  $("contextMic").textContent = on ? "Stop" : "Speak";
+  $("context").readOnly = on;   // the words are being written in; typing now would be overwritten
+}
+
+function toggleDictation() {
+  if (dictation) return dictation.stop();   // the last phrase still arrives, then onend runs
+  const box = $("context");
+  const before = box.value.slice(0, box.selectionStart);
+  const after = box.value.slice(box.selectionEnd);
+  let committed = "";      // finished phrases; the interim guess is shown but not kept
+  let failed = false;
+  const rec = new SpeechRecognizer();
+  rec.lang = navigator.language || "en-US";
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const result = event.results[i];
+      if (result.isFinal) committed += result[0].transcript;
+      else interim += result[0].transcript;
+    }
+    const spoken = (committed + interim).trim();
+    const lead = spoken && before && !/\s$/.test(before) ? " " : "";
+    const tail = spoken && after && !/^\s/.test(after) ? " " : "";
+    box.value = before + lead + spoken + tail + after;
+    const caret = (before + lead + spoken).length;
+    box.setSelectionRange(caret, caret);
+  };
+  rec.onerror = (event) => {
+    failed = true;
+    setContextStatus(SPEECH_ERRORS[event.error] || `Speech stopped (${event.error}).`);
+  };
+  rec.onend = () => {
+    dictation = null;
+    setMicOn(false);
+    if (!failed) setContextStatus("");
+  };
+  dictation = rec;
+  setMicOn(true);
+  setContextStatus("Listening. Press Stop when you are done.");
+  try {
+    rec.start();
+  } catch (e) {
+    dictation = null;
+    setMicOn(false);
+    setContextStatus(`Could not start listening: ${e.message}`);
+  }
+}
+
+function setupSpeech() {
+  if (SpeechRecognizer) return;
+  $("contextMic").disabled = true;
+  $("contextMic").title = "Speech input needs Chrome, Edge or Safari. Type your context instead.";
+  $("contextHint").textContent = "Speech input needs Chrome, Edge or Safari. Type your context here instead.";
+}
+
+$("contextMic").onclick = toggleDictation;
 
 /* ---------- Reel ---------- */
 
@@ -372,6 +457,7 @@ function takeCard(job, number) {
   if (src && done) tools.append(el("a", { href: src, download: job.file, textContent: "Download" }));
   if (!job.uploaded && job.kind !== "movie" && !job.masked) button("Reuse", () => {
     $("prompt").value = job.prompt;
+    $("context").value = job.context || "";
     if (job.seed !== undefined) $("seed").value = job.seed;
     state.kind = job.kind; state.model = job.model;
     state.start = job.start_take && state.jobs.has(job.start_take) ? job.start_take : null;
@@ -390,6 +476,7 @@ function takeCard(job, number) {
   });
 
   const meta = el("div", { className: "meta" }, el("p", { textContent: job.prompt }));
+  if (job.context) meta.append(el("p", { className: "ctx", textContent: `Context: ${job.context}` }));
   if (done && job.placeholder) meta.append(el("span", { className: "tag", textContent: "Placeholder, not model output" }));
   if (job.note) meta.append(el("p", { className: "note", textContent: job.note }));
   meta.append(el("div", { className: "info", textContent: info.join(" · ") }), tools);
@@ -441,6 +528,7 @@ async function poll() {
 $("slate").addEventListener("submit", async (event) => {
   event.preventDefault();
   showError("");
+  if (dictation) return showError("Press Stop first, so the last words reach the context box.");
   const text = $("prompt").value.trim();
   if (!text) return showError(`Write a ${WORDING[state.kind][0].toLowerCase()} first.`);
   const model = currentModel();
@@ -456,6 +544,7 @@ $("slate").addEventListener("submit", async (event) => {
   }
   if (state.kind === "music") { body.lyrics = $("lyrics").value; body.seconds = $("musicSeconds").value; }
   if (state.kind === "voice") { body.voice = $("voice").value; body.speed = $("speed").value; }
+  if (state.kind !== "voice") body.context = $("context").value.trim();
   if (state.kind !== "voice") body.seed = $("seed").value;
 
   const battle = visual && $("battle").checked;
@@ -473,9 +562,11 @@ $("slate").addEventListener("submit", async (event) => {
   }
 });
 
-$("prompt").addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) $("slate").requestSubmit();
-});
+for (const id of ["prompt", "context"]) {
+  $(id).addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) $("slate").requestSubmit();
+  });
+}
 
 $("startUpload").addEventListener("change", async () => {
   const file = $("startUpload").files[0];
@@ -530,6 +621,7 @@ $("viewer").addEventListener("click", (event) => { if (event.target === $("viewe
   fillSelect($("speed"), [["0.8", "Slower"], ["1", "Normal"], ["1.2", "Faster"]]);
   $("speed").value = "1";
   renderChips();
+  setupSpeech();
   renderControls();
   renderCut();
   renderTakes();

@@ -331,6 +331,54 @@ def test_battle_rules_and_cleanup(client, tmp_path):
     assert [b["id"] for b in again.get("/api/arena").get_json()["battles"]] == [kept["id"]]
 
 
+class RecordingEngine(PreviewEngine):
+    """Keeps the prompt each take was rendered with, so a test can see what the model was given."""
+
+    def __init__(self):
+        super().__init__()
+        self.prompts = []
+
+    def generate(self, spec, req, out_dir, stem, progress):
+        self.prompts.append(req["prompt"])
+        return super().generate(spec, req, out_dir, stem, progress)
+
+
+def test_context_box_is_added_after_the_scene(tmp_path):
+    engine = RecordingEngine()
+    client = create_app(out_dir=str(tmp_path), engine=engine).test_client()
+    body = {"model": "z-image-turbo", "prompt": "a red kite", "context": "  1950s harbour town, overcast  "}
+    job = client.post("/api/generate", json=body).get_json()["jobs"][0]
+    assert job["prompt"] == "a red kite"                      # the scene stays as written
+    assert job["context"] == "1950s harbour town, overcast"   # trimmed, and kept for Reuse
+    wait(client, job["id"])
+    assert engine.prompts == ["a red kite\n\n1950s harbour town, overcast"]
+
+
+def test_context_is_optional_and_voiceovers_take_none(client):
+    job = client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "a kite"}).get_json()["jobs"][0]
+    assert job["context"] == ""
+    voice = client.post("/api/generate", json={"model": "kokoro", "prompt": "Hello there", "context": "whisper"})
+    assert voice.get_json()["jobs"][0]["context"] == ""       # the voice speaks the scene only
+
+
+def test_context_limit(client):
+    post = lambda **body: client.post("/api/generate", json={"model": "z-image-turbo", "prompt": "x", **body})
+    assert post(context="c" * 1001).status_code == 400
+    assert post(context="c" * 1000).status_code == 202
+    assert client.post("/api/battle", json={"kind": "image", "prompt": "x", "context": "c" * 1001}).status_code == 400
+
+
+def test_battle_takes_share_the_context(tmp_path):
+    engine = RecordingEngine()
+    client = create_app(out_dir=str(tmp_path), engine=engine).test_client()
+    data = client.post("/api/battle", json={"kind": "image", "prompt": "waves", "context": "stormy sea"}).get_json()
+    a, b = data["jobs"]
+    assert a["context"] == b["context"] == data["battle"]["context"] == "stormy sea"
+    for job in data["jobs"]:
+        wait(client, job["id"])
+    assert engine.prompts == ["waves\n\nstormy sea", "waves\n\nstormy sea"]
+
+
 def test_elo_leaderboard():
     import arena
 

@@ -28,6 +28,10 @@ your electricity.
   leaderboard. See [Arena](#arena).
 - **Direct the shot**: camera-direction chips and a "Look" preset are added to
   your scene description.
+- **Context box**: type or speak extra notes (mood, setting, who is in it, style).
+  They are added after the scene for pictures, video and music, and the take card
+  shows them. Voiceovers speak the scene only, so the box is hidden there.
+  See [Context and speech](#context-and-speech).
 - **Work the reel**: filter by video or image, open stills full size, download,
   reuse a scene with its seed, cancel queued takes, delete finished ones.
 - Ctrl + Enter in the scene box calls "Action!".
@@ -69,6 +73,22 @@ variable, e.g. `YARDI_REPO_LTX_2=/models/ltx-2`
 `YARDI_REPO_ACE_STEP`).
 Point `YARDI_REPO_LTX_VIDEO` at a newer diffusers-format LTX-Video checkpoint
 to use that instead of the default.
+
+## Context and speech
+
+The context box takes extra description: mood, setting, who is in it, style.
+It is added after your scene and any look or direction chips, so the scene stays
+first. Each take keeps its context, the reel shows it, and Reuse fills the box
+again. The limit is 1,000 characters.
+
+Speak turns your voice into text with the browser's built-in speech recogniser.
+Nothing to install and no model to download. Chrome and Edge send the audio to
+their speech service to be recognised; check your browser's documentation for
+others. Firefox has no built-in recogniser, so Speak is disabled there and you
+type instead. Browsers often block the microphone on plain `http` addresses from
+other computers, so use `localhost` or an `https` address. A recogniser that runs
+entirely on this machine would be a separate install, and this studio does not
+include one yet.
 
 ## Arena
 
@@ -148,8 +168,8 @@ authentication before exposing it to a network.
 | Method | Path               | Purpose                                             |
 |--------|--------------------|-----------------------------------------------------|
 | GET    | `/api/config`      | Models, aspect ratios, active engine                |
-| POST   | `/api/generate`    | `{model, prompt, aspect, seconds, count, seed, negative_prompt, start_take}`; music adds `lyrics`, voice adds `voice` and `speed` |
-| POST   | `/api/battle`      | `{kind: "video" or "image", prompt, aspect, seconds, seed, start_take}` → two blind takes |
+| POST   | `/api/generate`    | `{model, prompt, context, aspect, seconds, count, seed, negative_prompt, start_take}`; music adds `lyrics`, voice adds `voice` and `speed` |
+| POST   | `/api/battle`      | `{kind: "video" or "image", prompt, context, aspect, seconds, seed, start_take}` → two blind takes |
 | GET    | `/api/arena`       | Battles, newest first, and the leaderboard            |
 | POST   | `/api/battles/<id>/vote` | `{winner: "a", "b" or "tie"}`; reveals the models |
 | DELETE | `/api/battles/<id>` | Discard an unvoted battle; its takes stay            |
