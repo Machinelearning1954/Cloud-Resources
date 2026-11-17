@@ -28,7 +28,7 @@ your electricity.
   leaderboard. See [Arena](#arena).
 - **Direct the shot**: camera-direction chips and a "Look" preset are added to
   your scene description.
-- **Context box**: type or speak extra notes (mood, setting, who is in it, style).
+- **Context box**: type, speak, or both in the same box, extra notes (mood, setting, who is in it, style).
   They are added after the scene for pictures, video and music, and the take card
   shows them. Voiceovers speak the scene only, so the box is hidden there.
   See [Context and speech](#context-and-speech).
@@ -38,9 +38,6 @@ your electricity.
   reuse a take (scene, look, direction chips, length, aspect, negative prompt,
   seed and context all come back), cancel queued takes, delete finished ones.
   A deleted take can be brought back with Undo for 30 seconds.
-- **Project brief**: a box above the form for what the whole video is about.
-  Tick "Add this brief to every take" and it goes in front of each take's context.
-  It is saved in this browser only.
 - Ctrl + Enter in the scene box calls "Action!".
 
 ## Models

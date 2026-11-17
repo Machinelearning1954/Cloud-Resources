@@ -276,16 +276,6 @@ dialog#viewer form { margin-top: 8px; text-align: right; }
 .hint.status.bad { color: var(--bad); }
 .ctx { margin: 0; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
 
-/* Project brief: what the whole video is about, above the form */
-.brief {
-  margin: 14px clamp(16px, 3vw, 32px) 0; padding: 12px 14px; display: grid; gap: 6px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-}
-.brief textarea { min-height: 56px; }
-.brief .hint-row { align-items: center; }
-.check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; }
-.check input { width: auto; accent-color: var(--accent); }
-
 /* Undo after a delete: stays for ten seconds, above the page content */
 .toast {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20;
