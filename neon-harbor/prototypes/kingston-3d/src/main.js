@@ -168,13 +168,19 @@
     const m = Math.hypot(x, y); return m > 1 ? { x: x / m, y: y / m } : { x, y };
   }
   function say(msg) { lastToast = msg; $("toast").textContent = msg; toastUntil = S.t + 4.5; }
+  const buzzes = [];                                   // the last few vibration patterns, for the checks
+  function buzz(pattern) { // phone vibration on the moments that matter; silent with sound off, and a no-op where the browser has none
+    if (muted) return; buzzes.push(pattern); if (buzzes.length > 8) buzzes.shift();
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* some browsers refuse outside a tap: ignore */ }
+  }
   function tell() { // turn the rules' events into messages, sound layers and screens
     for (const e of S.events.splice(0)) {
+      if (e.type === "picked") buzz([30]);
       if (e.type === "picked" && e.first) say("Follow the arrow to Zinc Roof Soundhall.");
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
-      else if (e.type === "delivered") { beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
-      else if (e.type === "seen") say("Seen carrying! Break the sight line or drop the crate.");
-      else if (e.type === "end") { scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
+      else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
+      else if (e.type === "seen") { buzz([140, 70, 140]); say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "end") { buzz(e.result === "won" ? [80, 50, 80, 50, 220] : [450]); scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
     }
   }
   function tick() { if (scn !== "play") return; sim.step(S, input()); tell(); }
@@ -284,6 +290,7 @@
   // Check hooks: a script can drive the game and read its state. After the first step() the page
   // stops drawing by itself (software-rendered test machines are slow); call render() before a screenshot.
   window.game = {
+    buzzes,
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
     press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
