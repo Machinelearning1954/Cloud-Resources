@@ -1810,8 +1810,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
-    [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
-    [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
+    [0.00, 0xfff2dc, 4.10, 0xbdd8ff, 0x9c8a6e, 1.15, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
+    [0.30, 0xffe2b6, 4.30, 0xb6cef8, 0xa88a5e, 1.15, 0xdfe5de, 0x4f8ccf, 1.00, 220],
     [0.50, 0xffbe76, 4.80, 0xb6c4f0, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
     [0.62, 0xff9a52, 7.60, 0x9cb4ea, 0xb87a4c, 1.60, 0xf2a874, 0x5a78c0, 1.05, 125],   // the sun is strong here because tod.sun is already under a half: golden hour holds, then the sun goes quickly
     [0.72, 0xff6a3c, 7.60, 0x8ea2f0, 0x5c5684, 1.85, 0xa87c98, 0x3c4f9c, 1.08, 130],
@@ -1924,8 +1924,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           // each light stays on its lamp while that lamp is one of the nearest two; its strength is zero when its lamp ties with the third nearest, so a move never shows
           if (atA !== n1 && atA !== n2) atA = atB === n1 ? n2 : n1;
           if (atB !== n1 && atB !== n2 || atB === atA) atB = atA === n1 ? n2 : n1;
-          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
-          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
+          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 46 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
+          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 46 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
         },
       };
     },
