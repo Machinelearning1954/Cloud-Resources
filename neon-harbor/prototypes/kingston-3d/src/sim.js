@@ -112,8 +112,10 @@
     for (let i = 1; i < pts.length; i++) if (Math.hypot(pts[i][0] - x, pts[i][1] - y) < Math.hypot(pts[best][0] - x, pts[best][1] - y)) best = i;
     return best;
   }
+  const TIERS = [0, 34, 67];                            // heat at which the street turns calm -> alert -> lockdown
+  function heatTier(S) { return S.heat >= TIERS[2] ? 2 : S.heat >= TIERS[1] ? 1 : 0; }
   function patrolSpeed(S, g) {
-    return (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
+    return (1 + 0.1 * heatTier(S)) * (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
   }
 
   /* ---- state ---- */
@@ -124,7 +126,7 @@
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -179,7 +181,7 @@
     for (const g of S.patrols) {
       const pts = g.route.pts, speed = patrolSpeed(S, g), chase = speed * tune.chasePercent / 100;
       const dx = p.x - g.x, dy = p.y - g.y, dd = Math.hypot(dx, dy);
-      g.sees = S.carrying && dd < tune.seeRange && dd > 0 &&
+      g.sees = S.carrying && dd < tune.seeRange * (1 + 0.2 * Math.min(1, heatTier(S))) && dd > 0 &&
                (dx * Math.cos(g.ang) + dy * Math.sin(g.ang)) / dd > cosHalf && clearSight(g, p);
       if (g.sees) { g.memory = { x: p.x, y: p.y }; if (g.mode !== "hunt") { g.mode = "hunt"; g.stuck = 0; } }
       else if (!S.carrying && g.mode !== "route" && g.mode !== "return") g.mode = "return";
@@ -210,6 +212,7 @@
     const rising = S.seen && S.seenFor > tune.graceSeconds;
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
+    const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
 
     // passers-by: decoration only
     for (const q of S.peds) {
@@ -223,7 +226,7 @@
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

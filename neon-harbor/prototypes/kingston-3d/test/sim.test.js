@@ -178,6 +178,14 @@ test("once spotted, heat waits out the grace period before it climbs", () => {
   assert.ok(S.heat > 0, "heat should climb after the grace period, got " + S.heat);
 });
 
+test("heat tiers: the street turns alert at 34 and locks down at 67, and patrols see further and move faster", () => {
+  const S = sim.create(), g = S.patrols[0];
+  assert.equal(sim.heatTier(S), 0); const calm = sim.patrolSpeed(S, g);
+  S.heat = 40; assert.equal(sim.heatTier(S), 1);
+  S.heat = 80; assert.equal(sim.heatTier(S), 2); assert.ok(sim.patrolSpeed(S, g) > calm * 1.15);
+  sim.step(S, STILL); assert.ok(S.events.some((e) => e.type === "tier" && e.tier === 2 && e.up));
+});
+
 let failed = 0;
 for (const [ok, name, why] of results) { console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : " — " + why}`); failed += !ok; }
 console.log(`\nRule tests: ${results.length - failed} passed, ${failed} failed (of ${results.length}).`);

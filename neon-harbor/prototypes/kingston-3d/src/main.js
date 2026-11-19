@@ -184,6 +184,7 @@
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
       else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
       else if (e.type === "seen") { buzz([140, 70, 140]); if (!calm) cam.shake = 0.35; say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "tier") { say(e.up ? (e.tier === 2 ? "Lockdown! Patrols are faster. Get out of sight." : "The street is on alert: patrols see further.") : (e.tier === 0 ? "Things are calm again." : "Lockdown eased. Still on alert.")); if (e.up) buzz([90]); }
       else if (e.type === "end") { buzz(e.result === "won" ? [80, 50, 80, 50, 220] : [450]); scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
     }
   }
