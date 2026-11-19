@@ -64,6 +64,11 @@
   const arrow = NH.props.arrow(); scene.add(arrow);
   ring.userData.overlay = arrow.userData.overlay = true;   // game markers, not part of the place: the scene exporter leaves "overlay" objects out
   sim.PALMS.forEach(([x, y], i) => { const t = NH.props.palm(i); NH.put(t, x, y, 0); t.rotation.y = i * 1.7; scene.add(t); });
+  // vendors' coconut carts on the pavement, each with its seller standing by; scenery only, the rules do not see them
+  [[372, 560, 0.0, 3], [828, 1210, Math.PI, 4], [372, 1120, 0.0, 5]].forEach(([x, y, a, c], i) => {
+    const k = NH.props.cart(i); NH.put(k, x, y, 0); k.rotation.y = a + Math.PI / 2; scene.add(k);
+    const v = person(c); NH.put(v.group, x + (a ? 24 : -24), y + 14, 0); NH.face(v.group, a); npcs.push(v);   // the seller stands on the street side, facing the cart
+  });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
   const lamps = sim.LAMPS.map(([x, y], i) => { // the post stands on a corner; its arm reaches back so the lamp hangs over the lamp point
     const l = NH.props.lampPost(), yard = i === sim.LAMPS.length - 1, arm = NH.LAMP_ARM / U, a = yard ? Math.PI : (i % 2 ? 0.75 : 0.25) * Math.PI;

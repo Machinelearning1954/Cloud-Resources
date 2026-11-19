@@ -6,6 +6,8 @@
      NH.props.crate()                    -> THREE.Object3D   (1 m cube, origin at its base centre)
      NH.props.speaker()                  -> THREE.Object3D   (1.5 m wide, 2 m tall, 1.2 m deep, origin at base centre, drivers on the +X face)
      NH.props.palm(i)                    -> THREE.Object3D   (i = index, for variety: lean, height, 7 to 9 fronds; 6.1 to 6.5 m tall)
+     NH.props.cart(i)                    -> THREE.Object3D   (i = index, for variety: a street vendor's handcart heaped with green
+                                            coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -317,6 +319,28 @@
       solid(b, ball(7, 5), at(top[0] + cos(a) * 0.21, top[1] - 0.2 - 0.14 * rnd(i, 220 + c), top[2] + sin(a) * 0.21, r, r * 1.15, r), rnd(i, 230 + c) < 0.5 ? lin(0x7f9440) : lin(0x8a6a34), SATIN); }
     return finish(b, 62);
   }
+  function cartGeo(i) { // a vendor's handcart: plank bed on two cart wheels, push handles, a heap of coconuts and a sun shade
+    const b = bag(), WOOD = lin(0x9a6a3c), DARK = lin(0x5a3a22), TYRE = lin(0x1c1c1e), HUB = lin(0x9aa0a6), SHADES = [[0xd8452e, 0xf2c230], [0x2f8f5a, 0xf2c230], [0x2b7fb8, 0xf4efe2]][i % 3];
+    const r = (k) => { const x = Math.sin((i + 1) * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+    solid(b, BOX, at(0, 0.82, 0, 1.6, 0.08, 0.92), WOOD, VARNISH);                                                      // the bed
+    for (const z of [-0.47, 0.47]) solid(b, BOX, at(0, 0.95, z, 1.6, 0.22, 0.04), mul(WOOD, 0.85), VARNISH);          // side boards
+    for (const x of [-0.8, 0.8]) solid(b, BOX, at(x, 0.95, 0, 0.04, 0.22, 0.92), mul(WOOD, 0.8), VARNISH);
+    for (const z of [-0.55, 0.55]) {
+      solid(b, cyl(14), at(-0.25, 0.4, z, 0.8, 0.09, 0.8, PI / 2), TYRE, RUBBER);                                       // cart wheels
+      solid(b, cyl(8), at(-0.25, 0.4, z * 1.02, 0.16, 0.1, 0.16, PI / 2), HUB, METAL);
+      solid(b, BOX, at(1.15, 0.86, z * 0.62, 0.75, 0.05, 0.05, 0, 0, -0.18), DARK, VARNISH);                             // push handles
+      solid(b, BOX, at(0.68, 0.39, z * 0.75, 0.05, 0.78, 0.05), DARK, VARNISH);                                         // front legs
+    }
+    solid(b, BOX, at(-0.25, 0.42, 0, 0.06, 0.06, 1.12), HUB, METAL);                                                    // axle
+    for (let k = 0; k < 34; k++) {                                                                                        // the heap: a low mound of coconuts
+      const a = r(k) * TAU, d = Math.sqrt(r(k + 50)) * 0.62, x = cos(a) * d * 1.15, z = sin(a) * d * 0.62, h = 0.93 + (1 - d / 0.62) * 0.28 + r(k + 90) * 0.05;
+      const green = mix(lin(0x4f8a2a), lin(0x9cbf3a), r(k + 70)), cut = r(k + 30) < 0.12;
+      solid(b, ball(7, 5), at(x * 0.6, h, z * 0.85, 0.2, 0.24, 0.2), cut ? lin(0xf3eedf) : green, MATTE);
+    }
+    solid(b, cyl(6), at(-0.78, 1.45, 0.44, 0.04, 1.3, 0.04), HUB, METAL);                                              // shade pole at the back corner, so the heap shows from above
+    for (let k = 0; k < 8; k++) { const q = k * PI / 4 + PI / 8; solid(b, BOX, at(-0.78 + cos(q) * 0.24, 2.12, 0.44 + sin(q) * 0.24, 0.3, 0.035, 0.2, 0, -q, 0), lin(SHADES[k % 2]), PAINT); }
+    return finish(b, 30);
+  }
   function skiffGeo(hex) {
     const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
@@ -400,6 +424,7 @@
     crate() { return mesh(once("crate", crateGeo), mats().crate, true); },
     speaker() { return mesh(once("speaker", speakerGeo), mats().speaker, true); },
     palm(i) { return mesh(once("palm" + i, () => palmGeo(i)), mats().leaf, true); },
+    cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
       const M = mats(), group = new THREE.Group(), glowMat = M.glow(), fx = glowMesh(once("lampGlow", lampGlow), glowMat); fx.visible = false; glowMat.color.setScalar(0);
