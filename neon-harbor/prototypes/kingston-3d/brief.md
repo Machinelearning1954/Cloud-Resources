@@ -17,7 +17,7 @@ phone browser. Throwaway code, not the game. Ledger row 80.
   walks to where it last saw them, looks around for four seconds, then walks back to its loop.
   Once you put the crate down, it stops hunting. The AI runs entirely on the device: no network,
   no cloud model (rule 6). The rules live in `src/sim.js`, which has no drawing code and runs in
-  Node, so they are tested without a browser. Tuning: `chasePercent` and `searchSeconds`.
+  Node, so they are tested without a browser. Tuning: `chasePercent` and `searchSeconds`. Once spotted, heat waits `graceSeconds` (1.5 s) before it climbs, so a sighting gives a moment to break the sight line instead of being an almost certain loss.
 - **Camera:** fixed heading, tilted 64 degrees, following the player. Every sim
   rectangle is a fenced lot with the house at its south edge and a low yard behind,
   so a building never hides the street behind it. People, patrols, the stash crate

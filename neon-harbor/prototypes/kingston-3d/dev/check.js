@@ -69,7 +69,7 @@ const ok = (name, pass, detail) => { results.push([!!pass, name, detail]); };
     return { scene: g.scene, result: s.result, card: document.getElementById("box").textContent.slice(0, 40) }; });
   ok("five deliveries win and the win card shows", won.scene === "won" && won.result === "won" && /Doors/.test(won.card), JSON.stringify(won));
   const lost = await p.evaluate(() => { const g = window.game; g.start(); const s = g.state; g.step(1); s.carrying = true; s.heat = 99.5; const q = s.patrols[0];
-    for (let i = 0; i < 30 && !s.over; i++) { s.player.x = q.x + Math.cos(q.ang) * 60; s.player.y = q.y + Math.sin(q.ang) * 60; g.step(1); } g.render(0.016);
+    for (let i = 0; i < 30 + Math.round(NH.sim.tune.graceSeconds * 60) && !s.over; i++) { s.player.x = q.x + Math.cos(q.ang) * 60; s.player.y = q.y + Math.sin(q.ang) * 60; g.step(1); } g.render(0.016);
     return { scene: g.scene, result: s.result }; });
   ok("being watched to 100 heat loses", lost.scene === "lost" && lost.result === "lost-heat", JSON.stringify(lost));
   const late = await p.evaluate(() => { const g = window.game; g.start(); g.state.t = NH.sim.config.clockSeconds.value - 0.02; g.step(4); return { scene: g.scene, result: g.state.result }; });

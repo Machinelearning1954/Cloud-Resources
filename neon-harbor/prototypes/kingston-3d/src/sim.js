@@ -22,6 +22,7 @@
     bonusSeconds: { value: 30,  min: 5,   max: 120, step: 5 },    // clock time the Late Doors code gives back
     chasePercent: { value: 130, min: 100, max: 200, step: 5 },    // a hunting patrol moves at this % of its normal speed
     searchSeconds:{ value: 4,   min: 1,   max: 15,  step: 1 },    // how long a patrol looks around where it lost you
+    graceSeconds: { value: 1.5, min: 0,   max: 5,   step: 0.5 },  // once spotted, heat waits this long before it climbs: time to break the sight line
   };
   const tune = new Proxy({}, { get: (_, k) => config[k].value });
 
@@ -123,7 +124,7 @@
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -205,7 +206,9 @@
       }
       if (g.sees) S.seen = true;
     }
-    S.heat = clamp(S.heat + (S.seen ? tune.heatRise : -tune.heatFall) * STEP, 0, 100);
+    S.seenFor = S.seen ? S.seenFor + STEP : 0;
+    const rising = S.seen && S.seenFor > tune.graceSeconds;
+    S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
 
     // passers-by: decoration only

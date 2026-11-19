@@ -57,7 +57,8 @@ test("you are not seen beyond the vision range or outside the cone", () => {
 });
 test("heat rises while seen and falls slowly when not", () => {
   const S = sim.create(), g = S.patrols[0]; sim.step(S, STILL); S.carrying = true;
-  for (let i = 0; i < 30; i++) { inFrontOf(S, g, 80); sim.step(S, STILL); }
+  const grace = Math.round(tune.graceSeconds / sim.STEP) + 1;   // heat waits out the grace period first
+  for (let i = 0; i < grace + 30; i++) { inFrontOf(S, g, 80); sim.step(S, STILL); }
   assert.ok(Math.abs(S.heat - tune.heatRise * 0.5) < 2, `heat ${S.heat}`);
   const h = S.heat; S.carrying = false; for (let i = 0; i < 60; i++) sim.step(S, STILL);
   assert.ok(Math.abs((h - S.heat) - tune.heatFall) < 0.5);
@@ -88,7 +89,7 @@ test("five deliveries win", () => {
 });
 test("heat at 100 loses; the clock running out loses", () => {
   const a = sim.create(), g = a.patrols[0]; sim.step(a, STILL); a.carrying = true; a.heat = 99.9;
-  for (let i = 0; i < 20 && !a.over; i++) { inFrontOf(a, g, 60); sim.step(a, STILL); } assert.equal(a.result, "lost-heat");
+  for (let i = 0; i < Math.round(tune.graceSeconds / sim.STEP) + 20 && !a.over; i++) { inFrontOf(a, g, 60); sim.step(a, STILL); } assert.equal(a.result, "lost-heat");
   const b = sim.create(); b.t = tune.clockSeconds - 0.01; for (let i = 0; i < 3; i++) sim.step(b, STILL); assert.equal(b.result, "lost-time");
 });
 test("you cannot walk into buildings, off the map or into the water", () => {
@@ -164,6 +165,17 @@ test("empty-handed you are never hunted, however close you stand", () => {
   for (let i = 0; i < 300; i++) sim.step(S, STILL);
   assert.notEqual(g.mode, "hunt");
   assert.equal(S.seen, false);
+});
+
+test("once spotted, heat waits out the grace period before it climbs", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 340; S.player.y = 560; g.ang = Math.PI / 2;
+  const graceSteps = Math.floor(sim.tune.graceSeconds / sim.STEP) - 2;
+  for (let i = 0; i < graceSteps; i++) sim.step(S, STILL);
+  assert.equal(S.seen, true);
+  assert.equal(S.heat, 0);
+  for (let i = 0; i < 60; i++) sim.step(S, STILL);
+  assert.ok(S.heat > 0, "heat should climb after the grace period, got " + S.heat);
 });
 
 let failed = 0;
