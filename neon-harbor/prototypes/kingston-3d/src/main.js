@@ -72,7 +72,8 @@
   const strings = NH.props.stringLights(NH.at(912, 200, 3.6), NH.at(1146, 200, 3.6), 14); scene.add(strings.group);
 
   /* ---------------- camera ---------------- */
-  const cam = { zoom: 1, pitch: NH.PITCH, half: 13, pan: new THREE.Vector3(), focus: new THREE.Vector3(), target: new THREE.Vector3() };
+  const calm = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);   // players who ask for less motion get no shake
+  const cam = { shake: 0, zoom: 1, pitch: NH.PITCH, half: 13, pan: new THREE.Vector3(), focus: new THREE.Vector3(), target: new THREE.Vector3() };
 
   function aim(snap) {
     cam.focus.lerp(cam.target, snap ? 1 : 0.14);
@@ -80,6 +81,9 @@
     const t = Math.tan(camera.fov * Math.PI / 360), d = half / Math.min(t, t * camera.aspect) * cam.zoom;
     camera.position.set(cam.focus.x, cam.focus.y + d * Math.sin(pitch), cam.focus.z + d * Math.cos(pitch));
     camera.lookAt(cam.focus);
+    if (cam.shake > 0.01) { // a short jolt when a patrol spots you: the view slides a little, never turns, and settles in about half a second
+      const w = S.t * 40; camera.position.x += Math.sin(w * 1.3) * cam.shake; camera.position.y += Math.sin(w * 1.7 + 1) * cam.shake * 0.6; cam.shake *= 0.9;
+    } else cam.shake = 0;
   }
   function fit() {
     vw = Math.max(1, cv.clientWidth); vh = Math.max(1, cv.clientHeight);
@@ -179,7 +183,7 @@
       if (e.type === "picked" && e.first) say("Follow the arrow to Zinc Roof Soundhall.");
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
       else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
-      else if (e.type === "seen") { buzz([140, 70, 140]); say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "seen") { buzz([140, 70, 140]); if (!calm) cam.shake = 0.35; say("Seen carrying! Break the sight line or drop the crate."); }
       else if (e.type === "end") { buzz(e.result === "won" ? [80, 50, 80, 50, 220] : [450]); scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
     }
   }
@@ -290,6 +294,7 @@
   // Check hooks: a script can drive the game and read its state. After the first step() the page
   // stops drawing by itself (software-rendered test machines are slow); call render() before a screenshot.
   window.game = {
+    cam,
     buzzes,
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
