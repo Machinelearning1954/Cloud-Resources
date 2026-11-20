@@ -41,8 +41,13 @@
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
-  const player = person(0, "you");
+  // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
+  const outfits = [player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", shirt: "#2f8f5a" }))];
+  function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
+  let player = outfits[0]; outfits[1].group.visible = false;
   const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(actor(carried));
+  function wear(i) { if (player === outfits[i]) return; player.group.visible = false; player = outfits[i]; player.group.visible = true; player.carry.add(carried); }
+  sim.LINES.forEach(([x, y]) => { const l = NH.props.clothesline(); NH.put(l, x, y, 0); scene.add(l); });
   const peds = S.peds.map((q) => person(q.cast));
   const npcs = sim.NPCS.map((n) => { const p = person(n.cast); NH.put(p.group, n.x, n.y, 0); NH.face(p.group, n.ang); return p; });
   const patrolViews = [];                       // grows as the rules add patrols
@@ -193,6 +198,8 @@
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
       else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
       else if (e.type === "seen") { buzz([140, 70, 140]); if (!calm) cam.shake = 0.35; say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "known") say("They've seen your shirt. Patrols will spot you faster. Change at a clothesline.");
+      else if (e.type === "changed") { wear(e.outfit); buzz([40, 30, 40]); say(e.wasKnown ? "New shirt. The patrols don't know you now." : "Shirt changed."); }
       else if (e.type === "tier") { say(e.up ? (e.tier === 2 ? "Lockdown! Patrols are faster. Get out of sight." : "The street is on alert: patrols see further.") : (e.tier === 0 ? "Things are calm again." : "Lockdown eased. Still on alert.")); if (e.up) buzz([90]); }
       else if (e.type === "end") { buzz(e.result === "won" ? [80, 50, 80, 50, 220] : [450]); scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
     }
@@ -287,7 +294,7 @@
     $("stick").hidden = !stick;
     if (stick) { $("stick").style.left = stick.ox + "px"; $("stick").style.top = stick.oy + "px"; $("knob").style.transform = `translate(${stick.x * 44}px, ${stick.y * 44}px)`; }
   }
-  function restart() { S = sim.create(); beat.layers = 0; typed = ""; }
+  function restart() { S = sim.create(); beat.layers = 0; typed = ""; wear(0); }
   function showCard(keepFocus) {
     const box = $("box"), saved = NH.save ? NH.save.panel() : ""; $("card").hidden = scn === "play" || scn === "figures"; if (scn === "play") return;
     const btn = (id, label, alt) => `<button class="big${alt ? " alt" : ""}" id="${id}" type="button">${label}</button>`;

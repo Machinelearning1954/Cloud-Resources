@@ -22,6 +22,7 @@
     bonusSeconds: { value: 30,  min: 5,   max: 120, step: 5 },    // clock time the Late Doors code gives back
     chasePercent: { value: 100, min: 100, max: 200, step: 5 },    // a hunting patrol moves at this % of its normal speed
     searchSeconds:{ value: 4,   min: 1,   max: 15,  step: 1 },    // how long a patrol looks around where it lost you
+    changeSeconds:{ value: 1.5, min: 0.5, max: 5,   step: 0.5 },  // standing still at a clothesline this long changes your shirt
     graceSeconds: { value: 1.5, min: 0,   max: 5,   step: 0.5 },  // once spotted, heat waits this long before it climbs: time to break the sight line
   };
   const tune = new Proxy({}, { get: (_, k) => config[k].value });
@@ -45,6 +46,7 @@
   ].map(([x, y, w, h], i) => ({ i, x, y, w, h, c: ROOF[i % ROOF.length], tall: 1 + (i * 37 % 10) / 14, wall: WALL[i % WALL.length] }));
   const SOUNDHALL = B[6], BOATWORKS = B[23];
   const PICK = { x: 300, y: 1425 }, DROP = { x: 1030, y: 290 };
+  const LINES = [[600, 968], [620, 410]];   // clotheslines where you can change your shirt, so patrols stop knowing you
   const LAMPS = [[340,420],[860,420],[340,940],[860,940],[340,1340],[860,1340],[600,420],[600,940],[600,1340],[1030,330]];
   const STREETS = { vertical: [340, 860], horizontal: [420, 940, 1340] };   // street centre lines
   const PALMS = [[380,1452],[555,1452],[800,1452],[900,1452],[1110,1452],[915,362],[1142,362]];
@@ -126,7 +128,7 @@
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -209,7 +211,13 @@
       if (g.sees) S.seen = true;
     }
     S.seenFor = S.seen ? S.seenFor + STEP : 0;
-    const rising = S.seen && S.seenFor > tune.graceSeconds;
+    if (S.seen && !wasSeen) S.grace = tune.graceSeconds * (S.known ? 0.5 : 1);         // a sighting gets half the grace only if they already knew your look
+    if (S.seen && !S.known) { S.known = true; S.events.push({ type: "known" }); }      // from now on, patrols know your look
+    const rising = S.seen && S.seenFor > (S.grace || tune.graceSeconds);
+    // change your shirt: stand still at a clothesline, out of sight, for changeSeconds
+    const atLine = LINES.some(([x, y]) => Math.hypot(p.x - x, p.y - y) < 26);
+    S.changing = atLine && !p.moving && !S.seen ? S.changing + STEP : 0;
+    if (S.changing >= tune.changeSeconds) { S.changing = 0; S.outfit ^= 1; const was = S.known; S.known = false; S.events.push({ type: "changed", outfit: S.outfit, wasKnown: was }); }
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
     const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
@@ -226,7 +234,7 @@
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

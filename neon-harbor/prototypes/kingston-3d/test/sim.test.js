@@ -186,6 +186,26 @@ test("heat tiers: the street turns alert at 34 and locks down at 67, and patrols
   sim.step(S, STILL); assert.ok(S.events.some((e) => e.type === "tier" && e.tier === 2 && e.up));
 });
 
+test("disguise: once seen carrying, patrols know you and the grace halves; changing at a clothesline clears it", () => {
+  const S = sim.create(), g = S.patrols[0]; sim.step(S, STILL); S.carrying = true;
+  for (let i = 0; i < 3; i++) { inFrontOf(S, g, 80); sim.step(S, STILL); }
+  assert.equal(S.known, true);
+  S.carrying = false; for (let i = 0; i < 30; i++) sim.step(S, STILL); S.carrying = true; S.heat = 0;   // break the sighting, then get seen again
+  const half = Math.round(tune.graceSeconds * 0.5 / sim.STEP);
+  for (let i = 0; i < half + 30; i++) { inFrontOf(S, g, 80); sim.step(S, STILL); }
+  assert.ok(S.heat > 0, "heat climbs after half the grace once known");
+  const [lx, ly] = sim.LINES[0]; S.player.x = lx; S.player.y = ly; g.x = 40; g.y = 40;
+  for (let i = 0; i < Math.round(tune.changeSeconds / sim.STEP) + 2; i++) sim.step(S, STILL);
+  assert.equal(S.known, false); assert.equal(S.outfit, 1);
+  assert.ok(S.events.some((e) => e.type === "changed"));
+});
+test("you cannot change while a patrol is watching", () => {
+  const S = sim.create(), g = S.patrols[0]; sim.step(S, STILL); S.carrying = true;
+  const [lx, ly] = sim.LINES[0]; g.mode = "route";
+  for (let i = 0; i < Math.round(tune.changeSeconds / sim.STEP) + 5; i++) { S.player.x = lx; S.player.y = ly; g.x = lx - 80; g.y = ly; g.ang = 0; sim.step(S, STILL); }
+  assert.equal(S.outfit, 0);
+});
+
 let failed = 0;
 for (const [ok, name, why] of results) { console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : " — " + why}`); failed += !ok; }
 console.log(`\nRule tests: ${results.length - failed} passed, ${failed} failed (of ${results.length}).`);

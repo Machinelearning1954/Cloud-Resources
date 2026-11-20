@@ -147,6 +147,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     bonusSeconds: { value: 30,  min: 5,   max: 120, step: 5 },    // clock time the Late Doors code gives back
     chasePercent: { value: 100, min: 100, max: 200, step: 5 },    // a hunting patrol moves at this % of its normal speed
     searchSeconds:{ value: 4,   min: 1,   max: 15,  step: 1 },    // how long a patrol looks around where it lost you
+    changeSeconds:{ value: 1.5, min: 0.5, max: 5,   step: 0.5 },  // standing still at a clothesline this long changes your shirt
     graceSeconds: { value: 1.5, min: 0,   max: 5,   step: 0.5 },  // once spotted, heat waits this long before it climbs: time to break the sight line
   };
   const tune = new Proxy({}, { get: (_, k) => config[k].value });
@@ -170,6 +171,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   ].map(([x, y, w, h], i) => ({ i, x, y, w, h, c: ROOF[i % ROOF.length], tall: 1 + (i * 37 % 10) / 14, wall: WALL[i % WALL.length] }));
   const SOUNDHALL = B[6], BOATWORKS = B[23];
   const PICK = { x: 300, y: 1425 }, DROP = { x: 1030, y: 290 };
+  const LINES = [[600, 968], [620, 410]];   // clotheslines where you can change your shirt, so patrols stop knowing you
   const LAMPS = [[340,420],[860,420],[340,940],[860,940],[340,1340],[860,1340],[600,420],[600,940],[600,1340],[1030,330]];
   const STREETS = { vertical: [340, 860], horizontal: [420, 940, 1340] };   // street centre lines
   const PALMS = [[380,1452],[555,1452],[800,1452],[900,1452],[1110,1452],[915,362],[1142,362]];
@@ -251,7 +253,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -334,7 +336,13 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       if (g.sees) S.seen = true;
     }
     S.seenFor = S.seen ? S.seenFor + STEP : 0;
-    const rising = S.seen && S.seenFor > tune.graceSeconds;
+    if (S.seen && !wasSeen) S.grace = tune.graceSeconds * (S.known ? 0.5 : 1);         // a sighting gets half the grace only if they already knew your look
+    if (S.seen && !S.known) { S.known = true; S.events.push({ type: "known" }); }      // from now on, patrols know your look
+    const rising = S.seen && S.seenFor > (S.grace || tune.graceSeconds);
+    // change your shirt: stand still at a clothesline, out of sight, for changeSeconds
+    const atLine = LINES.some(([x, y]) => Math.hypot(p.x - x, p.y - y) < 26);
+    S.changing = atLine && !p.moving && !S.seen ? S.changing + STEP : 0;
+    if (S.changing >= tune.changeSeconds) { S.changing = 0; S.outfit ^= 1; const was = S.known; S.known = false; S.events.push({ type: "changed", outfit: S.outfit, wasKnown: was }); }
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
     const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
@@ -351,7 +359,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
@@ -1365,6 +1373,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
      NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6 m long and 2.4 m tall, its +X face
                                             hand-painted: harbour sunset, palms, a speaker stack and lettering for the cast's own venues;
                                             2 draw calls)
+     NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
+                                            where the player changes shirt; 1 draw call)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -1741,6 +1751,13 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     if (i % 3 === 1) for (let k = 0; k < 3; k++) solid(b, BOX, at(-0.7 - k * 0.75, 1.3, (k % 2 ? 0.35 : -0.3), 0.6, 0.55, 0.6, 0, k * 0.4, 0), lin(0x9a6a3c), VARNISH);   // a few boxes of load in one bed
     return finish(b, 30);
   }
+  function lineGeo() {
+    const b = bag(), WOOD = lin(0x7a5a3a), ROPE = lin(0xdccba0);
+    for (const x of [-1.2, 1.2]) solid(b, BOX, at(x, 0.9, 0, 0.08, 1.8, 0.08), WOOD, VARNISH);
+    solid(b, BOX, at(0, 1.72, 0, 2.4, 0.02, 0.02), ROPE, MATTE);
+    [[0xe8b23a, -0.7], [0x2f8f5a, 0], [0xc8573a, 0.7]].forEach(([c, x]) => { solid(b, BOX, at(x, 1.42, 0, 0.5, 0.56, 0.03), lin(c), MATTE); solid(b, BOX, at(x, 1.62, 0, 0.62, 0.14, 0.03), lin(c), MATTE); });
+    return finish(b, 30);
+  }
   function skiffGeo(hex) {
     const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
@@ -1833,6 +1850,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         return finish(b, 30); }), mats().solid, true);
       g.add(wall, face); return g;
     },
+    clothesline() { return mesh(once("line", lineGeo), mats().solid, true); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
@@ -2267,8 +2285,13 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
-  const player = person(0, "you");
+  // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
+  const outfits = [player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", shirt: "#2f8f5a" }))];
+  function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
+  let player = outfits[0]; outfits[1].group.visible = false;
   const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(actor(carried));
+  function wear(i) { if (player === outfits[i]) return; player.group.visible = false; player = outfits[i]; player.group.visible = true; player.carry.add(carried); }
+  sim.LINES.forEach(([x, y]) => { const l = NH.props.clothesline(); NH.put(l, x, y, 0); scene.add(l); });
   const peds = S.peds.map((q) => person(q.cast));
   const npcs = sim.NPCS.map((n) => { const p = person(n.cast); NH.put(p.group, n.x, n.y, 0); NH.face(p.group, n.ang); return p; });
   const patrolViews = [];                       // grows as the rules add patrols
@@ -2419,6 +2442,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
       else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
       else if (e.type === "seen") { buzz([140, 70, 140]); if (!calm) cam.shake = 0.35; say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "known") say("They've seen your shirt. Patrols will spot you faster. Change at a clothesline.");
+      else if (e.type === "changed") { wear(e.outfit); buzz([40, 30, 40]); say(e.wasKnown ? "New shirt. The patrols don't know you now." : "Shirt changed."); }
       else if (e.type === "tier") { say(e.up ? (e.tier === 2 ? "Lockdown! Patrols are faster. Get out of sight." : "The street is on alert: patrols see further.") : (e.tier === 0 ? "Things are calm again." : "Lockdown eased. Still on alert.")); if (e.up) buzz([90]); }
       else if (e.type === "end") { buzz(e.result === "won" ? [80, 50, 80, 50, 220] : [450]); scn = e.result === "won" ? "won" : "lost"; showCard(); if (NH.save) NH.save.finish(S, tune).then(() => { if (scn === "won" || scn === "lost") showCard(true); }); }
     }
@@ -2513,7 +2538,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     $("stick").hidden = !stick;
     if (stick) { $("stick").style.left = stick.ox + "px"; $("stick").style.top = stick.oy + "px"; $("knob").style.transform = `translate(${stick.x * 44}px, ${stick.y * 44}px)`; }
   }
-  function restart() { S = sim.create(); beat.layers = 0; typed = ""; }
+  function restart() { S = sim.create(); beat.layers = 0; typed = ""; wear(0); }
   function showCard(keepFocus) {
     const box = $("box"), saved = NH.save ? NH.save.panel() : ""; $("card").hidden = scn === "play" || scn === "figures"; if (scn === "play") return;
     const btn = (id, label, alt) => `<button class="big${alt ? " alt" : ""}" id="${id}" type="button">${label}</button>`;

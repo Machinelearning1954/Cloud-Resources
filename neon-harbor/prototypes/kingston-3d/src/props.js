@@ -13,6 +13,8 @@
      NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6 m long and 2.4 m tall, its +X face
                                             hand-painted: harbour sunset, palms, a speaker stack and lettering for the cast's own venues;
                                             2 draw calls)
+     NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
+                                            where the player changes shirt; 1 draw call)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -389,6 +391,13 @@
     if (i % 3 === 1) for (let k = 0; k < 3; k++) solid(b, BOX, at(-0.7 - k * 0.75, 1.3, (k % 2 ? 0.35 : -0.3), 0.6, 0.55, 0.6, 0, k * 0.4, 0), lin(0x9a6a3c), VARNISH);   // a few boxes of load in one bed
     return finish(b, 30);
   }
+  function lineGeo() {
+    const b = bag(), WOOD = lin(0x7a5a3a), ROPE = lin(0xdccba0);
+    for (const x of [-1.2, 1.2]) solid(b, BOX, at(x, 0.9, 0, 0.08, 1.8, 0.08), WOOD, VARNISH);
+    solid(b, BOX, at(0, 1.72, 0, 2.4, 0.02, 0.02), ROPE, MATTE);
+    [[0xe8b23a, -0.7], [0x2f8f5a, 0], [0xc8573a, 0.7]].forEach(([c, x]) => { solid(b, BOX, at(x, 1.42, 0, 0.5, 0.56, 0.03), lin(c), MATTE); solid(b, BOX, at(x, 1.62, 0, 0.62, 0.14, 0.03), lin(c), MATTE); });
+    return finish(b, 30);
+  }
   function skiffGeo(hex) {
     const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
@@ -481,6 +490,7 @@
         return finish(b, 30); }), mats().solid, true);
       g.add(wall, face); return g;
     },
+    clothesline() { return mesh(once("line", lineGeo), mats().solid, true); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
