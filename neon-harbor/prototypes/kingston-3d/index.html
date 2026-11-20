@@ -2417,10 +2417,34 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       beat.next += spb; beat.i++;
     }
   }
+  // each patrol hums from where it is: louder as it nears, panned left or right, higher while it hunts you
+  const hums = [];
+  function hum(i) {
+    if (!hums[i]) {
+      const ac = beat.ac, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), pn = ac.createStereoPanner ? ac.createStereoPanner() : null;
+      o.type = "sawtooth"; o.frequency.value = 70; f.type = "lowpass"; f.frequency.value = 320; g.gain.value = 0;
+      o.connect(f).connect(g); if (pn) g.connect(pn).connect(ac.destination); else g.connect(ac.destination); o.start();
+      hums[i] = { o, g, pn, level: 0 };
+    }
+    return hums[i];
+  }
+  function patrolSound() {
+    if (!beat.ac) return;
+    const on = !muted && scn === "play", t = beat.ac.currentTime, p = S.player;
+    S.patrols.forEach((q, i) => {
+      const h = hum(i), d = Math.hypot(q.x - p.x, q.y - p.y), near = Math.max(0, 1 - d / 450), hunt = q.mode === "hunt";
+      h.level = on ? (q.foot ? 0.03 : 0.07) * near * near * (hunt ? 1.6 : 1) : 0;
+      h.g.gain.setTargetAtTime(h.level, t, 0.1);
+      h.o.frequency.setTargetAtTime((q.foot ? 140 : 70) * (hunt ? 1.3 : 1), t, 0.2);
+      if (h.pn) h.pn.pan.setTargetAtTime(Math.max(-1, Math.min(1, (q.x - p.x) / 300)), t, 0.1);
+    });
+    for (let i = S.patrols.length; i < hums.length; i++) if (hums[i]) { hums[i].level = 0; hums[i].g.gain.setTargetAtTime(0, t, 0.1); }
+  }
   function sound() { if (!beat.ac) { try { beat.ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { beat.ac = null; } } if (beat.ac && beat.ac.state === "suspended") beat.ac.resume(); }
 
   /* ---------------- screens and HUD ---------------- */
   function hud() {
+    patrolSound();
     const playing = scn === "play", figures = scn === "figures";
     $("toast").classList.toggle("low", !playing); $("toast").hidden = !lastToast || !(playing || figures);
     $("hud").hidden = scn === "title" || figures; $("drop").hidden = !playing;
@@ -2496,6 +2520,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   window.game = {
     cam,
     buzzes,
+    get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
     press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
