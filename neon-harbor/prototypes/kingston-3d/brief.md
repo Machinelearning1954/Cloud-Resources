@@ -13,7 +13,7 @@ phone browser. Throwaway code, not the game. Ledger row 80.
   game code.
 - **Rules:** the same as Crate Run, plus one addition: **patrol AI** (ledger row 86). Each patrol
   is a small state machine. On a route it walks its loop. When it sees a carrier it hunts: it
-  chases at 130% of its normal speed and holds 30 px away. If the carrier goes out of sight it
+  chases at its normal speed (100%, tunable) and holds 30 px away. If the carrier goes out of sight it
   walks to where it last saw them, looks around for four seconds, then walks back to its loop.
   Once you put the crate down, it stops hunting. The AI runs entirely on the device: no network,
   no cloud model (rule 6). The rules live in `src/sim.js`, which has no drawing code and runs in

@@ -128,7 +128,7 @@ function placePatrol(S, x, y) { const g = S.patrols[0]; g.x = x; g.y = y; g.ang 
 test("a patrol that sees a carrier turns to hunt, closes in, and holds a short distance off", () => {
   const S = sim.create(), g = placePatrol(S, 340, 420);
   S.carrying = true; S.player.x = 520; S.player.y = 420;
-  for (let i = 0; i < 90; i++) sim.step(S, STILL);
+  for (let i = 0; i < 150; i++) sim.step(S, STILL);   // 2.5 s: at chasePercent 100 it covers the 180 px gap and settles
   assert.equal(g.mode, "hunt");
   assert.ok(sim.dist(g, S.player) <= 32, `held ${sim.dist(g, S.player).toFixed(0)} px away`);
   assert.ok(g.sees, "still in view while holding");
