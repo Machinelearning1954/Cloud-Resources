@@ -1362,6 +1362,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
                                             coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
      NH.props.pickup(i)                  -> THREE.Object3D   (i = index, for variety: a parked, sun-faded pickup truck, 5.2 m long,
                                             1.9 m wide, cab toward +X, origin at base centre; 1 draw call)
+     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6 m long and 2.4 m tall, its +X face
+                                            hand-painted: harbour sunset, palms, a speaker stack and lettering for the cast's own venues;
+                                            2 draw calls)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -1518,6 +1521,29 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       g.beginPath(); g.arc(128, 128, 23, 0, TAU); g.fill();
       g.fillStyle = "#fff"; g.fillRect(0, 0, 256, 17); g.fillRect(0, 238, 18, 18);                                          // under the frame: pale grain for the frame boards, plain white for steel and rope
       for (let s = 0; s < 40; s++) { g.fillStyle = "rgba(40,20,0," + (0.06 + 0.12 * rnd(s, 9)).toFixed(3) + ")"; g.fillRect(rnd(s, 10) * 230, 1 + rnd(s, 11) * 14, 20 + rnd(s, 12) * 60, 1.2); }
+    }));
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  });
+  const MURALS = [
+    { words: ["BASSLINE", "SUNDAYS"], sky: ["#2a1b4a", "#c8466a", "#f6a24a"], sea: "#1f6f86", accent: "#f2c230" },
+    { words: ["BRASS & KEEL", "BOATWORKS"], sky: ["#123a5a", "#2f8f9a", "#f2d28a"], sea: "#0f4f63", accent: "#e8573a" },
+  ];
+  const muralTex = (i) => once("muralTex" + i, () => { // painted in code, like everything else here: no image files
+    const m = MURALS[i % MURALS.length];
+    const t = new THREE.CanvasTexture(canvas(640, 256, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, 170); m.sky.forEach((c, k) => sky.addColorStop(k / (m.sky.length - 1), c)); g.fillStyle = sky; g.fillRect(0, 0, 640, 256);
+      g.fillStyle = "#ffd36b"; g.beginPath(); g.arc(470, 150, 46, 0, TAU); g.fill();                                   // the sun going down
+      g.fillStyle = m.sea; g.fillRect(0, 160, 640, 96);
+      g.fillStyle = "rgba(255,220,140,0.55)"; for (let k = 0; k < 9; k++) g.fillRect(430 + (k % 3) * 9 - k * 2, 168 + k * 9, 70 - k * 6, 3);   // its glitter on the water
+      g.fillStyle = "#14141a"; for (const [x, h] of [[70, 150], [150, 120], [585, 140]]) {                             // palms in silhouette
+        g.fillRect(x - 3, 200 - h, 6, h); for (let f = 0; f < 7; f++) { const a = -PI + f * PI / 6; g.beginPath(); g.ellipse(x + cos(a) * 26, 200 - h + sin(a) * 10, 30, 6, a, 0, TAU); g.fill(); }
+      }
+      g.fillStyle = "#14141a"; g.fillRect(250, 120, 60, 80); g.fillRect(316, 120, 60, 80); g.fillRect(283, 64, 60, 54);   // a sound-system stack
+      g.fillStyle = m.accent; for (const [x, y, r] of [[280, 160, 20], [346, 160, 20], [313, 91, 15]]) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.fillStyle = "#14141a"; g.beginPath(); g.arc(x, y, r * 0.45, 0, TAU); g.fill(); g.fillStyle = m.accent; }
+      g.textAlign = "center"; g.lineJoin = "round";
+      m.words.forEach((w, k) => { const y = 54 + k * 46, size = k ? 34 : 46; g.font = "900 " + size + "px Impact, 'Arial Black', sans-serif";
+        g.lineWidth = 9; g.strokeStyle = "#14141a"; g.strokeText(w, 320, y + (k ? 160 : 0)); g.fillStyle = k ? "#f4efe2" : m.accent; g.fillText(w, 320, y + (k ? 160 : 0)); });
+      g.fillStyle = "rgba(0,0,0,0.18)"; for (let k = 0; k < 220; k++) g.fillRect((k * 97) % 640, (k * 53) % 256, 2 + (k % 3), 1);   // block joints and chips showing through
     }));
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
   });
@@ -1799,6 +1825,14 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     speaker() { return mesh(once("speaker", speakerGeo), mats().speaker, true); },
     palm(i) { return mesh(once("palm" + i, () => palmGeo(i)), mats().leaf, true); },
     pickup(i) { return mesh(once("pickup" + (i % 3), () => pickupGeo(i % 3)), mats().solid, true); },
+    mural(i) {
+      const g = new THREE.Group(), face = new THREE.Mesh(once("muralFace", () => new THREE.PlaneGeometry(6, 2.4)), once("muralMat" + (i % 2), () => new THREE.MeshStandardMaterial({ name: "mural", map: muralTex(i), roughness: 0.9, metalness: 0 })));
+      face.rotation.y = PI / 2; face.position.set(0.11, 1.32, 0); face.receiveShadow = true;
+      const wall = mesh(once("muralWall", () => { const b = bag(), BLOCK = lin(0xbdb6a8);
+        solid(b, BOX, at(0, 1.3, 0, 0.2, 2.6, 6.3), BLOCK, MATTE); solid(b, BOX, at(0, 2.64, 0, 0.3, 0.08, 6.4), mul(BLOCK, 0.85), MATTE);   // the block wall and its capping
+        return finish(b, 30); }), mats().solid, true);
+      g.add(wall, face); return g;
+    },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
@@ -2261,6 +2295,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     const k = NH.props.cart(i); NH.put(k, x, y, 0); k.rotation.y = a + Math.PI / 2; scene.add(k);
     const v = person(c); NH.put(v.group, x + (a ? 24 : -24), y + 14, 0); NH.face(v.group, a); npcs.push(v);   // the seller stands on the street side, facing the cart
   });
+  // two painted walls at the top of the quay, facing the harbour (and the camera); scenery only
+  [[440, 1384, 0], [825, 1384, 1]].forEach(([x, y, i]) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
   // pickups parked on the quay; scenery only, the rules do not see them
   [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
