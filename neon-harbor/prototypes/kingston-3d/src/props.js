@@ -8,6 +8,8 @@
      NH.props.palm(i)                    -> THREE.Object3D   (i = index, for variety: lean, height, 7 to 9 fronds; 6.1 to 6.5 m tall)
      NH.props.cart(i)                    -> THREE.Object3D   (i = index, for variety: a street vendor's handcart heaped with green
                                             coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
+     NH.props.pickup(i)                  -> THREE.Object3D   (i = index, for variety: a parked, sun-faded pickup truck, 5.2 m long,
+                                            1.9 m wide, cab toward +X, origin at base centre; 1 draw call)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -341,6 +343,26 @@
     for (let k = 0; k < 8; k++) { const q = k * PI / 4 + PI / 8; solid(b, BOX, at(-0.78 + cos(q) * 0.24, 2.12, 0.44 + sin(q) * 0.24, 0.3, 0.035, 0.2, 0, -q, 0), lin(SHADES[k % 2]), PAINT); }
     return finish(b, 30);
   }
+  function pickupGeo(i) { // a working pickup: hood, cab and open bed on four wheels, paint faded by the sun
+    const b = bag(), PAINT_C = lin([0xe8e4da, 0xa8452f, 0x2f7f86][i % 3]), DARK = lin(0x1c1f22), GLASSC = lin(0x26313a), CHROME = lin(0xb9bec2), TYRE = lin(0x18181a), LAMP = lin(0xfff1c8), TAIL = lin(0xb0201a);
+    const body = (p) => mul(PAINT_C, 0.86 + 0.18 * clamp01(p[1] / 1.9));                                                 // paint a shade lighter toward the roof
+    solid(b, BOX, at(0, 0.72, 0, 5.2, 0.5, 1.86), body, PAINT);                                                             // lower body, end to end
+    solid(b, BOX, at(1.95, 1.12, 0, 1.3, 0.32, 1.8), body, PAINT);                                                          // hood
+    solid(b, BOX, at(0.55, 1.4, 0, 1.55, 0.86, 1.8), body, PAINT);                                                          // cab
+    solid(b, BOX, at(1.36, 1.5, 0, 0.06, 0.6, 1.6, 0, 0, 0.5), GLASSC, GLASS);                                             // windscreen, leaning back
+    for (const z of [-0.91, 0.91]) solid(b, BOX, at(0.55, 1.55, z, 1.2, 0.48, 0.03), GLASSC, GLASS);                       // side windows
+    solid(b, BOX, at(-1.25, 0.99, 0, 2.7, 0.06, 1.7), DARK, MATTE);                                                         // bed floor
+    for (const z of [-0.9, 0.9]) solid(b, BOX, at(-1.25, 1.2, z, 2.7, 0.45, 0.07), body, PAINT);                           // bed sides
+    solid(b, BOX, at(-2.57, 1.2, 0, 0.07, 0.45, 1.86), body, PAINT);                                                        // tailgate
+    solid(b, BOX, at(2.62, 0.62, 0, 0.12, 0.2, 1.9), CHROME, METAL); solid(b, BOX, at(-2.62, 0.62, 0, 0.12, 0.2, 1.9), DARK, RUBBER);   // bumpers
+    for (const z of [-0.7, 0.7]) { solid(b, BOX, at(2.6, 0.95, z, 0.05, 0.16, 0.3), LAMP, GLOW); solid(b, BOX, at(-2.6, 1.05, z, 0.05, 0.22, 0.14), TAIL, GLOW); }
+    for (const x of [-1.65, 1.7]) for (const z of [-0.86, 0.86]) {
+      solid(b, cyl(16), at(x, 0.4, z, 0.8, 0.26, 0.8, PI / 2), TYRE, RUBBER);
+      solid(b, cyl(8), at(x, 0.4, z * 1.08, 0.36, 0.06, 0.36, PI / 2), CHROME, METAL);
+    }
+    if (i % 3 === 1) for (let k = 0; k < 3; k++) solid(b, BOX, at(-0.7 - k * 0.75, 1.3, (k % 2 ? 0.35 : -0.3), 0.6, 0.55, 0.6, 0, k * 0.4, 0), lin(0x9a6a3c), VARNISH);   // a few boxes of load in one bed
+    return finish(b, 30);
+  }
   function skiffGeo(hex) {
     const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
@@ -424,6 +446,7 @@
     crate() { return mesh(once("crate", crateGeo), mats().crate, true); },
     speaker() { return mesh(once("speaker", speakerGeo), mats().speaker, true); },
     palm(i) { return mesh(once("palm" + i, () => palmGeo(i)), mats().leaf, true); },
+    pickup(i) { return mesh(once("pickup" + (i % 3), () => pickupGeo(i % 3)), mats().solid, true); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {

@@ -69,6 +69,8 @@
     const k = NH.props.cart(i); NH.put(k, x, y, 0); k.rotation.y = a + Math.PI / 2; scene.add(k);
     const v = person(c); NH.put(v.group, x + (a ? 24 : -24), y + 14, 0); NH.face(v.group, a); npcs.push(v);   // the seller stands on the street side, facing the cart
   });
+  // pickups parked on the quay; scenery only, the rules do not see them
+  [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
   const lamps = sim.LAMPS.map(([x, y], i) => { // the post stands on a corner; its arm reaches back so the lamp hangs over the lamp point
     const l = NH.props.lampPost(), yard = i === sim.LAMPS.length - 1, arm = NH.LAMP_ARM / U, a = yard ? Math.PI : (i % 2 ? 0.75 : 0.25) * Math.PI;
