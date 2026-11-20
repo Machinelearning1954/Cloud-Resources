@@ -2402,7 +2402,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   function tone(type, f, t, len, vol, slide) {
     const o = beat.ac.createOscillator(), g = beat.ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + len);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(g).connect(beat.ac.destination); o.start(t); o.stop(t + len + 0.02);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + len); o.connect(g).connect(bus()); o.start(t); o.stop(t + len + 0.02);
   }
   function audio() {
     if (muted || scn !== "play" || !beat.ac) return;
@@ -2416,6 +2416,17 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       if (L >= 4 && [0, 6, 10].includes(s)) tone("sawtooth", [440, 523.3, 392][[0, 6, 10].indexOf(s)], t, 0.3, 0.03);
       beat.next += spb; beat.i++;
     }
+  }
+  // "8D" riddim: the music bus circles slowly round the listener (one turn every 8 s) with a short room echo, best on headphones
+  function bus() {
+    if (!beat.bus) {
+      const ac = beat.ac, inp = ac.createGain(), pn = ac.createStereoPanner ? ac.createStereoPanner() : null, d = ac.createDelay(1), fb = ac.createGain(), wet = ac.createGain();
+      d.delayTime.value = 0.12; fb.gain.value = 0.28; wet.gain.value = 0.22;
+      const out = pn || ac.destination; inp.connect(out); inp.connect(d); d.connect(fb).connect(d); d.connect(wet).connect(out); if (pn) pn.connect(ac.destination);
+      if (pn) { const lfo = ac.createOscillator(), depth = ac.createGain(); lfo.frequency.value = 1 / 8; depth.gain.value = 0.85; lfo.connect(depth).connect(pn.pan); lfo.start(); }
+      beat.bus = inp; beat.panner = pn;
+    }
+    return beat.bus;
   }
   // each patrol hums from where it is: louder as it nears, panned left or right, higher while it hunts you
   const hums = [];
@@ -2520,7 +2531,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   window.game = {
     cam,
     buzzes,
-    get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
+    get circling() { return !!(beat.panner); }, get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },
     press(k) { press(k); }, hold(k, on) { keys[k] = on !== false; },
