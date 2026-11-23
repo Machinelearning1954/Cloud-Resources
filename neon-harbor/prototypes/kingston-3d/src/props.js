@@ -15,6 +15,8 @@
                                             2 draw calls)
      NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
                                             where the player changes shirt; 1 draw call)
+     NH.props.plate()                    -> THREE.Object3D   (a dub plate: a 12-inch record standing on edge, 0.5 m across so it reads
+                                            from the game camera, with a yellow label; a collectible; 1 draw call)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -491,6 +493,9 @@
       g.add(wall, face); return g;
     },
     clothesline() { return mesh(once("line", lineGeo), mats().solid, true); },
+    plate() { return mesh(once("plate", () => { const b = bag();
+      solid(b, cyl(20), at(0, 0.45, 0, 0.5, 0.03, 0.5, PI / 2), lin(0x121214), GLASS); solid(b, cyl(12), at(0, 0.45, 0, 0.18, 0.04, 0.18, PI / 2), lin(0xf2c230), PAINT);
+      return finish(b, 30); }), mats().solid, true); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {

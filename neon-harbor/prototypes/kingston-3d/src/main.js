@@ -81,6 +81,8 @@
   });
   // two painted walls at the top of the quay, facing the harbour (and the camera); scenery only
   [[440, 1384, 0], [825, 1384, 1]].forEach(([x, y, i]) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
+  // dub plates to find in the alleys: they turn slowly, and vanish once collected
+  const plates = sim.PLATES.map(([x, y]) => { const d = NH.props.plate(); NH.put(d, x, y, 0); scene.add(d); return d; });
   // pickups parked on the quay; scenery only, the rules do not see them
   [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
@@ -203,6 +205,7 @@
       else if (e.type === "dropped") say("Crate down. Patrols ignore you now. Come back for it.");
       else if (e.type === "delivered") { buzz([60, 40, 60]); beat.layers = e.count; say(e.count === 1 ? "One in. Each crate brings another patrol. Alleys hide you." : `${e.count} of ${tune.cratesToWin} delivered.`); }
       else if (e.type === "seen") { buzz([140, 70, 140]); if (!calm) cam.shake = 0.35; say("Seen carrying! Break the sight line or drop the crate."); }
+      else if (e.type === "plate") { buzz([25, 20, 25]); say(e.count === 3 ? "All three dub plates found!" : `Dub plate found: ${e.count} of 3.`); }
       else if (e.type === "known") say("They've seen your shirt. Patrols will spot you faster. Change at a clothesline.");
       else if (e.type === "changed") { wear(e.outfit); buzz([40, 30, 40]); say(e.wasKnown ? "New shirt. The patrols don't know you now." : "Shirt changed."); }
       else if (e.type === "tier") { say(e.up ? (e.tier === 2 ? "Lockdown! Patrols are faster. Get out of sight." : "The street is on alert: patrols see further.") : (e.tier === 0 ? "Things are calm again." : "Lockdown eased. Still on alert.")); if (e.up) buzz([90]); }
@@ -287,6 +290,7 @@
   /* ---------------- screens and HUD ---------------- */
   function hud() {
     patrolSound();
+    plates.forEach((d, i) => { d.visible = !S.plates[i]; d.rotation.y = S.t * 1.5 + i; });
     $("depth").hidden = quality < 1 || scn === "figures";   // the blur costs a little: a slow device gives it up first, and the cast screen stays sharp
     const playing = scn === "play", figures = scn === "figures";
     $("toast").classList.toggle("low", !playing); $("toast").hidden = !lastToast || !(playing || figures);
@@ -316,7 +320,7 @@
       <div id="code"></div><p class="sub" id="codemsg" role="status"></p>
       <div class="pad"><span></span><button class="key" data-d="U" type="button">Up</button><span></span>
         <button class="key" data-d="L" type="button">Left</button><button class="key" data-d="D" type="button">Down</button><button class="key" data-d="R" type="button">Right</button></div>`;
-    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
+    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><p>${S.spotted ? "" : "<b>Clean run:</b> no patrol ever saw you carrying. "}Dub plates found: <b>${S.plates.filter(Boolean).length} of 3</b>.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
     else box.innerHTML = `<h1>${S.result === "lost-heat" ? "Too much <span>heat</span>" : "Doors <span>stayed shut</span>"}</h1>
       <p>${S.result === "lost-heat" ? "A patrol watched you carry for too long." : "Seven o'clock came with the stack unfinished."} You delivered ${S.delivered} of ${tune.cratesToWin}.</p>${S.cheated ? '<p class="sub">Codes were used on this run.</p>' : ""}<div class="row">${btn("again", "Try again")}</div>${saved}`;
     const go = $("go"), again = $("again"), cast = $("cast"); typed = "";

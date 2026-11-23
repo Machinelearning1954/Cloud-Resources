@@ -46,6 +46,7 @@
   ].map(([x, y, w, h], i) => ({ i, x, y, w, h, c: ROOF[i % ROOF.length], tall: 1 + (i * 37 % 10) / 14, wall: WALL[i % WALL.length] }));
   const SOUNDHALL = B[6], BOATWORKS = B[23];
   const PICK = { x: 300, y: 1425 }, DROP = { x: 1030, y: 290 };
+  const PLATES = [[170, 300], [1030, 760], [180, 800]];   // dub plates hidden in the alleys: optional, never lost, there every run
   const LINES = [[600, 968], [620, 410]];   // clotheslines where you can change your shirt, so patrols stop knowing you
   const LAMPS = [[340,420],[860,420],[340,940],[860,940],[340,1340],[860,1340],[600,420],[600,940],[600,1340],[1030,330]];
   const STREETS = { vertical: [340, 860], horizontal: [420, 940, 1340] };   // street centre lines
@@ -129,7 +130,7 @@
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, plates: [false, false, false], spotted: false, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -221,6 +222,8 @@
     if (S.changing >= tune.changeSeconds) { S.changing = 0; S.outfit ^= 1; const was = S.known; S.known = false; S.events.push({ type: "changed", outfit: S.outfit, wasKnown: was }); }
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
+    if (S.seen) S.spotted = true;                                                       // a clean run is one where no patrol ever saw you carrying
+    PLATES.forEach(([x, y], i) => { if (!S.plates[i] && Math.hypot(p.x - x, p.y - y) < 22) { S.plates[i] = true; S.events.push({ type: "plate", count: S.plates.filter(Boolean).length }); } });
     const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
 
     // passers-by: decoration only
@@ -235,7 +238,7 @@
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, PLATES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

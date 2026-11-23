@@ -206,6 +206,16 @@ test("you cannot change while a patrol is watching", () => {
   assert.equal(S.outfit, 0);
 });
 
+test("dub plates: walking over one collects it once; a run with no sighting stays clean", () => {
+  const S = sim.create(); S.patrols[0].x = 40; S.patrols[0].y = 40;
+  const [x, y] = sim.PLATES[0]; S.player.x = x; S.player.y = y;
+  sim.step(S, STILL); sim.step(S, STILL);
+  assert.deepEqual(S.plates, [true, false, false]);
+  assert.equal(S.events.filter((e) => e.type === "plate").length, 1);
+  assert.equal(S.spotted, false);
+  for (const [px, py] of sim.PLATES) assert.equal(sim.blocked(px, py, 11), false, "plate on open ground");
+});
+
 let failed = 0;
 for (const [ok, name, why] of results) { console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : " — " + why}`); failed += !ok; }
 console.log(`\nRule tests: ${results.length - failed} passed, ${failed} failed (of ${results.length}).`);
