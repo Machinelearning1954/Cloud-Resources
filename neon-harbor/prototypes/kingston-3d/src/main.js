@@ -42,9 +42,14 @@
   /* ---------------- things in the scene that follow the rules' state ---------------- */
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
   // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
-  const outfits = [player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", shirt: "#2f8f5a" }))];
+  // two runners to choose from on the title card, two shirts each (the second is what a clothesline change puts on)
+  const KEMAR = sim.CAST[7];
+  const heroes = [[player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", look: "imani", shirt: "#2f8f5a" }))],
+                  [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", cut: 0.7 }))]];
+  let hero = 0, outfits = heroes[0]; heroes.forEach((h) => h.forEach((p) => { p.group.visible = false; })); outfits[0].group.visible = true;
   function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
-  let player = outfits[0]; outfits[1].group.visible = false;
+  let player = outfits[0];
+  function choose(i) { hero = i; outfits = heroes[i]; wear(0); }
   const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(actor(carried));
   function wear(i) { if (player === outfits[i]) return; player.group.visible = false; player = outfits[i]; player.group.visible = true; player.carry.add(carried); }
   sim.LINES.forEach(([x, y]) => { const l = NH.props.clothesline(); NH.put(l, x, y, 0); scene.add(l); });
@@ -304,7 +309,7 @@
       <p>Doors open at 7:00 PM. Carry <b>5 speaker crates</b> from Keelwright Boatworks to Zinc Roof Soundhall.</p>
       <ul><li>Patrols only care while you are <b>carrying</b>.</li><li>Put the crate down to walk past clean, then come back for it.</li><li>Buildings block their view.</li></ul>
       <p class="sub">Phone: drag anywhere to move, tap Drop. Keyboard: arrows or WASD, Space to drop or pick up, P pause, M sound.</p>
-      <div class="row">${btn("go", "Start")}${btn("cast", "Cast", true)}</div>${saved}`;
+      <div class="row">${btn("go", "Start")}${btn("who", "Play as: " + sim.CAST[hero ? 7 : 0].name.split(" ")[0], true)}${btn("cast", "Cast", true)}</div>${saved}`;
     else if (scn === "figures") { box.innerHTML = ""; say("Tap or press any key to go back"); return; }
     else if (scn === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>
       <p class="sub">Codes: tap six directions (or use the arrow keys). Try Up Up Down Left Right Down.</p>
@@ -319,6 +324,7 @@
     if (go) go.onclick = () => { if (scn === "title") restart(); scn = "play"; sound(); showCard(); say(S.t ? "" : "Walk into the crate pile to pick one up."); };
     if (again) again.onclick = () => { restart(); scn = "play"; sound(); showCard(); say("Walk into the crate pile to pick one up."); };
     if (cast) cast.onclick = () => { scn = "figures"; showCard(); };
+    const who = $("who"); if (who) who.onclick = () => { choose(1 - hero); showCard(); };
     if (NH.save) NH.save.bind(box, () => showCard(true));
     if (!keepFocus) (go || again).focus();
   }
@@ -358,6 +364,7 @@
   window.game = {
     cam,
     buzzes,
+    choose(i) { choose(i); }, get hero() { return hero; },
     get circling() { return !!(beat.panner); }, get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },

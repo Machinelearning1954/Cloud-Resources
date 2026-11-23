@@ -60,10 +60,11 @@
   /* ---------------- geometry builder: positions, normals, colours and bone weights, merged by hand ---------------- */
   const SKIN = 0, CLOTH = 1, HAIR = 2;
   function builder() {
-    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0;
+    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0, print = null;
     return {
+      setPrint(ref, alt, cut) { print = { ref, alt, cut: cut || 0 }; },   // a printed shirt: vertices in the shirt colour take the second colour in blotches
       get n() { return pos.length / 3; },
-      v(p, c, b) { const w = b[2] || 0; pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
+      v(p, c, b) { const w = b[2] || 0; if (print && c[0] === print.ref[0] && c[1] === print.ref[1] && c[2] === print.ref[2]) { if (Math.sin(p[0] * 47 + p[1] * 29) + Math.sin(p[1] * 53 + p[2] * 41) + Math.sin(p[2] * 37 - p[0] * 31) > print.cut) c = print.alt; } pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
       ring(r, n, c, b) { // n points round p, along u and v; e < 1 squares the oval off
         const first = pos.length / 3, e = r.e || 1;
         for (let j = 0; j < n; j++) {
@@ -158,7 +159,7 @@
 
   /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
   function lookFor(cast) {
-    const h = hash(cast.id), pick = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
+    const h = hash(cast.look || cast.id), pick   /* cast.look: wear another entry's build and clothes, so a change of shirt changes only the shirt */ = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
     return {
       shirt: lin(cast.shirt), kind: patrol ? "uniform" : boat ? "overalls" : pick(BOTTOMS, 10),
       legs: lin(patrol ? NAVY : boat ? 0x3f5f86 : pick(LEG_COLS, 11)), shoes: lin(patrol || boat ? 0x1c1c20 : pick(SHOE_COLS, 11)),
@@ -300,7 +301,7 @@
   function kitFor(cast) {
     if (KITS[cast.id]) return KITS[cast.id];
     if (!STYLES[cast.hair]) throw new Error("people: no model for the hairstyle '" + cast.hair + "'");
-    const B = builder(), look = lookFor(cast); body(B, look); STYLES[cast.hair](B, look);
+    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.cut); body(B, look); STYLES[cast.hair](B, look);
     const skin = SKINS[cast.skin] || (SKINS[cast.skin] = new THREE.MeshStandardMaterial({ color: cast.skin, roughness: 0.62 }));   // the cast's skin colour as-is
     return (KITS[cast.id] = { geo: B.geometry(), mats: [skin, CLOTH_MAT, cast.hair === "afro" ? HAIR_MATTE : HAIR_MAT], look });   // coils scatter light: no sheen on the afro
   }
