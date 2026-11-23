@@ -275,10 +275,10 @@
     canerows(B) {
       [0.036, -0.036, 0.096, -0.096].forEach((z, i) => {
         const side = i > 1, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
-        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0175 * (k % 2 ? 1.12 : 0.92)); bs.push([HEAD]); }
+        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0245 * (k % 2 ? 1.1 : 0.94)); /* thick enough to read as rows from the game camera */ bs.push([HEAD]); }
         const tail = side ? [] : [[-0.118, 1.51, z * 1.05]];
         tail.forEach((p, k) => { pts.push(p); rad.push(0.015); bs.push([HEAD]); });
-        tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.12, root: true });
+        tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.35, root: true });
       });
     },
     /* the foot patrol: a peaked cap with a pale flat top, short hair showing under it at the sides and back */
