@@ -282,6 +282,7 @@
   /* ---------------- screens and HUD ---------------- */
   function hud() {
     patrolSound();
+    $("depth").hidden = quality < 1 || scn === "figures";   // the blur costs a little: a slow device gives it up first, and the cast screen stays sharp
     const playing = scn === "play", figures = scn === "figures";
     $("toast").classList.toggle("low", !playing); $("toast").hidden = !lastToast || !(playing || figures);
     $("hud").hidden = scn === "title" || figures; $("drop").hidden = !playing;
