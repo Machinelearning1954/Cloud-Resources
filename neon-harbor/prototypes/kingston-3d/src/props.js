@@ -382,10 +382,10 @@
       solid(b, BOX, at(0.68, 0.39, z * 0.75, 0.05, 0.78, 0.05), DARK, VARNISH);                                         // front legs
     }
     solid(b, BOX, at(-0.25, 0.42, 0, 0.06, 0.06, 1.12), HUB, METAL);                                                    // axle
-    for (let k = 0; k < 34; k++) {                                                                                        // the heap: a low mound of coconuts
+    for (let k = 0; k < 26; k++) {                                                                                        // the heap: a low mound of coconuts
       const a = r(k) * TAU, d = Math.sqrt(r(k + 50)) * 0.62, x = cos(a) * d * 1.15, z = sin(a) * d * 0.62, h = 0.93 + (1 - d / 0.62) * 0.28 + r(k + 90) * 0.05;
       const green = mix(lin(0x4f8a2a), lin(0x9cbf3a), r(k + 70)), cut = r(k + 30) < 0.12;
-      solid(b, ball(7, 5), at(x * 0.6, h, z * 0.85, 0.2, 0.24, 0.2), cut ? lin(0xf3eedf) : green, MATTE);
+      solid(b, ball(5, 3), at(x * 0.6, h, z * 0.85, 0.23, 0.26, 0.23), cut ? lin(0xf3eedf) : green, MATTE);   // few faces each: from the game camera a heap reads the same, at a quarter of the triangles
     }
     solid(b, cyl(6), at(-0.78, 1.45, 0.44, 0.04, 1.3, 0.04), HUB, METAL);                                              // shade pole at the back corner, so the heap shows from above
     for (let k = 0; k < 8; k++) { const q = k * PI / 4 + PI / 8; solid(b, BOX, at(-0.78 + cos(q) * 0.24, 2.12, 0.44 + sin(q) * 0.24, 0.3, 0.035, 0.2, 0, -q, 0), lin(SHADES[k % 2]), PAINT); }
