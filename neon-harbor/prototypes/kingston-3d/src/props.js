@@ -17,6 +17,8 @@
                                             where the player changes shirt; 1 draw call)
      NH.props.plate()                    -> THREE.Object3D   (a dub plate: a 12-inch record standing on edge, 0.5 m across so it reads
                                             from the game camera, with a yellow label; a collectible; 1 draw call)
+     NH.props.sign(i)                    -> THREE.Object3D   (i = 0..3: a hand-painted shop sign on two posts, board 2.6 m wide with its
+                                            top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -196,6 +198,22 @@
       m.words.forEach((w, k) => { const y = 54 + k * 46, size = k ? 34 : 46; g.font = "900 " + size + "px Impact, 'Arial Black', sans-serif";
         g.lineWidth = 9; g.strokeStyle = "#14141a"; g.strokeText(w, 320, y + (k ? 160 : 0)); g.fillStyle = k ? "#f4efe2" : m.accent; g.fillText(w, 320, y + (k ? 160 : 0)); });
       g.fillStyle = "rgba(0,0,0,0.18)"; for (let k = 0; k < 220; k++) g.fillRect((k * 97) % 640, (k * 53) % 256, 2 + (k % 3), 1);   // block joints and chips showing through
+    }));
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  });
+  const SIGNS = [
+    { top: "MISS PEARL'S", sub: "COOKSHOP \u00b7 PATTIES \u00b7 SOUP", bg: "#f2c230", ink: "#7a1f14", edge: "#c8573a" },
+    { top: "TIDE CUTS", sub: "BARBER \u00b7 FADES \u00b7 LINE-UPS", bg: "#12343f", ink: "#f4efe2", edge: "#2f8f9a" },
+    { top: "IRIE ICE", sub: "COLD DRINKS \u00b7 SKY JUICE", bg: "#e8573a", ink: "#fff3c4", edge: "#f2c230" },
+    { top: "HARBOUR FIX", sub: "PHONES \u00b7 RADIOS \u00b7 REPAIRS", bg: "#2f8f5a", ink: "#fff8e6", edge: "#14141a" },
+  ];
+  const signTex = (i) => once("signTex" + i, () => { // sign-painter's board: flat colour, a border, fat letters with a drop shadow
+    const m = SIGNS[i % SIGNS.length];
+    const t = new THREE.CanvasTexture(canvas(512, 192, (g) => {
+      g.fillStyle = m.bg; g.fillRect(0, 0, 512, 192); g.strokeStyle = m.edge; g.lineWidth = 12; g.strokeRect(10, 10, 492, 172);
+      g.textAlign = "center"; g.font = "900 72px Impact, 'Arial Black', sans-serif"; g.fillStyle = "rgba(0,0,0,0.35)"; g.fillText(m.top, 260, 96); g.fillStyle = m.ink; g.fillText(m.top, 256, 92);
+      g.font = "700 30px 'Arial Black', Arial, sans-serif"; g.fillText(m.sub, 256, 150);
+      g.fillStyle = "rgba(0,0,0,0.12)"; for (let k = 0; k < 120; k++) g.fillRect((k * 131) % 512, (k * 59) % 192, 3, 1);   // weathering
     }));
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
   });
@@ -496,6 +514,14 @@
     plate() { return mesh(once("plate", () => { const b = bag();
       solid(b, cyl(20), at(0, 0.45, 0, 0.5, 0.03, 0.5, PI / 2), lin(0x121214), GLASS); solid(b, cyl(12), at(0, 0.45, 0, 0.18, 0.04, 0.18, PI / 2), lin(0xf2c230), PAINT);
       return finish(b, 30); }), mats().solid, true); },
+    sign(i) {
+      const g = new THREE.Group(), face = new THREE.Mesh(once("signFace", () => new THREE.PlaneGeometry(2.6, 0.98)), once("signMat" + (i % 4), () => new THREE.MeshStandardMaterial({ name: "sign", map: signTex(i), roughness: 0.85, metalness: 0 })));
+      face.rotation.y = PI / 2; face.position.set(0.06, 2.5, 0); face.receiveShadow = true;
+      const frame = mesh(once("signFrame", () => { const b = bag(), WOOD = lin(0x6a4a2e);
+        for (const z of [-1.2, 1.2]) solid(b, BOX, at(0, 1.5, z, 0.09, 3, 0.09), WOOD, VARNISH);
+        solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
+      g.add(frame, face); return g;
+    },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {

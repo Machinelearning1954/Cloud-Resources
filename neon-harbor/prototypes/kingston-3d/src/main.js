@@ -83,6 +83,8 @@
   [[440, 1384, 0], [825, 1384, 1]].forEach(([x, y, i]) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
   // dub plates to find in the alleys: they turn slowly, and vanish once collected
   const plates = sim.PLATES.map(([x, y]) => { const d = NH.props.plate(); NH.put(d, x, y, 0); scene.add(d); return d; });
+  // hand-painted shop signs on the pavements, facing south to the camera; scenery only
+  [[480, 392, 0], [720, 392, 1], [600, 912, 2], [480, 1312, 3]].forEach(([x, y, i]) => { const s = NH.props.sign(i); NH.put(s, x, y, 0); s.rotation.y = -Math.PI / 2; scene.add(s); });
   // pickups parked on the quay; scenery only, the rules do not see them
   [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
