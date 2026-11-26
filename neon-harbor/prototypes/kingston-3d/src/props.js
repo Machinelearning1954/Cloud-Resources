@@ -19,6 +19,9 @@
                                             from the game camera, with a yellow label; a collectible; 1 draw call)
      NH.props.sign(i)                    -> THREE.Object3D   (i = 0..3: a hand-painted shop sign on two posts, board 2.6 m wide with its
                                             top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
+     NH.props.contact(list)              -> THREE.Object3D   (soft dark patches on the ground, one mesh for the whole list, 1 draw call;
+                                            list = [[x, z, halfLength, halfWidth, turn, strength], ...] in the parent's metres. They ground
+                                            things at night and in shade, when the sun casts no shadow for them)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -522,6 +525,8 @@
         solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
       g.add(frame, face); return g;
     },
+    contact(list) { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0);
+      return glowMesh(finish(b, -1, true), once("contactMat", () => mats().glow())); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {

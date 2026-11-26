@@ -1403,6 +1403,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
                                             from the game camera, with a yellow label; a collectible; 1 draw call)
      NH.props.sign(i)                    -> THREE.Object3D   (i = 0..3: a hand-painted shop sign on two posts, board 2.6 m wide with its
                                             top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
+     NH.props.contact(list)              -> THREE.Object3D   (soft dark patches on the ground, one mesh for the whole list, 1 draw call;
+                                            list = [[x, z, halfLength, halfWidth, turn, strength], ...] in the parent's metres. They ground
+                                            things at night and in shade, when the sun casts no shadow for them)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -1906,6 +1909,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
       g.add(frame, face); return g;
     },
+    contact(list) { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0);
+      return glowMesh(finish(b, -1, true), once("contactMat", () => mats().glow())); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
@@ -2339,14 +2344,15 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = m.userData.overlay = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
-  const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
+  const foot = () => NH.props.contact([[0, 0, 0.5, 0.42, 0, 0.42]]);   // the soft patch under a person's feet
+  const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
   // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
   // two runners to choose from on the title card, two shirts each (the second is what a clothesline change puts on)
   const KEMAR = sim.CAST[7];
   const heroes = [[player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", look: "imani", shirt: "#2f8f5a" }))],
                   [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
   let hero = 0, outfits = heroes[0]; heroes.forEach((h) => h.forEach((p) => { p.group.visible = false; })); outfits[0].group.visible = true;
-  function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
+  function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
   let player = outfits[0];
   function choose(i) { hero = i; outfits = heroes[i]; wear(0); }
   const carried = NH.props.crate(); carried.scale.setScalar(1 / NH.HERO); carried.position.y -= 0.35; player.carry.add(actor(carried));
@@ -2384,6 +2390,13 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const plates = sim.PLATES.map(([x, y]) => { const d = NH.props.plate(); NH.put(d, x, y, 0); scene.add(d); return d; });
   // hand-painted shop signs on the pavements, facing south to the camera; scenery only
   [[480, 392, 0], [720, 392, 1], [600, 912, 2], [480, 1312, 3]].forEach(([x, y, i]) => { const s = NH.props.sign(i); NH.put(s, x, y, 0); s.rotation.y = -Math.PI / 2; scene.add(s); });
+  // contact shading under the standing props: one mesh for all of them
+  { const U2 = NH.U, wx = (x) => (x - sim.W / 2) * U2, wz = (y) => (y - sim.H / 2) * U2, L = [];
+    [[372, 560], [828, 1210], [372, 1120]].forEach(([x, y]) => L.push([wx(x), wz(y), 0.8, 1.25, 0, 0.5]));                       // carts
+    [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a]) => L.push([wx(x), wz(y), 3.2, 1.6, a, 0.55]));   // pickups
+    [[440, 1384], [825, 1384]].forEach(([x, y]) => L.push([wx(x), wz(y) + 0.3, 3.6, 0.7, 0, 0.4]));                                // mural walls
+    sim.PICK && L.push([wx(sim.PICK.x), wz(sim.PICK.y), 1.5, 1.5, 0, 0.45]);                                                       // the crate pile
+    scene.add(NH.props.contact(L)); }
   // pickups parked on the quay; scenery only, the rules do not see them
   [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
