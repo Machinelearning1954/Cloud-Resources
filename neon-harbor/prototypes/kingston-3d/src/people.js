@@ -60,11 +60,11 @@
   /* ---------------- geometry builder: positions, normals, colours and bone weights, merged by hand ---------------- */
   const SKIN = 0, CLOTH = 1, HAIR = 2;
   function builder() {
-    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0, print = null;
+    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0, print = null; const ink = [];
     return {
-      setPrint(ref, alt, cut) { print = { ref, alt, cut: cut || 0 }; },   // a printed shirt: vertices in the shirt colour take the second colour in blotches
+      setPrint(ref, alt, kind) { print = { ref, alt, kind }; },   // a printed shirt: its vertices carry the second colour and the kind of print; the cloth shader draws the pattern
       get n() { return pos.length / 3; },
-      v(p, c, b) { const w = b[2] || 0; if (print && c[0] === print.ref[0] && c[1] === print.ref[1] && c[2] === print.ref[2]) { if (Math.sin(p[0] * 47 + p[1] * 29) + Math.sin(p[1] * 53 + p[2] * 41) + Math.sin(p[2] * 37 - p[0] * 31) > print.cut) c = print.alt; } pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
+      v(p, c, b) { const w = b[2] || 0; if (print && c[0] === print.ref[0] && c[1] === print.ref[1] && c[2] === print.ref[2]) ink.push(print.alt[0], print.alt[1], print.alt[2], print.kind); else ink.push(0, 0, 0, 0); pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
       ring(r, n, c, b) { // n points round p, along u and v; e < 1 squares the oval off
         const first = pos.length / 3, e = r.e || 1;
         for (let j = 0; j < n; j++) {
@@ -90,7 +90,7 @@
       },
       geometry() {
         const g = new THREE.BufferGeometry(), f = (a, n) => new THREE.Float32BufferAttribute(a, n); let at = 0;
-        g.setAttribute("position", f(pos, 3)); g.setAttribute("normal", f(nor, 3)); g.setAttribute("color", f(col, 3));
+        g.setAttribute("position", f(pos, 3)); g.setAttribute("normal", f(nor, 3)); g.setAttribute("color", f(col, 3)); g.setAttribute("ink", f(ink, 4));
         g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(bone, 4)); g.setAttribute("skinWeight", f(wgt, 4));
         g.setIndex(tri[0].concat(tri[1], tri[2])); tri.forEach((T, i) => { g.addGroup(at, T.length, i); at += T.length; });
         return g;
@@ -298,10 +298,25 @@
   /* ---------------- one kit (geometry + materials) per cast id, shared by everyone made from it ---------------- */
   const KITS = {}, SKINS = {};
   const CLOTH_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), HAIR_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }), HAIR_MATTE = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  /* printed shirts: where a vertex carries ink (rgb = second colour, a = 1 floral, 2 leopard) the pattern is drawn in the figure's own
+     rest-pose space, so it stays on the cloth as the body moves. Everyone shares this material; plain clothes carry no ink. */
+  CLOTH_MAT.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 ink;\nvarying vec4 vInk;\nvarying vec3 vRest;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvInk = ink; vRest = position;");
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vInk;\nvarying vec3 vRest;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+      if (vInk.a > 0.5) {
+        float n;
+        if (vInk.a > 1.5) { vec3 q = vRest * 24.0, id = floor(q), c = fract(q) - 0.5; float h = fract(sin(dot(id, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          n = step(length(c + (h - 0.5) * 0.3), 0.2 + 0.14 * h) * step(0.25, h); }                                   // leopard: uneven spots, some cells left bare
+        else { vec3 q = vRest * 30.0; n = step(0.12, sin(q.x * 1.3 + sin(q.y * 1.7) * 1.5) * sin(q.y * 1.1 + sin(q.z * 1.9 + q.x) * 1.5) + 0.3 * sin(q.z * 2.3)); }   // floral: big overlapping leaf shapes
+        diffuseColor.rgb = mix(diffuseColor.rgb, vInk.rgb, n);
+      }`);
+  };
   function kitFor(cast) {
     if (KITS[cast.id]) return KITS[cast.id];
     if (!STYLES[cast.hair]) throw new Error("people: no model for the hairstyle '" + cast.hair + "'");
-    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.cut); body(B, look); STYLES[cast.hair](B, look);
+    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.print === "leopard" ? 2 : 1); body(B, look); STYLES[cast.hair](B, look);
     const skin = SKINS[cast.skin] || (SKINS[cast.skin] = new THREE.MeshStandardMaterial({ color: cast.skin, roughness: 0.62 }));   // the cast's skin colour as-is
     return (KITS[cast.id] = { geo: B.geometry(), mats: [skin, CLOTH_MAT, cast.hair === "afro" ? HAIR_MATTE : HAIR_MAT], look });   // coils scatter light: no sheen on the afro
   }

@@ -45,7 +45,7 @@
   // two runners to choose from on the title card, two shirts each (the second is what a clothesline change puts on)
   const KEMAR = sim.CAST[7];
   const heroes = [[player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", look: "imani", shirt: "#2f8f5a" }))],
-                  [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", cut: 0.7 }))]];
+                  [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
   let hero = 0, outfits = heroes[0]; heroes.forEach((h) => h.forEach((p) => { p.group.visible = false; })); outfits[0].group.visible = true;
   function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
   let player = outfits[0];

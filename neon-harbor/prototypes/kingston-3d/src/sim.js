@@ -67,7 +67,7 @@
     { id: "ped-afro",     name: "Passer-by", hair: "afro",     skin: "#8a5a36", shirt: "#b07ad0", note: "rounded afro" },
     { id: "ped-canerows", name: "Passer-by", hair: "canerows", skin: "#54311c", shirt: "#e07a9a", note: "canerows" },
     { id: "patrol", name: "Foot patrol",            hair: "cap",           skin: "#7a4a2b", shirt: "#2c3f66", note: "sees you carrying" },
-    { id: "kemar",  name: "Kemar 'Tide' Bailey",    hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", note: "you, if you choose: printed shirts" },
+    { id: "kemar",  name: "Kemar 'Tide' Bailey",    hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", print: "floral", note: "you, if you choose: printed shirts" },
   ];
   const NPCS = [ // people who stand in one place
     { cast: 1, x: 1100, y: 250, ang: Math.PI },   // Omari at the rig
