@@ -298,6 +298,12 @@
   /* ---------------- one kit (geometry + materials) per cast id, shared by everyone made from it ---------------- */
   const KITS = {}, SKINS = {};
   const CLOTH_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), HAIR_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }), HAIR_MATTE = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  /* a short trimmed beard: a band of hair along the jaw from ear to ear and under the chin, close to the skin */
+  function beard(B) {
+    const N = 11, rows = [];
+    for (const [el, s] of [[-0.42, 1.1], [-0.7, 1.17], [-1.05, 1.12]]) { rows.push(B.n); for (let j = 0; j < N; j++) { const az = (j / (N - 1) - 0.5) * 2.7, lift = 0.14 * Math.pow(abs(az) / 1.35, 2); B.v(skull(az, el + lift, s), HAIRC, [HEAD]); } }
+    B.strip(HAIR, rows[0], rows[1], N, true); B.strip(HAIR, rows[1], rows[0], N, true); B.strip(HAIR, rows[1], rows[2], N, true); B.strip(HAIR, rows[2], rows[1], N, true); B.done();
+  }
   /* printed shirts: where a vertex carries ink (rgb = second colour, a = 1 floral, 2 leopard) the pattern is drawn in the figure's own
      rest-pose space, so it stays on the cloth as the body moves. Everyone shares this material; plain clothes carry no ink. */
   CLOTH_MAT.onBeforeCompile = (sh) => {
@@ -316,7 +322,7 @@
   function kitFor(cast) {
     if (KITS[cast.id]) return KITS[cast.id];
     if (!STYLES[cast.hair]) throw new Error("people: no model for the hairstyle '" + cast.hair + "'");
-    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.print === "leopard" ? 2 : 1); body(B, look); STYLES[cast.hair](B, look);
+    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.print === "leopard" ? 2 : 1); body(B, look); STYLES[cast.hair](B, look); if (cast.beard) beard(B);
     const skin = SKINS[cast.skin] || (SKINS[cast.skin] = new THREE.MeshStandardMaterial({ color: cast.skin, roughness: 0.62 }));   // the cast's skin colour as-is
     return (KITS[cast.id] = { geo: B.geometry(), mats: [skin, CLOTH_MAT, cast.hair === "afro" ? HAIR_MATTE : HAIR_MAT], look });   // coils scatter light: no sheen on the afro
   }
