@@ -11,20 +11,45 @@ phone browser. Throwaway code, not the game. Ledger row 80.
 - **What it is not:** it is not the Unreal game and it tells nothing about how that
   game will look. There is no ray tracing here. Nothing in this folder is imported by
   game code.
-- **Rules:** the same as Crate Run, plus one addition: **patrol AI** (ledger row 86). Each patrol
-  is a small state machine. On a route it walks its loop. When it sees a carrier it hunts: it
-  chases at its normal speed (100%, tunable) and holds 30 px away. If the carrier goes out of sight it
-  walks to where it last saw them, looks around for four seconds, then walks back to its loop.
-  Once you put the crate down, it stops hunting. The AI runs entirely on the device: no network,
-  no cloud model (rule 6). The rules live in `src/sim.js`, which has no drawing code and runs in
-  Node, so they are tested without a browser. Tuning: `chasePercent` and `searchSeconds`. Once spotted, heat waits `graceSeconds` (1.5 s) before it climbs, so a sighting gives a moment to break the sight line instead of being an almost certain loss. Heat has three tiers: calm, alert from 34 (patrols see 20% further) and lockdown from 67 (patrols also move 20% faster). Cooling off drops back a tier; 100 still loses. Disguise: once a patrol has seen you carrying, patrols know your shirt and later sightings get half the grace. Stand still out of sight at a clothesline for `changeSeconds` (1.5 s) to swap between a yellow and a green shirt; then they no longer know you. Optional extras: three dub plates hidden in the alleys (there every run, never lost) and a clean-run note on the win card if no patrol ever saw you carrying. Two runners can be chosen on the title card: Imani, or Kemar 'Tide' Bailey (a fictional character; his shirts are a black-and-white print and a tan one).
+- **Rules:** the same as Crate Run, plus the additions below. The rules live in `src/sim.js`,
+  which has no drawing code and runs in Node, so they are tested without a browser. Every
+  number is in its `config` table.
+  - **Patrol AI** (ledger row 86). Each patrol is a small state machine. On a route it walks its
+    loop. When it sees a carrier it hunts: it moves at `chasePercent` of its normal speed (100%)
+    and holds 30 px away. If the carrier goes out of sight it walks to where it last saw them,
+    looks around for `searchSeconds` (4), then walks back to its loop. Once you put the crate
+    down, it stops hunting. The AI runs entirely on the device: no network, no cloud model (rule 6).
+  - **Grace period** (row 90). Once spotted, heat waits `graceSeconds` (1.5) before it climbs,
+    so a sighting gives a moment to break the sight line.
+  - **Heat tiers** (row 90). Calm below 34. Alert from 34: patrols see 20% further. Lockdown
+    from 67: patrols also move 20% faster. Cooling off drops back a tier; 100 still loses.
+  - **Disguise** (row 89). Once a patrol has seen you carrying, patrols know your shirt and each
+    later sighting gets half the grace. Stand still, unseen, within 26 px of one of the two
+    clotheslines for `changeSeconds` (1.5) to swap shirts; then they no longer know you.
+  - **Optional extras** (row 89). Three dub plates lie in the alleys, there every run, so nothing
+    can be missed for good. The win card counts them and notes a clean run if no patrol ever
+    saw you carrying. Neither is saved between sessions.
+  - **Two runners** (row 93). The title card's "Play as" button switches between Imani and
+    Kemar 'Tide' Bailey, a fictional character. Each has two shirts for the clothesline change.
+- **Senses** (row 91). The phone vibrates on pickup, delivery, being seen, a rise in heat tier,
+  a shirt change, a dub plate, a win and a loss (silent when sound is muted, nothing on
+  browsers without vibration). The camera jolts for about half a second when you are seen,
+  unless the device asks for reduced motion. Each patrol hums from where it is, louder as it
+  nears and higher while it hunts; the riddim circles the listener once every 8 seconds. Both
+  are placed with the browser's HRTF panner, so they are meant for headphones. None of this
+  has been heard or felt on a real device.
 - **Camera:** fixed heading, tilted 64 degrees, following the player. Every sim
   rectangle is a fenced lot with the house at its south edge and a low yard behind,
   so a building never hides the street behind it. People, patrols, the stash crate
   and vision cones are drawn faintly through anything that does cover them.
 - **Look:** painted concrete, zinc roofs and fences, a working quay, and one sun that
   moves from afternoon through golden hour to night (ADR 0050). Every person wears a
-  hairstyle from the hair library, modelled as itself (ADR 0051).
+  hairstyle from the hair library, modelled as itself (ADR 0051). Street life, all scenery
+  the rules do not see (rows 89, 92): three coconut handcarts with their sellers, three
+  parked pickups, two painted mural walls, four hand-painted shop signs for made-up
+  businesses, two clotheslines. A soft patch of contact shading sits under people and
+  standing props, and the far edge of the view is slightly out of focus (switched off once
+  the page has lowered its drawing quality).
 - **Frame rate first:** the page lowers its drawing resolution, never its frame-rate
   target, when a device is slow.
 - **Saved runs and the lock:** wins and the best run are kept in the browser. They can
@@ -32,7 +57,7 @@ phone browser. Throwaway code, not the game. Ledger row 80.
   from a passkey, released by the device's own screen lock. Read "What the lock is
   not" below before describing it to anyone.
 - **Controls and screens:** as Crate Run. Phone: drag to move, Drop button. Keyboard:
-  arrows or WASD, Space, P, M.
+  arrows or WASD, Space, P, M. The title card has Start, Play as and Cast.
 
 ## How it is put together
 
@@ -40,12 +65,14 @@ phone browser. Throwaway code, not the game. Ledger row 80.
 src/sim.js        the rules (no drawing). Shared by browser and tests.
 src/contract.js   units, axes, camera, lots, light and budget rules every module follows
 src/world.js      the block: streets, lots, houses, quay, water, what lies beyond
-src/people.js     characters and their hairstyles
-src/props.js      patrol car, crates, speakers, palms, skiffs, lamps, vision cone
+src/people.js     characters and their hairstyles, beards, and shirts printed by the cloth shader
+src/props.js      patrol car, crates, speakers, palms, skiffs, lamps, vision cone, coconut carts,
+                  pickups, mural walls, shop signs, clotheslines, dub plates, contact shading
 src/lighting.js   sun, sky, haze, night
 src/lock.js       sealing of the saved runs    src/save.js   the record and its panel
-src/main.js       renderer, camera, input, screens, sound, the loop, test hooks
-src/shell.html    page shell and styles
+src/main.js       renderer, camera (and its jolt), input, screens, sound (riddim, patrol hums,
+                  3D placement), vibration, the two runners and their outfits, the loop, test hooks
+src/shell.html    page shell and styles, the vignette and the far-edge blur
 build.js          joins all of the above and the library into index.html (generated)
 vendor/           three.min.js r160, its licence, checksums
 dev/baseline/     the last integrated version of each visual module, used by --solo builds
@@ -55,8 +82,10 @@ dev/raytrace/     Offline ray tracing of the game's own scene in Blender Cycles:
                   export.js / export_scene.py (same export, from Node or Python) + inpage.js write the scene;
                   render.py renders it, on a graphics card if one is present, otherwise on the CPU;
                   cloud_render.sh does all of it in one command on a fresh machine; kaggle_render.ipynb
-                  runs that on a free notebook service's graphics card. Run and checked here on a CPU
-                  only. Never run on a graphics card or on that service.
+                  runs that on a free notebook service's graphics card. Run here on a CPU (five views at
+                  256 and at 512 samples) and on a rented RTX PRO 6000 with OptiX (five views at 1024
+                  samples, 3 to 5 seconds each; ledger row 87). The notebook has never been run. The
+                  export carries the painted murals and signs; shirts printed by the shader come out plain.
 test/             Node tests: rules, saved-run counting, lock crypto. These run in CI.
 ```
 
@@ -64,7 +93,13 @@ Change something, then: `node build.js`, `node test/sim.test.js`, `node test/sav
 `node test/lock.test.js`. With Playwright installed: `node dev/check.js`,
 `node dev/lock-check.js`, `node dev/sheet.js index.html <a folder outside the repo>`.
 Keep screenshots out of the repository: the red-team scan refuses unreadable files
-inside `prototypes/`.
+inside `prototypes/`, and that includes an untracked `dev/out/` folder.
+
+Budget, counted in a software renderer on 2026-11-28: the eleven standard views draw 27 to
+118 draw calls and 15,700 to 83,800 triangles. The widest view tried (the quay at night, five
+delivered, camera pulled back 1.6 times) draws 176 draw calls and about 111,000 triangles,
+against the contract's 220 and 120,000. Shadows draw everything a second time, and each
+person costs about 1,800 triangles, so people are the next thing to lighten.
 
 ## How it was built
 

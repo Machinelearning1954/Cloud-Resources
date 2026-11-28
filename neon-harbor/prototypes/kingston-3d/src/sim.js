@@ -116,10 +116,10 @@
     for (let i = 1; i < pts.length; i++) if (Math.hypot(pts[i][0] - x, pts[i][1] - y) < Math.hypot(pts[best][0] - x, pts[best][1] - y)) best = i;
     return best;
   }
-  const TIERS = [0, 34, 67];                            // heat at which the street turns calm -> alert -> lockdown
+  const TIERS = [0, 34, 67];                            // heat at which the street turns calm -> alert (patrols see 20% further) -> lockdown (and move 20% faster)
   function heatTier(S) { return S.heat >= TIERS[2] ? 2 : S.heat >= TIERS[1] ? 1 : 0; }
   function patrolSpeed(S, g) {
-    return (1 + 0.1 * heatTier(S)) * (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
+    return (heatTier(S) === 2 ? 1.2 : 1) * (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
   }
 
   /* ---- state ---- */

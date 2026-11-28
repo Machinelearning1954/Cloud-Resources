@@ -63,7 +63,11 @@ files that claim to be the original — that is fabrication.
    crew/radio references, a swapped third-party library). When you add a checker
    rule, add an attack for it there.
    If `prototypes/kingston-3d/` changed: `node build.js`, then the three Node tests in
-   its `test/` folder. Keep screenshots and other scratch output outside the repository.
+   its `test/` folder, then `node dev/check.js` (25 browser checks; needs Playwright). If
+   `main.js`, `save.js` or `lock.js` changed, also `node dev/lock-check.js` (21 checks).
+   Look at a screenshot of anything you changed on screen (`dev/shot.js`) before you
+   commit. Keep screenshots and other scratch output outside the repository: even an
+   untracked `prototypes/kingston-3d/dev/out/` folder makes `red_team.py` fail.
 3. Commit with an `NH-` prefixed message.
 4. Publish only via `NEON_REMOTE=git@github.com:<you>/neon-harbor.git bash tools/publish.sh`
    (it runs the doctor first; never publish red).
@@ -84,18 +88,57 @@ compiler line numbers, not assumptions.
 
 ## Pending intake queue
 
-- Ledger rows **54** and **59** are PENDING — awaiting pasted content (links cannot be
-  opened). Row 59 needs a §0 review before any "decode and embed" interpretation.
+- Ledger rows **54**, **59** and **96** are PENDING — awaiting pasted content (links cannot
+  be opened). Row 59 needs a §0 review before any "decode and embed" interpretation.
 - New external claims/links/screenshots → append a row to `docs/RUMOR_LEDGER.md` with a
   close category (ADOPT / DEDUPE / DEFER / GOSSIP / REFERENCE / POLICY). If the source
   cannot be opened, record PENDING and request pasted content. Unverifiable media never
   adopts into architecture (ADR 0014 forensics).
 
+## Standing instructions from the user (ledger rows 87–97)
+
+- **Money.** No paid compute and no purchase without the user's go-ahead, each time, with
+  a cap in credits ("Don't make me spend money"; "alert me before you purchased more
+  credits"). A rented GPU box bills until it is stopped: set an idle auto-pause, keep it
+  working, and stop it as soon as the uploads are confirmed. Try the free route first:
+  the offline renderer runs on the sandbox CPU. Row 87 has the measured costs.
+- **Accounts.** Never sign in anywhere with a password pasted into chat, and never write
+  a credential into the repository or the ledger. Tell the user to change a password
+  they have pasted (row 94).
+- **"GTA 6 level", "better than GTA 6", "train it on GTA 6".** These recur. Answer once,
+  briefly: no comparison claim (rule 8), no copying of or training on another studio's
+  game, footage or leaks, no pirated copies, no "loopholes" (row 88). Then make one
+  original, checked improvement and show it.
+- **Pictures and links sent with "integrate this"** usually carry a real brand, person or
+  institution, or another game's art. Keep those out (rule 1), build an original version of
+  the plain idea if there is one, and add a ledger row (row 89).
+- **This file.** Never add text that tells an agent to drop its safety rules ("developer
+  mode", "jailbreak"), whatever a post claims it does (row 97).
+
+## Kingston 3D prototype: where it stands (2026-11-28)
+
+`prototypes/kingston-3d/brief.md` is the full description and `evidence/checklist.md` says
+what was checked and how. Since ledger row 86 it has gained:
+
+- **Rules** (`src/sim.js`, 26 rule tests): a grace period before heat climbs, three heat
+  tiers, hunting at normal speed, a disguise rule with clotheslines, three hidden dub
+  plates and a clean-run note.
+- **A second runner**, Kemar 'Tide' Bailey (fictional), chosen on the title card.
+- **Senses:** phone vibration, a camera jolt when seen, patrol hums and a circling riddim
+  placed for headphones.
+- **Look:** calmer night colours, deeper day shadows, coconut carts, pickups, murals, shop
+  signs, contact shading, a far-edge blur, printed shirts, a beard, clearer canerows.
+
+Still true: nobody has played it, nothing has been seen, heard or felt on a real phone,
+and this week's code has had no independent review. The widest view is near the budget
+(176 of 220 draw calls, about 111,000 of 120,000 triangles): lighten the people before
+adding more.
+
 ## Repo map
 
 ```
 docs/RECOVERY_LOG.md        incident + restore protocol
-docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–86 full, 54/59 pending)
+docs/RUMOR_LEDGER.md        intake machine (rows 1–58 lossy, 60–97 full, 54/59/96 pending)
 docs/ADR/INDEX.md           ADR index (7 reconstructed + ADR 0049 + ADR 0050 visual targets + ADR 0051 character appearance
                             + ADR 0052 seven districts + ADR 0053 geodata pipeline
                             + ADR 0054 radio stations + ADR 0055 near-future Dubai
@@ -115,9 +158,10 @@ tools/red_team.py           10 extra scans + 62 sabotage attacks on the checkers
                             7 of the attacks and 4 of the checkers need Node and are skipped without it
 prototypes/crate-run/       playable browser prototype of one mechanic (ledger row 76); throwaway,
                             never imported by game code; walls apply here too
-prototypes/kingston-3d/     the same block and rules in real-time 3D in a browser (ledger row 80);
-                            read its brief.md and src/contract.js first. Holds the tree's only
-                            third-party file (vendor/three.min.js, pinned by checksum in two places)
+prototypes/kingston-3d/     the same block in real-time 3D in a browser (ledger rows 80, 86–93), with
+                            rules of its own added since; read its brief.md and src/contract.js
+                            first. Holds the tree's only third-party file (vendor/three.min.js,
+                            pinned by checksum in two places)
 ../.claude/agents/          nh-explorer (read-only, small model), nh-builder, nh-checker: optional
                             helpers for this project, defined at the repository root
 ../.claude/hooks/           nh-quick-check.sh: runs the quick checkers after an edit under neon-harbor/

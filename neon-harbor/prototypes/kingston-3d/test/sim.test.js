@@ -181,8 +181,8 @@ test("once spotted, heat waits out the grace period before it climbs", () => {
 test("heat tiers: the street turns alert at 34 and locks down at 67, and patrols see further and move faster", () => {
   const S = sim.create(), g = S.patrols[0];
   assert.equal(sim.heatTier(S), 0); const calm = sim.patrolSpeed(S, g);
-  S.heat = 40; assert.equal(sim.heatTier(S), 1);
-  S.heat = 80; assert.equal(sim.heatTier(S), 2); assert.ok(sim.patrolSpeed(S, g) > calm * 1.15);
+  S.heat = 40; assert.equal(sim.heatTier(S), 1); assert.equal(sim.patrolSpeed(S, g), calm, "alert widens sight only: speed is unchanged");
+  S.heat = 80; assert.equal(sim.heatTier(S), 2); assert.ok(Math.abs(sim.patrolSpeed(S, g) - calm * 1.2) < 1e-9, "lockdown is 20% faster");
   sim.step(S, STILL); assert.ok(S.events.some((e) => e.type === "tier" && e.tier === 2 && e.up));
 });
 

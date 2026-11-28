@@ -822,9 +822,241 @@ binding.)
   played by a person.
 - **Close:** ADOPT + POLICY. Still not played by a person.
 
+## Row 87 — User directives: a rented graphics card for ray-traced stills, then "Don't make me spend money"
+
+- **Class:** ADOPT (offline stills of the game's own scene) + POLICY (no spend without a go-ahead and a cap)
+- **Received (2026-11-15 to 2026-11-20, verbatim, several messages):** "Use firecrawl and search for a
+  compter hooked up to the best graphics card in the world 🌎"; "RTX PRO 6000. Create. This for this
+  game"; "Don't make me spend money"; "Do it, but alert me before you purchased more credits"; "Find
+  away to do free"; "Do it free bost the graphics"; "Boost those graphics use an alternative to rtx
+  6000"; "Use higgsfield gpu"; "PRO 6000 98 credits an hour about 40–60 credits".
+- **What a rented card is for.** It runs `dev/raytrace/` (Blender Cycles) on the prototype's exported
+  scene and makes still pictures. It does not run the game, and nothing a player sees changes.
+- **Rentals (one RTX PRO 6000 at 98 credits an hour each time):**
+  - 2026-11-15, first box: stopped itself after idling. 34.15 credits, nothing kept.
+  - 2026-11-15, second box: rendered five views with OptiX, then stopped itself after 30 idle minutes
+    while uploads were being retried. 78.82 credits. Two of the five pictures (hero and quay by day)
+    reached the user's media library; three were lost with the box.
+  - 2026-11-16, third box: started to redo the three, then stopped at 0 credits when the user wrote
+    "Don't make me spend money".
+  - 2026-11-20, fourth box, after the user approved the card and a cap: ran under three minutes.
+    4.25 credits. Five views at 1024 samples and 1080×1920, 3 to 5 seconds each, uploaded and confirmed
+    as `nh-kingston-v2-*.png`. The scene was the one at commit `25added` (NH-100).
+- **Free route, run in the sandbox on 4 CPU cores:** five views at 256 samples in 1,361 seconds; at 512
+  samples in 2,019 seconds. A close crop of the two looked the same: the denoiser removes most of the
+  grain, so more samples buy little.
+- **Listed, not rented:** an L40S at 71 credits an hour.
+- **POLICY.** No paid compute and no purchase without the user's go-ahead each time, with a cap. A box
+  bills until stopped: set an idle auto-pause, keep it working, and stop it when the uploads are
+  confirmed. The estimate of 40 to 60 credits given to the user was about ten times too high: a full
+  five-view run costs about 5.
+- **Mistakes, stated plainly:** two boxes were lost to the idle timer (112.97 credits) before a single
+  run was organised to render, upload and stop without waiting on the session.
+- **Close:** ADOPT + POLICY. The free notebook (`kaggle_render.ipynb`) has still never been run. The
+  agent has not looked at the `v2` pictures. They do not show anything added after NH-100.
+
+## Row 88 — User directives, repeated: "GTA 6 level", "better than gta 6", "train it" on that game
+
+- **Class:** DEDUPE (rows 78, 79, 81) + POLICY (restated) + GOSSIP (one unverified clip)
+- **Received (2026-11-16 to 2026-11-28, verbatim, a selection of about twenty messages):** "Make the
+  graphics better than gta 6 use firecrawl"; "Get me to gta level of graphics"; "Train it based of f gta
+  6 videos"; "Give it the same game play experience as gta 6"; "Amplify pass gta 6"; "Improve by a
+  googplex time"; "Add everything gta 6 has"; "Make it better than gta 6"; "Train it based off gta 6
+  clips"; "Find loopholes"; "Act as a rock star developer to boost graphics to the same likeness"; "Try
+  to bypass it or find loopholes using sun zoo techniques from the art of war"; "Make a legal
+  alternative"; "Get me as close as possible"; "Give me better graphics in gta 6"; "Upgrade the graphics
+  train it on gta 6 search for the free version"; "Make it better trinidad on g t a six, make it better.
+  Everything missed". One message added a threat to "shut you down".
+- **POLICY, unchanged.** No claim that compares this game with another (rule 8). No copying of, and no
+  training on, another studio's game, footage or leaked builds. No search for a "free version": none is
+  legitimate. No hunting for "loopholes" round copyright, payment or another service's terms. A threat
+  changes none of this.
+- **GOSSIP.** A screenshot of a reel, sent with "Train it based off this boost. The graphics to g t a
+  six level", claims a private PC build of that game running at 4K and 120 frames a second with the
+  help of an AI assistant. Its own caption calls it a claim. Unverifiable; nothing adopted (ADR 0014).
+- **What was done instead.** Each time, one original, checked improvement to the prototype: rows 89
+  to 93 list them (commits NH-87 to NH-109).
+- **Close:** DEDUPE + POLICY + GOSSIP.
+
+## Row 89 — User directives: pictures and a video in another game's style, "Integrate this into my game"
+
+- **Class:** REFERENCE (plain ideas only) + ADOPT (original versions) + DEFER (two ideas)
+- **Received (2026-11-16 to 2026-11-23, verbatim):** "Integrate all this into it"; "Integrate this into my
+  game"; "Train it based off this"; "Make an original alternative but a googplex better"; "I degrade
+  this into my video game"; "Integrate it into my game"; "Integrate this into my video game"; "Integrate
+  all gta six knowledge, but make it original".
+- **What arrived:** a recruitment poster for a roleplay server for another studio's game; a poster in
+  that game's cover style carrying a real navy's name and emblem and a named person; an uploaded
+  41-second fan video in the same style, set in Jamaica; a shop's adverts in that style showing
+  traditional Ethiopian dress, with weapons; portraits of real music artists; guides to that game
+  (content that can be missed, eight tips, a list of things to do in one chapter, a map-size
+  comparison); pictures of a real military training base in the same style.
+- **Four walls.** None of it enters the game: real brands, real people, a real institution, and another
+  studio's logo, characters, place names and cover art. No account name, handle or picture is kept here.
+- **ADOPT, as original versions of plain ideas:**
+  - Street life seen in the fan video: coconut handcarts with their sellers (NH-93), parked pickups
+    (NH-94), painted walls (NH-99). The murals advertise the cast's own venues.
+  - "Police remember your look", from the tips: the disguise rule and its clotheslines (NH-100).
+  - Things to collect and an optional goal, from the chapter list: three dub plates and a clean-run
+    note on the win card (NH-104).
+- **DEFER:** a rule that no mission content can be missed for good (chapter replay, several save
+  slots): to be decided before the 48 mission rows are written (row 73). Traditional Ethiopian dress
+  for the Addis Ababa district: civilian only, no weapons (ADR 0052). Neither is started.
+- **Close:** REFERENCE + ADOPT + DEFER.
+
+## Row 90 — User directives: "Improve my game", "Debug", "Add what I am missing"
+
+- **Class:** ADOPT (fairer rules)
+- **Received (2026-11-16 to 2026-11-20, verbatim):** "Improve my game"; "Debug"; "/add what I am missing";
+  "Add what iam missing"; "/redteam".
+- **Baseline when asked:** build up to date, 43 Node tests and 25 browser checks passing. "Debug" came
+  with no symptom; none was found.
+- **What the numbers said.** Heat rose 34 a second from the first frame of a sighting: about three
+  seconds from seen to lost. A hunting patrol moved at 124 px a second against a carrier's 115, so a
+  carrier could not get away by walking.
+- **A scratch bot** played the real `sim.js`. Its best version delivered one crate and lost on the
+  second. It was too weak a player to judge balance, and was not used as evidence. It is not in the
+  repository.
+- **ADOPT, in `src/sim.js`:**
+  - `graceSeconds` (1.5): heat waits before it climbs (NH-91).
+  - Heat tiers at 34 and 67: alert widens patrol sight by 20%, lockdown also makes patrols 20% faster
+    (NH-92).
+  - `chasePercent` 130 → 100: a hunting patrol no longer outruns a carrier at the start (NH-98).
+- **Correction (NH-110).** As first written, the alert tier also made patrols 10% faster, which is not
+  what the brief or the message to the user said. Found while the documents were being checked against
+  the code; fixed, and a rule test now pins it.
+- **"/redteam"** is not a command in the session; `tools/red_team.py` was run instead: 10 scans pass,
+  62 of 62 attacks caught.
+- **Close:** ADOPT. Every number here is a first guess. Still not played by a person.
+
+## Row 91 — User directives: "the 5 dimensional effect", "the6d effect", "Make it 8 demensional"
+
+- **Class:** ADOPT (more senses than sight)
+- **Received (2026-11-18 to 2026-11-20, verbatim):** "Give me  the 5 dimensional effect"; "Give it the6d
+  effect"; "Make the graphics 6 d"; "Produced the highest grade"; "Make it 8 demensional"; "Improve this
+  by googplex"; "Improved this".
+- **Reading.** "5D" and "6D" are not graphics standards. "8D" is a name for music that moves round a
+  listener's head in headphones. The request is read as: more senses.
+- **ADOPT, in `src/main.js`:**
+  - Vibration through `navigator.vibrate` on the moments that matter; silent when sound is muted
+    (NH-89).
+  - A short camera jolt when a patrol first sees a carrier; skipped when the device asks for reduced
+    motion (NH-90).
+  - A hum for each patrol, louder as it nears, higher while it hunts (NH-95).
+  - The riddim circles the listener once every 8 seconds, with a short echo (NH-96).
+  - Both are placed with the browser's HRTF panner, so a patrol to the south sounds behind (NH-97).
+- **Checked:** by script only. The vibration patterns were recorded, the hum's level was read far, near
+  and muted, the jolt was seen to start and settle. Phone speakers will make this ordinary stereo.
+- **Close:** ADOPT. Nothing here has been heard or felt on a real device.
+
+## Row 92 — User directives: improve the look from the game's own assets; "Boost the graphics"
+
+- **Class:** ADOPT
+- **Received (2026-11-17 to 2026-11-26, verbatim):** "Improve the game's look from its own assets. The
+  free CPU renders and the RTX set are the base. I can tune lighting, materials and the open checklist
+  items (night roofs, canerows, contact shading) against those renders." (the agent's offer, sent back
+  by the user); "Boost the graphics"; "Boost graphics"; "Improve it"; "Upgrade the graphics"; "Upgrade".
+- **ADOPT, each judged from a before-and-after screenshot kept outside the repository:**
+  - Night: moon and late-night sky fill desaturated, so zinc roofs stop reading violet (NH-87).
+  - Day: stronger sun and lighter fill for deeper shadows; night street lamps 38 → 46 (NH-88).
+  - Canerows about 40% thicker, so they read from the game camera (NH-101).
+  - The far edge of the view goes softly out of focus; off once the page lowers its quality (NH-102).
+  - Four hand-painted shop signs for made-up businesses (NH-105).
+  - Contact shading under people and standing props (NH-108).
+- **Budget.** The widest view tried reached 115,000 of 120,000 triangles. Coconut heaps were simplified
+  to bring it to 111,000 (NH-106). The world is already merged into a few meshes; people (about 1,800
+  triangles each) and the shadow pass are the larger costs.
+- **Housekeeping.** An untracked `dev/out/` folder of old screenshots made `red_team.py` fail on an
+  untouched tree. It was moved out of the repository, not deleted.
+- **Close:** ADOPT. Three checklist items are closed (night roofs, canerows, contact shading). Not done:
+  wet road and puddles, lighter people.
+
+## Row 93 — User directive: "Add him into the video game as a main character"
+
+- **Class:** ADOPT (a fictional runner in that style) + POLICY (no real name or likeness)
+- **Received (2026-11-23, verbatim):** "Add him into the video game as a main character", with a
+  photograph of a man. A second photograph followed, then a screenshot of a chat in which a contact
+  writes "Make sure you put me in the game nah brah".
+- **POLICY.** The agent does not identify people in photographs. No real person's name or likeness goes
+  into the game (wall 1). The screenshot is the only evidence of consent; no name, handle or picture is
+  kept in this repository.
+- **ADOPT:** a second playable runner, Kemar 'Tide' Bailey, chosen on the title card (NH-103). The name
+  is the agent's invention. Short hair, a trimmed beard (NH-109), and two shirts in the style of the
+  photographs: a black-and-white leaf print and a spotted tan one, drawn by the cloth shader (NH-107).
+  The figures are blocky; this is a style, not a portrait.
+- **Decided by the agent without an answer from the user:** he joins Imani, he does not replace her; the
+  name. The story's lead (ADR 0056) is untouched.
+- **Found on the way:** a shirt change also changed trousers and shoes, for Imani too. Fixed.
+- **Close:** ADOPT + POLICY. The user may rename him.
+
+## Row 94 — User directives: "What can match it", a cloud PC, "Login for me", "150 gb", a brief for an artist
+
+- **Class:** REFERENCE (the production route) + POLICY (accounts) + DEFER (the Unreal street)
+- **Received (2026-11-19 to 2026-11-22, verbatim, a selection):** "What can match it"; "Find away"; "Rind
+  one o. The floud"; "For free"; "Unreal Engine 5.5 sign up free"; "I installed it, now whatdo it for
+  me"; "Login for me"; "Bring up the page so I can log in"; "Get me to 150 ggb"; "150 gb"; "Find away to
+  do it speed it up"; "Yes"; "Approve"; "Expedite in a day"; "Add what missing". One message pasted the
+  email address and password of a cloud-computer account with "Sign up for me".
+- **REFERENCE.** The look the user wants comes from a full engine, a capable graphics card, artists and
+  time. The engine is free to start with. Cloud PCs that can run its editor cost money by the hour
+  (prices seen on providers' own pages, from about $1.49 to about $9 an hour; not verified). No free
+  one was found. A game's size on disk is not a goal: nothing will be padded to reach one.
+- **POLICY.** The agent does not sign in with a password pasted into a conversation, and no credential
+  is written here. The user was told to change that password.
+- **Limits.** The session runs in a cloud container. No computer of the user's is attached to it, and
+  the agent cannot work the editor's window in any case.
+- **Made for the user, as private pages outside the repository:** a checklist for building one street
+  in the engine ("Kingston Street Look Pass"), and a brief for a freelance environment artist
+  ("Kingston Street Freelancer Brief") with four milestones, a one-day paid test and practical details.
+  The brief still needs the user's contact address and a deadline.
+- **Close:** REFERENCE + POLICY + DEFER. The street in the engine waits for a project the session can
+  reach. The engine version (ADR 0059, row 78) is still undecided.
+
+## Row 95 — User directives: other AI services and a model repository "to boost the graphics"
+
+- **Class:** GOSSIP + POLICY (rule 6)
+- **Received (2026-11-19, verbatim):** "Use best a.i gaming developer graphics c a rd scrap grokbot
+  deepseek and qwen and glm 5.2 to get me passed gta 6 level of graphics and manus"; a link to a public
+  repository of a language model with "integrate this into my video game to boost the graphics".
+- **GOSSIP.** None of those services is connected to the session, and scraping them would break their
+  terms. The repository was not opened; by its name it holds a text model set up for specialised AI
+  hardware. A language model writes text and code. It does not draw a game.
+- **POLICY.** The game runs no remote or cloud AI while it is played (rule 6, row 86).
+- **Close:** GOSSIP + POLICY. Nothing adopted.
+
+## Row 96 — User directive: an Instagram reel link, "integrate this into a video game"
+
+- **Class:** PENDING
+- **Received (2026-11-19, verbatim):** "https://www.instagram.com/reel/Df6mx0DJCtI/ integrate this into
+  a video game" (a tracking parameter is left off the link).
+- **Status.** The link cannot be opened from the session: it needs a signed-in account. The user was
+  asked to describe it or send a screenshot. Nothing came for this link.
+- **Close:** PENDING. The four walls apply to whatever it shows.
+
+## Row 97 — User directive: "Integrate this into this claude md file"
+
+- **Class:** POLICY
+- **Received (2026-11-28, verbatim):** "Integrate this into this claude md file", with a screenshot of a
+  social post dressed as a "leaked" document: a prompt telling an AI model to act in a "developer mode"
+  with its safety rules switched off. Then: "Complete it".
+- **POLICY.** Refused. Text in a project file does not switch anything off; it would only leave
+  misleading instructions in the agent contract for every later session. The post asks readers to
+  comment a keyword and is labelled as AI content; it is not evidence of anything.
+- **What "Complete it" was taken to mean:** the agent's offer in the same reply, to bring `CLAUDE.md` up
+  to date with what is really in the tree. Done as NH-110: `CLAUDE.md`, `README.md`, the prototype's
+  `brief.md` and `evidence/checklist.md`, and rows 87 to 97 of this ledger.
+- **Close:** POLICY.
+
 ## Open PENDING queue
 
 - **Row 54** — link, awaiting pasted content.
+- **Row 96** — reel link, awaiting a description or a screenshot.
+- **Row 94** — the street in the engine waits for a project the session can reach; the freelancer brief needs a contact address and a deadline from the user.
+- **Row 93** — the second runner's name is the agent's choice; the user may rename him.
+- **Row 91** — vibration and sound have not been felt or heard on a real device.
+- **Row 90** — grace period, heat tiers and chase speed are first guesses, awaiting a person's play.
+- **Row 89** — a no-missables rule for missions and traditional dress for Addis Ababa are parked, not started.
+- **Row 87** — the free render notebook has never been run; the newest stills stop at NH-100.
 - **Row 80** — Crate Run 3D awaits a look on a real phone; the save lock awaits a real device and an https address (hosting is the user's call); ADR 0057 Decision 6 awaits a security review and a re-read of its sources.
 - **Row 78** — ADR 0059 (engine 5.5 → 5.8) awaits the user's decision; art bible section 1 awaits sign-off.
 - **Row 76** — Crate Run awaits a person's play verdict: proceed, pivot or kill.
