@@ -1,6 +1,8 @@
 /* people: every character in the game. Each one is a single skinned figure with its own hairstyle.
    API: NH.people.make(cast) -> { group, carry, update(dt, st) }
-     cast  = an entry of NH.sim.CAST ({ id, name, hair, skin, shirt, note })
+     cast  = an entry of NH.sim.CAST, or a copy of one with its own id: { id, name, hair, skin, shirt, note }, plus optional
+             pattern (hex colour of a print), print ("floral" or "leopard"), beard (true) and look (the id whose build,
+             trousers and shoes to reuse, so a change of shirt changes only the shirt)
      group = THREE.Group, feet at y = 0, 1.8 m tall, facing +X (main.js scales it by NH.HERO)
      carry = THREE.Object3D inside the group where a carried crate is parented (in front of the chest). It rests at
              (0.55, 1.05, 0) in the group's space and rides on the chest bone, so the crate moves with the hands that hold it
@@ -11,7 +13,8 @@
 
    How it is drawn: one THREE.SkinnedMesh per person with three material groups, so three draw calls each:
      skin  - a MeshStandardMaterial whose colour is cast.skin, untouched (shared by everyone with that skin)
-     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap
+     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap. Shirt vertices of a
+             printed shirt also carry an `ink` attribute, and the material's shader draws the print from it
      hair  - one shared vertex-coloured material, NH.PALETTE.hair throughout; only the 360 waves add a second,
              lighter tone of the same hair on the crests of the ripples so the pattern reads from above
    The geometry is merged by hand once per cast id and shared; the skeleton is per person. Everything stays inside
@@ -60,10 +63,11 @@
   /* ---------------- geometry builder: positions, normals, colours and bone weights, merged by hand ---------------- */
   const SKIN = 0, CLOTH = 1, HAIR = 2;
   function builder() {
-    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0;
+    const pos = [], nor = [], col = [], bone = [], wgt = [], tri = [[], [], []], t0 = [0, 0, 0]; let v0 = 0, print = null; const ink = [];
     return {
+      setPrint(ref, alt, kind) { print = { ref, alt, kind }; },   // a printed shirt: its vertices carry the second colour and the kind of print; the cloth shader draws the pattern
       get n() { return pos.length / 3; },
-      v(p, c, b) { const w = b[2] || 0; pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
+      v(p, c, b) { const w = b[2] || 0; if (print && c[0] === print.ref[0] && c[1] === print.ref[1] && c[2] === print.ref[2]) ink.push(print.alt[0], print.alt[1], print.alt[2], print.kind); else ink.push(0, 0, 0, 0); pos.push(p[0], p[1], p[2]); nor.push(0, 0, 0); col.push(c[0], c[1], c[2]); bone.push(b[0], b[1] || 0, 0, 0); wgt.push(1 - w, w, 0, 0); return pos.length / 3 - 1; },
       ring(r, n, c, b) { // n points round p, along u and v; e < 1 squares the oval off
         const first = pos.length / 3, e = r.e || 1;
         for (let j = 0; j < n; j++) {
@@ -89,7 +93,7 @@
       },
       geometry() {
         const g = new THREE.BufferGeometry(), f = (a, n) => new THREE.Float32BufferAttribute(a, n); let at = 0;
-        g.setAttribute("position", f(pos, 3)); g.setAttribute("normal", f(nor, 3)); g.setAttribute("color", f(col, 3));
+        g.setAttribute("position", f(pos, 3)); g.setAttribute("normal", f(nor, 3)); g.setAttribute("color", f(col, 3)); g.setAttribute("ink", f(ink, 4));
         g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(bone, 4)); g.setAttribute("skinWeight", f(wgt, 4));
         g.setIndex(tri[0].concat(tri[1], tri[2])); tri.forEach((T, i) => { g.addGroup(at, T.length, i); at += T.length; });
         return g;
@@ -156,9 +160,9 @@
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
   const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];
 
-  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
+  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of cast.look, or of the id when there is no look ---------------- */
   function lookFor(cast) {
-    const h = hash(cast.id), pick = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
+    const h = hash(cast.look || cast.id), pick   /* cast.look: wear another entry's build and clothes, so a change of shirt changes only the shirt */ = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
     return {
       shirt: lin(cast.shirt), kind: patrol ? "uniform" : boat ? "overalls" : pick(BOTTOMS, 10),
       legs: lin(patrol ? NAVY : boat ? 0x3f5f86 : pick(LEG_COLS, 11)), shoes: lin(patrol || boat ? 0x1c1c20 : pick(SHOE_COLS, 11)),
@@ -275,10 +279,10 @@
     canerows(B) {
       [0.036, -0.036, 0.096, -0.096].forEach((z, i) => {
         const side = i > 1, f = sqrt(1 - z * z / (HR[2] * HR[2])), g0 = side ? 0.35 : 0.62, g1 = side ? 2.9 : 3.85, m = side ? 6 : 9, pts = [], rad = [], bs = [];
-        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0175 * (k % 2 ? 1.12 : 0.92)); bs.push([HEAD]); }
+        for (let k = 0; k <= m; k++) { const g = g0 + (g1 - g0) * k / m; pts.push([HC[0] + cos(g) * (HR[0] * f + 0.004), HC[1] + sin(g) * (HR[1] * f + 0.004), z]); rad.push(0.0245 * (k % 2 ? 1.1 : 0.94)); /* thick enough to read as rows from the game camera */ bs.push([HEAD]); }
         const tail = side ? [] : [[-0.118, 1.51, z * 1.05]];
         tail.forEach((p, k) => { pts.push(p); rad.push(0.015); bs.push([HEAD]); });
-        tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.12, root: true });
+        tube(B, HAIR, pts, rad, 4, { c: HAIRC, bs, b: [HEAD], ref: [0, 0, 1], flat: 1.35, root: true });
       });
     },
     /* the foot patrol: a peaked cap with a pale flat top, short hair showing under it at the sides and back */
@@ -297,10 +301,31 @@
   /* ---------------- one kit (geometry + materials) per cast id, shared by everyone made from it ---------------- */
   const KITS = {}, SKINS = {};
   const CLOTH_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), HAIR_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }), HAIR_MATTE = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
+  /* a short trimmed beard: a band of hair along the jaw from ear to ear and under the chin, close to the skin */
+  function beard(B) {
+    const N = 11, rows = [];
+    for (const [el, s] of [[-0.42, 1.1], [-0.7, 1.17], [-1.05, 1.12]]) { rows.push(B.n); for (let j = 0; j < N; j++) { const az = (j / (N - 1) - 0.5) * 2.7, lift = 0.14 * Math.pow(abs(az) / 1.35, 2); B.v(skull(az, el + lift, s), HAIRC, [HEAD]); } }
+    B.strip(HAIR, rows[0], rows[1], N, true); B.strip(HAIR, rows[1], rows[0], N, true); B.strip(HAIR, rows[1], rows[2], N, true); B.strip(HAIR, rows[2], rows[1], N, true); B.done();
+  }
+  /* printed shirts: where a vertex carries ink (rgb = second colour, a = 1 floral, 2 leopard) the pattern is drawn in the figure's own
+     rest-pose space, so it stays on the cloth as the body moves. Everyone shares this material; plain clothes carry no ink. */
+  CLOTH_MAT.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec4 ink;\nvarying vec4 vInk;\nvarying vec3 vRest;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvInk = ink; vRest = position;");
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec4 vInk;\nvarying vec3 vRest;")
+      .replace("#include <color_fragment>", `#include <color_fragment>
+      if (vInk.a > 0.5) {
+        float n;
+        if (vInk.a > 1.5) { vec3 q = vRest * 24.0, id = floor(q), c = fract(q) - 0.5; float h = fract(sin(dot(id, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          n = step(length(c + (h - 0.5) * 0.3), 0.2 + 0.14 * h) * step(0.25, h); }                                   // leopard: uneven spots, some cells left bare
+        else { vec3 q = vRest * 30.0; n = step(0.12, sin(q.x * 1.3 + sin(q.y * 1.7) * 1.5) * sin(q.y * 1.1 + sin(q.z * 1.9 + q.x) * 1.5) + 0.3 * sin(q.z * 2.3)); }   // floral: big overlapping leaf shapes
+        diffuseColor.rgb = mix(diffuseColor.rgb, vInk.rgb, n);
+      }`);
+  };
   function kitFor(cast) {
     if (KITS[cast.id]) return KITS[cast.id];
     if (!STYLES[cast.hair]) throw new Error("people: no model for the hairstyle '" + cast.hair + "'");
-    const B = builder(), look = lookFor(cast); body(B, look); STYLES[cast.hair](B, look);
+    const B = builder(), look = lookFor(cast); if (cast.pattern) B.setPrint(look.shirt, lin(cast.pattern), cast.print === "leopard" ? 2 : 1); body(B, look); STYLES[cast.hair](B, look); if (cast.beard) beard(B);
     const skin = SKINS[cast.skin] || (SKINS[cast.skin] = new THREE.MeshStandardMaterial({ color: cast.skin, roughness: 0.62 }));   // the cast's skin colour as-is
     return (KITS[cast.id] = { geo: B.geometry(), mats: [skin, CLOTH_MAT, cast.hair === "afro" ? HAIR_MATTE : HAIR_MAT], look });   // coils scatter light: no sheen on the afro
   }

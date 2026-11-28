@@ -1,6 +1,8 @@
 /* people: every character in the game. Each one is a single skinned figure with its own hairstyle.
    API: NH.people.make(cast) -> { group, carry, update(dt, st) }
-     cast  = an entry of NH.sim.CAST ({ id, name, hair, skin, shirt, note })
+     cast  = an entry of NH.sim.CAST, or a copy of one with its own id: { id, name, hair, skin, shirt, note }, plus optional
+             pattern (hex colour of a print), print ("floral" or "leopard"), beard (true) and look (the id whose build,
+             trousers and shoes to reuse, so a change of shirt changes only the shirt)
      group = THREE.Group, feet at y = 0, 1.8 m tall, facing +X (main.js scales it by NH.HERO)
      carry = THREE.Object3D inside the group where a carried crate is parented (in front of the chest). It rests at
              (0.55, 1.05, 0) in the group's space and rides on the chest bone, so the crate moves with the hands that hold it
@@ -11,7 +13,8 @@
 
    How it is drawn: one THREE.SkinnedMesh per person with three material groups, so three draw calls each:
      skin  - a MeshStandardMaterial whose colour is cast.skin, untouched (shared by everyone with that skin)
-     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap
+     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap. Shirt vertices of a
+             printed shirt also carry an `ink` attribute, and the material's shader draws the print from it
      hair  - one shared vertex-coloured material, NH.PALETTE.hair throughout; only the 360 waves add a second,
              lighter tone of the same hair on the crests of the ripples so the pattern reads from above
    The geometry is merged by hand once per cast id and shared; the skeleton is per person. Everything stays inside
@@ -157,7 +160,7 @@
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
   const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];
 
-  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
+  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of cast.look, or of the id when there is no look ---------------- */
   function lookFor(cast) {
     const h = hash(cast.look || cast.id), pick   /* cast.look: wear another entry's build and clothes, so a change of shirt changes only the shirt */ = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
     return {

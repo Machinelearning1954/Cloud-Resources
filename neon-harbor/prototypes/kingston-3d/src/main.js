@@ -1,6 +1,7 @@
 /* main: boot, renderer, camera, input, screens, sound, the loop and the test hooks.
    The rules live in sim.js. The look lives in world.js, people.js, props.js and lighting.js.
-   This file only wires them together. */
+   This file wires them together. It also holds a little content of its own: where the street scenery
+   stands (carts, pickups, murals, signs) and what each runner's second shirt looks like. */
 (function () {
   "use strict";
   const NH = window.NH, sim = NH.sim, tune = sim.tune, STEP = sim.STEP, U = NH.U, P = NH.PALETTE;
@@ -40,13 +41,12 @@
   function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = m.userData.overlay = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
-  const foot = () => NH.props.contact([[0, 0, 0.5, 0.42, 0, 0.42]]);   // the soft patch under a person's feet
+  const foot = () => NH.props.contact([[0, 0, 0.5, 0.42, 0, 0.42]]);   // the soft patch under a person's feet: one mesh each, sharing one geometry
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
-  // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
   // two runners to choose from on the title card, two shirts each (the second is what a clothesline change puts on)
-  const KEMAR = sim.CAST[7];
+  const SECOND = 7, TAVIAN = sim.CAST[SECOND];   // the second runner's place in the cast list
   const heroes = [[player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", look: "imani", shirt: "#2f8f5a" }))],
-                  [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
+                  [player0(TAVIAN), player0(Object.assign({}, TAVIAN, { id: "tavian-leopard", look: "tavian", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
   let hero = 0, outfits = heroes[0]; heroes.forEach((h) => h.forEach((p) => { p.group.visible = false; })); outfits[0].group.visible = true;
   function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
   let player = outfits[0];
@@ -75,26 +75,30 @@
   const arrow = NH.props.arrow(); scene.add(arrow);
   ring.userData.overlay = arrow.userData.overlay = true;   // game markers, not part of the place: the scene exporter leaves "overlay" objects out
   sim.PALMS.forEach(([x, y], i) => { const t = NH.props.palm(i); NH.put(t, x, y, 0); t.rotation.y = i * 1.7; scene.add(t); });
-  // vendors' coconut carts on the pavement, each with its seller standing by; scenery only, the rules do not see them
-  [[372, 560, 0.0, 3], [828, 1210, Math.PI, 4], [372, 1120, 0.0, 5]].forEach(([x, y, a, c], i) => {
+  // street scenery the rules do not see. Each list is written once: the props and their contact shading both read it.
+  const CARTS = [[372, 560, 0.0, 3], [828, 1210, Math.PI, 4], [372, 1120, 0.0, 5]];              // x, y, facing, the seller's place in the cast list
+  const MURALS = [[440, 1384], [825, 1384]];
+  const PICKUPS = [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]];        // x, y, facing
+  // vendors' coconut carts on the pavement, each with its seller standing by
+  CARTS.forEach(([x, y, a, c], i) => {
     const k = NH.props.cart(i); NH.put(k, x, y, 0); k.rotation.y = a + Math.PI / 2; scene.add(k);
     const v = person(c); NH.put(v.group, x + (a ? 24 : -24), y + 14, 0); NH.face(v.group, a); npcs.push(v);   // the seller stands on the street side, facing the cart
   });
-  // two painted walls at the top of the quay, facing the harbour (and the camera); scenery only
-  [[440, 1384, 0], [825, 1384, 1]].forEach(([x, y, i]) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
+  // two painted walls at the top of the quay, facing the harbour (and the camera)
+  MURALS.forEach(([x, y], i) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
   // dub plates to find in the alleys: they turn slowly, and vanish once collected
   const plates = sim.PLATES.map(([x, y]) => { const d = NH.props.plate(); NH.put(d, x, y, 0); scene.add(d); return d; });
   // hand-painted shop signs on the pavements, facing south to the camera; scenery only
   [[480, 392, 0], [720, 392, 1], [600, 912, 2], [480, 1312, 3]].forEach(([x, y, i]) => { const s = NH.props.sign(i); NH.put(s, x, y, 0); s.rotation.y = -Math.PI / 2; scene.add(s); });
   // contact shading under the standing props: one mesh for all of them
   { const U2 = NH.U, wx = (x) => (x - sim.W / 2) * U2, wz = (y) => (y - sim.H / 2) * U2, L = [];
-    [[372, 560], [828, 1210], [372, 1120]].forEach(([x, y]) => L.push([wx(x), wz(y), 0.8, 1.25, 0, 0.5]));                       // carts
-    [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a]) => L.push([wx(x), wz(y), 3.2, 1.6, a, 0.55]));   // pickups
-    [[440, 1384], [825, 1384]].forEach(([x, y]) => L.push([wx(x), wz(y) + 0.3, 3.6, 0.7, 0, 0.4]));                                // mural walls
+    CARTS.forEach(([x, y]) => L.push([wx(x), wz(y), 0.8, 1.25, 0, 0.5]));
+    PICKUPS.forEach(([x, y, a]) => L.push([wx(x), wz(y), 3.2, 1.6, a, 0.55]));
+    MURALS.forEach(([x, y]) => L.push([wx(x), wz(y) + 0.3, 3.6, 0.7, 0, 0.4]));
     sim.PICK && L.push([wx(sim.PICK.x), wz(sim.PICK.y), 1.5, 1.5, 0, 0.45]);                                                       // the crate pile
     scene.add(NH.props.contact(L)); }
-  // pickups parked on the quay; scenery only, the rules do not see them
-  [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
+  // pickups parked on the quay
+  PICKUPS.forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
   const lamps = sim.LAMPS.map(([x, y], i) => { // the post stands on a corner; its arm reaches back so the lamp hangs over the lamp point
     const l = NH.props.lampPost(), yard = i === sim.LAMPS.length - 1, arm = NH.LAMP_ARM / U, a = yard ? Math.PI : (i % 2 ? 0.75 : 0.25) * Math.PI;
@@ -180,7 +184,8 @@
     patrolViews.forEach((v, i) => {
       const g = S.patrols[i], on = !!g; v.group.visible = on; v.cone.mesh.visible = on; v.coneGhost.visible = on; if (!on) return;
       NH.put(v.group, g.x, g.y, 0); NH.face(v.group, g.ang); NH.put(v.cone.mesh, g.x, g.y, 0); NH.face(v.cone.mesh, g.ang); v.cone.set(g.sees);
-      v.coneGhost.position.copy(v.cone.mesh.position); v.coneGhost.rotation.y = v.cone.mesh.rotation.y; v.coneGhostMat.color.setHex(g.sees ? P.heat : 0xfff0be); v.coneGhostMat.opacity = g.sees ? 0.3 : 0.16;
+      const reach = sim.sightRange(S) / tune.seeRange; v.cone.mesh.scale.set(reach, 1, reach);   // from the alert tier patrols see further: the drawn cone grows with the rule
+      v.coneGhost.position.copy(v.cone.mesh.position); v.coneGhost.rotation.y = v.cone.mesh.rotation.y; v.coneGhost.scale.copy(v.cone.mesh.scale); v.coneGhostMat.color.setHex(g.sees ? P.heat : 0xfff0be); v.coneGhostMat.opacity = g.sees ? 0.3 : 0.16;
       if (v.foot) v.update(dt, { moving: playing, carrying: false, walk: S.t * 6 }); else v.update(dt, { sees: g.sees, night: tod.night, t: S.t });
     });
     stash.visible = !!S.stash; if (S.stash) NH.put(stash, S.stash.x, S.stash.y, 0);
@@ -323,14 +328,14 @@
       <p>Doors open at 7:00 PM. Carry <b>5 speaker crates</b> from Keelwright Boatworks to Zinc Roof Soundhall.</p>
       <ul><li>Patrols only care while you are <b>carrying</b>.</li><li>Put the crate down to walk past clean, then come back for it.</li><li>Buildings block their view.</li></ul>
       <p class="sub">Phone: drag anywhere to move, tap Drop. Keyboard: arrows or WASD, Space to drop or pick up, P pause, M sound.</p>
-      <div class="row">${btn("go", "Start")}${btn("who", "Play as: " + sim.CAST[hero ? 7 : 0].name.split(" ")[0], true)}${btn("cast", "Cast", true)}</div>${saved}`;
+      <div class="row">${btn("go", "Start")}${btn("who", "Play as: " + sim.CAST[hero ? SECOND : 0].name.split(" ")[0], true)}${btn("cast", "Cast", true)}</div>${saved}`;
     else if (scn === "figures") { box.innerHTML = ""; say("Tap or press any key to go back"); return; }
     else if (scn === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>
       <p class="sub">Codes: tap six directions (or use the arrow keys). Try Up Up Down Left Right Down.</p>
       <div id="code"></div><p class="sub" id="codemsg" role="status"></p>
       <div class="pad"><span></span><button class="key" data-d="U" type="button">Up</button><span></span>
         <button class="key" data-d="L" type="button">Left</button><button class="key" data-d="D" type="button">Down</button><button class="key" data-d="R" type="button">Right</button></div>`;
-    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><p>${S.spotted ? "" : "<b>Clean run:</b> no patrol ever saw you carrying. "}Dub plates found: <b>${S.plates.filter(Boolean).length} of 3</b>.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
+    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><p>${S.spotted ? "" : "<b>Unseen run:</b> no patrol ever saw you carrying. "}Dub plates found: <b>${S.plates.filter(Boolean).length} of 3</b>.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
     else box.innerHTML = `<h1>${S.result === "lost-heat" ? "Too much <span>heat</span>" : "Doors <span>stayed shut</span>"}</h1>
       <p>${S.result === "lost-heat" ? "A patrol watched you carry for too long." : "Seven o'clock came with the stack unfinished."} You delivered ${S.delivered} of ${tune.cratesToWin}.</p>${S.cheated ? '<p class="sub">Codes were used on this run.</p>' : ""}<div class="row">${btn("again", "Try again")}</div>${saved}`;
     const go = $("go"), again = $("again"), cast = $("cast"); typed = "";
@@ -376,9 +381,11 @@
   // Check hooks: a script can drive the game and read its state. After the first step() the page
   // stops drawing by itself (software-rendered test machines are slow); call render() before a screenshot.
   window.game = {
-    cam,
-    buzzes,
-    choose(i) { choose(i); }, get hero() { return hero; },
+    // added with the rules and senses of NH-87 to NH-109. start() does not start audio: call sound() before reading hums or circling.
+    cam,                                                    // the camera rig; cam.shake is the jolt
+    buzzes,                                                 // the last eight vibration patterns asked for, oldest first (kept even where the device has no vibration; none while muted)
+    choose(i) { choose(i); }, get hero() { return hero; },  // pick runner 0 or 1; which one is picked
+    get cones() { return patrolViews.map((v) => +v.cone.mesh.scale.x.toFixed(3)); },   // how far each drawn vision cone reaches, as a multiple of seeRange
     get circling() { return !!(beat.panner); }, get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },

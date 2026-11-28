@@ -9,7 +9,8 @@ real-person likeness / real brands / R* canon characters / real institutions.
 > **NH-REBUILD-1 note:** rows 1–58 below are a **lossy reconstruction** from the project
 > log after sandbox recycle (see `RECOVERY_LOG.md`). Each row is marked
 > `[RECONSTRUCTED-LOSSY]`; verbatim text and per-row evidence were not recoverable.
-> Rows 60–62 are live, full, and evidence-linked. Rows 54 and 59 remain **PENDING**.
+> At NH-REBUILD-1, rows 60–62 were live, full and evidence-linked. Every row from 60 on is
+> live and full; the Open PENDING queue at the end lists what is still pending.
 
 ## Rows 1–58 — lossy summary block
 
@@ -852,8 +853,15 @@ binding.)
   five-view run costs about 5.
 - **Mistakes, stated plainly:** two boxes were lost to the idle timer (112.97 credits) before a single
   run was organised to render, upload and stop without waiting on the session.
+- **Correction (NH-111): the stills never carried the game's new lighting.** The agent told the user
+  twice that the free 512-sample set and the `v2` set "include the new lighting" of NH-87 and NH-88.
+  That was wrong. `dev/raytrace/render.py` has its own light rig: it sets the strength of the sun,
+  moon, sky and lamps itself from the time of day, and takes only the sun's direction and daytime
+  colour from the game. The night stills still use the renderer's fixed blue moonlight. The geometry,
+  colours, murals and signs in the stills are the game's; the lighting is the renderer's.
 - **Close:** ADOPT + POLICY. The free notebook (`kaggle_render.ipynb`) has still never been run. The
-  agent has not looked at the `v2` pictures. They do not show anything added after NH-100.
+  agent has not looked at the `v2` pictures. They do not show anything added after NH-100, and no
+  still shows a change made to the game's lighting.
 
 ## Row 88 — User directives, repeated: "GTA 6 level", "better than gta 6", "train it" on that game
 
@@ -895,10 +903,13 @@ binding.)
   studio's logo, characters, place names and cover art. No account name, handle or picture is kept here.
 - **ADOPT, as original versions of plain ideas:**
   - Street life seen in the fan video: coconut handcarts with their sellers (NH-93), parked pickups
-    (NH-94), painted walls (NH-99). The murals advertise the cast's own venues.
+    (NH-94), painted walls (NH-99). The murals carry made-up lettering built on two cast nicknames
+    (Bassline Sundays; Brass & Keel Boatworks). Neither is a venue in the game's registries.
   - "Police remember your look", from the tips: the disguise rule and its clotheslines (NH-100).
-  - Things to collect and an optional goal, from the chapter list: three dub plates and a clean-run
-    note on the win card (NH-104).
+  - Things to collect and an optional goal, from the chapter list: three dub plates and a note on the
+    win card for a run in which no patrol saw you carrying (NH-104). First worded "Clean run"; renamed
+    "Unseen run" in NH-111, because "clean win" already means a win without codes in the saved-run
+    counter, and the note could appear beside "Codes were used, so this run does not count."
 - **DEFER:** a rule that no mission content can be missed for good (chapter replay, several save
   slots): to be decided before the 48 mission rows are written (row 73). Traditional Ethiopian dress
   for the Addis Ababa district: civilian only, no weapons (ADR 0052). Neither is started.
@@ -945,8 +956,11 @@ binding.)
   - A hum for each patrol, louder as it nears, higher while it hunts (NH-95).
   - The riddim circles the listener once every 8 seconds, with a short echo (NH-96).
   - Both are placed with the browser's HRTF panner, so a patrol to the south sounds behind (NH-97).
-- **Checked:** by script only. The vibration patterns were recorded, the hum's level was read far, near
-  and muted, the jolt was seen to start and settle. Phone speakers will make this ordinary stereo.
+- **Checked:** by script only. The vibration patterns for a pickup and a delivery were recorded (the
+  others were not exercised then), the hum's level was read far, near and muted, the jolt was seen to
+  start and settle. Phone speakers will make this ordinary stereo. Those scripts were one-off and are
+  not in the repository; NH-111 added browser checks to `dev/check.js` for the jolt, the hum, the
+  circling bus and four more vibration patterns (seen, tier rise, shirt change, dub plate).
 - **Close:** ADOPT. Nothing here has been heard or felt on a real device.
 
 ## Row 92 — User directives: improve the look from the game's own assets; "Boost the graphics"
@@ -968,8 +982,11 @@ binding.)
   triangles each) and the shadow pass are the larger costs.
 - **Housekeeping.** An untracked `dev/out/` folder of old screenshots made `red_team.py` fail on an
   untouched tree. It was moved out of the repository, not deleted.
-- **Close:** ADOPT. Three checklist items are closed (night roofs, canerows, contact shading). Not done:
-  wet road and puddles, lighter people.
+- **Close:** ADOPT. Two checklist items are closed (night roofs, canerows). Contact shading (NH-108) was
+  added; it was never on the checklist. Not done: wet road and puddles, lighter people.
+- **Correction (NH-111).** From the alert tier a patrol saw 20% further than its drawn vision cone
+  showed, so a carrier could be seen up to 46 px (2.3 m) outside the cone. The cone now grows with the
+  rule; both read one function, so they cannot drift apart again.
 
 ## Row 93 — User directive: "Add him into the video game as a main character"
 
@@ -980,14 +997,27 @@ binding.)
 - **POLICY.** The agent does not identify people in photographs. No real person's name or likeness goes
   into the game (wall 1). The screenshot is the only evidence of consent; no name, handle or picture is
   kept in this repository.
-- **ADOPT:** a second playable runner, Kemar 'Tide' Bailey, chosen on the title card (NH-103). The name
-  is the agent's invention. Short hair, a trimmed beard (NH-109), and two shirts in the style of the
+- **ADOPT:** a second playable runner, chosen on the title card (NH-103). He was first named Kemar
+  'Tide' Bailey and is now Tavian 'Leaf' Wedderburn (NH-111; see the correction below). Both names
+  are the agent's invention. Short hair, a trimmed beard (NH-109), and two shirts in the style of the
   photographs: a black-and-white leaf print and a spotted tan one, drawn by the cloth shader (NH-107).
   The figures are blocky; this is a style, not a portrait.
 - **Decided by the agent without an answer from the user:** he joins Imani, he does not replace her; the
   name. The story's lead (ADR 0056) is untouched.
 - **Found on the way:** a shirt change also changed trousers and shoes, for Imani too. Fixed.
-- **Close:** ADOPT + POLICY. The user may rename him.
+- **Correction (NH-111): the name check was skipped, and the first name failed it.** ADR 0051 item 3
+  requires every new full name to be web-searched against public figures, and its nickname in a
+  Jamaican-music context. NH-103 did neither. Run on 2026-11-28:
+  - The first name is too close to a real Jamaican Olympic sprinter, Kemar Bailey-Cole. It also sat
+    beside two rows of `data/registries/crews.json`: Kemar 'Ripple' Lindo, who wears the same 360
+    waves, and Dwayne 'Tideline' Ellis. It is withdrawn.
+  - The replacement, searched the same day: "Tavian Wedderburn" returned no person of that name;
+    "Leaf" returned no Jamaican music artist; neither word is in `data/` or in any other cast entry.
+    Three other candidates were searched and not used.
+  - As ADR 0051 says, a search lowers the risk of a collision and does not rule it out.
+  - His cast id changed with the name, so his trousers and shoes (picked from a hash of the id)
+    changed too. The cast screen and title card were re-shot and looked at.
+- **Close:** ADOPT + POLICY. The user may rename him; a new name needs the same search first.
 
 ## Row 94 — User directives: "What can match it", a cloud PC, "Login for me", "150 gb", a brief for an artist
 
@@ -1045,6 +1075,21 @@ binding.)
 - **What "Complete it" was taken to mean:** the agent's offer in the same reply, to bring `CLAUDE.md` up
   to date with what is really in the tree. Done as NH-110: `CLAUDE.md`, `README.md`, the prototype's
   `brief.md` and `evidence/checklist.md`, and rows 87 to 97 of this ledger.
+- **Checked afterwards, and corrected (NH-111).** Ten agents read those five documents against the
+  code, one claim at a time, and a second agent tried to refute each finding: 411 claims, 38 problems
+  confirmed, 2 refuted. All 38 are acted on in NH-111:
+  - *The agent's own false statements:* the stills and the game's lighting (row 87); a character name
+    that skipped its check (row 93).
+  - *Code brought into line with the documents:* the drawn vision cone (row 92); the win card's note
+    renamed (row 89); the contact patch under each person now shares one geometry, and the carts,
+    pickups and murals are placed and shaded from one list each; `dev/baseline/` refreshed, and
+    `node build.js --check` now fails when it falls behind (one red-team attack added: 63).
+  - *Tests added:* three rule tests (29) for the alert tier's wider sight, the chase speed and the
+    unseen-run flag, each shown to fail when its rule is broken; nine browser checks (34) that use
+    the hooks added since row 86, seven of them shown to fail when their feature is broken.
+  - *Wording corrected:* in the brief, the checklist, `CLAUDE.md`, the README, this ledger's header
+    note and rows 89, 91 and 92, comments in eight source files, and the two helper-agent files that
+    still told agents to put screenshots inside the repository.
 - **Close:** POLICY.
 
 ## Open PENDING queue
@@ -1052,11 +1097,12 @@ binding.)
 - **Row 54** — link, awaiting pasted content.
 - **Row 96** — reel link, awaiting a description or a screenshot.
 - **Row 94** — the street in the engine waits for a project the session can reach; the freelancer brief needs a contact address and a deadline from the user.
-- **Row 93** — the second runner's name is the agent's choice; the user may rename him.
+- **Row 93** — the second runner's name is the agent's choice (searched in NH-111); the user may rename him.
+- **Row 92** — wet road and puddles, and lighter people, are not done.
 - **Row 91** — vibration and sound have not been felt or heard on a real device.
 - **Row 90** — grace period, heat tiers and chase speed are first guesses, awaiting a person's play.
 - **Row 89** — a no-missables rule for missions and traditional dress for Addis Ababa are parked, not started.
-- **Row 87** — the free render notebook has never been run; the newest stills stop at NH-100.
+- **Row 87** — the free render notebook has never been run; the newest stills stop at NH-100, and the offline renderer does not follow the game's lighting.
 - **Row 80** — Crate Run 3D awaits a look on a real phone; the save lock awaits a real device and an https address (hosting is the user's call); ADR 0057 Decision 6 awaits a security review and a re-read of its sources.
 - **Row 78** — ADR 0059 (engine 5.5 → 5.8) awaits the user's decision; art bible section 1 awaits sign-off.
 - **Row 76** — Crate Run awaits a person's play verdict: proceed, pivot or kill.

@@ -104,7 +104,7 @@ density players expect from the genre while every brand, venue and character rem
   free-roam sessions (up to 16) on dedicated servers. Design and budgets only;
   `tools/check_net_budget.py` checks the arithmetic. Rule §0 is amended: single-player
   stays fully offline.
-- **Red team (ledger rows 75, 80)** — `tools/red_team.py` sabotages a copy of the repo in 62
+- **Red team (ledger rows 75, 80)** — `tools/red_team.py` sabotages a copy of the repo in 63
   ways and confirms a checker catches each one. The first run found 18 gaps, and a later review found 3 more; all are
   closed. It also adds 10 scans the doctor's text search cannot do.
 - **First playable (ledger row 76)** — `prototypes/crate-run/`: one Kingston block, carry
@@ -113,7 +113,7 @@ density players expect from the genre while every brand, venue and character rem
 - **Cheat codes (ADR 0058, ledger row 77)** — 21 original codes in `services.json`, single-player
   only, none granting currency. Crate Run has three demo codes on its pause-menu pad.
 - **Crate Run 3D (ledger row 80)** — `prototypes/kingston-3d/`: the Crate Run block as a lit 3D
-  place that runs in a phone browser. It started with the same tested rules. It is a browser prototype
+  place, built to run in a phone browser. It started with the same tested rules. It is a browser prototype
   without ray tracing, not the Unreal game. Saved runs can be locked to the device (AES-256-GCM
   under a passkey); ADR 0057 gains a decision on encryption in transit. Built with one
   orchestrating session and scout, builder, reviewer and fixer agents. Since then (ledger rows

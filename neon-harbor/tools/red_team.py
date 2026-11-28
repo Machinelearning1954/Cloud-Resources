@@ -381,6 +381,7 @@ def build_attacks(term):
             ("proto3d", "save lock weakened to a 128-bit key", lambda t: edit_text(t, k3d("src", "lock.js"), lambda s: s.replace('{ name: "AES-GCM", length: 256 }', '{ name: "AES-GCM", length: 128 }'))),
             ("proto3d", "save lock reuses one fixed nonce", lambda t: edit_text(t, k3d("src", "lock.js"), lambda s: s.replace("iv = rand(12)", "iv = new Uint8Array(12)"))),
             ("proto3d", "a win with codes counted as a clean win", lambda t: edit_text(t, k3d("src", "save.js"), lambda s: s.replace("if (run.won && !run.cheated)", "if (run.won)"))),
+            ("proto3d", "a visual module left behind in dev/baseline (solo builds would pair old with new)", lambda t: edit_text(t, k3d("dev", "baseline", "props.js"), lambda s: "/* an older copy */\n" + s)),
         ]
     return A
 
@@ -430,7 +431,7 @@ def attack_suite(root):
 
     attacks = build_attacks(term)
     if not shutil.which("node"):
-        print("  note    Node is not installed: the 3D prototype's page, rule, save and lock checks and their 7 attacks were skipped")
+        print("  note    Node is not installed: the 3D prototype's page, rule, save and lock checks and their 8 attacks were skipped")
     holes = 0
     for group, name, sabotage in attacks:
         tmp = tempfile.mkdtemp(prefix="nh-redteam-")

@@ -178,7 +178,7 @@ test("once spotted, heat waits out the grace period before it climbs", () => {
   assert.ok(S.heat > 0, "heat should climb after the grace period, got " + S.heat);
 });
 
-test("heat tiers: the street turns alert at 34 and locks down at 67, and patrols see further and move faster", () => {
+test("heat tiers: the street turns alert at 34 and locks down at 67; only lockdown makes patrols faster", () => {
   const S = sim.create(), g = S.patrols[0];
   assert.equal(sim.heatTier(S), 0); const calm = sim.patrolSpeed(S, g);
   S.heat = 40; assert.equal(sim.heatTier(S), 1); assert.equal(sim.patrolSpeed(S, g), calm, "alert widens sight only: speed is unchanged");
@@ -206,7 +206,7 @@ test("you cannot change while a patrol is watching", () => {
   assert.equal(S.outfit, 0);
 });
 
-test("dub plates: walking over one collects it once; a run with no sighting stays clean", () => {
+test("dub plates: walking over one collects it once; a run with no sighting stays unseen", () => {
   const S = sim.create(); S.patrols[0].x = 40; S.patrols[0].y = 40;
   const [x, y] = sim.PLATES[0]; S.player.x = x; S.player.y = y;
   sim.step(S, STILL); sim.step(S, STILL);
@@ -214,6 +214,32 @@ test("dub plates: walking over one collects it once; a run with no sighting stay
   assert.equal(S.events.filter((e) => e.type === "plate").length, 1);
   assert.equal(S.spotted, false);
   for (const [px, py] of sim.PLATES) assert.equal(sim.blocked(px, py, 11), false, "plate on open ground");
+});
+
+test("alert tier: patrols see 20% further, and no further than that; lockdown adds no more sight", () => {
+  const probe = (heat, d) => { const S = sim.create(), g = placePatrol(S, 340, 420);   // on the open street, looking east
+    S.heat = heat; S.carrying = true; S.player.x = 340 + d; S.player.y = 420; sim.step(S, STILL); return S.seen; };
+  assert.equal(probe(0, tune.seeRange - 5), true, "calm: inside the range");
+  assert.equal(probe(0, tune.seeRange + 20), false, "calm: beyond the range");
+  assert.equal(probe(40, tune.seeRange + 20), true, "alert: the same spot is now in view");
+  assert.equal(probe(40, tune.seeRange * 1.2 + 5), false, "alert: 20% and no more");
+  assert.equal(probe(80, tune.seeRange * 1.2 + 5), false, "lockdown: sight does not widen again");
+  const S = sim.create(); assert.equal(sim.sightRange(S), tune.seeRange); S.heat = 40; assert.equal(sim.sightRange(S), tune.seeRange * 1.2);
+});
+test("a hunting patrol moves at its normal speed (chasePercent is 100), not faster", () => {
+  assert.equal(config.chasePercent.value, 100);
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 540; S.player.y = 420;
+  sim.step(S, STILL); assert.equal(g.mode, "hunt");
+  const x0 = g.x; for (let i = 0; i < 30; i++) sim.step(S, STILL);   // half a second of chase along the street, still far from the hold distance
+  assert.ok(Math.abs((g.x - x0) - sim.patrolSpeed(S, g) * 30 * STEP) < 0.01, `moved ${(g.x - x0).toFixed(2)} px in 30 steps`);
+});
+test("one sighting while carrying spoils an unseen run for good", () => {
+  const S = sim.create(), g = placePatrol(S, 340, 420);
+  S.carrying = true; S.player.x = 420; S.player.y = 420; sim.step(S, STILL);
+  assert.equal(S.seen, true); assert.equal(S.spotted, true);
+  S.carrying = false; g.x = 40; g.y = 40; for (let i = 0; i < 120; i++) sim.step(S, STILL);
+  assert.equal(S.seen, false); assert.equal(S.spotted, true, "still spoiled after the sight line is broken");
 });
 
 let failed = 0;

@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <!--
-  Crate Run 3D: the same one-block prototype as prototypes/crate-run, drawn in real-time 3D (WebGL).
+  Crate Run 3D: the one-block prototype of prototypes/crate-run, drawn in real-time 3D (WebGL), with rules of its own added since.
   GENERATED FILE: edit src/ and run `node build.js`. One self-contained file: no network, no assets.
   Uses three.js r160 (MIT, vendor/LICENSE.three.txt), inlined below. Throwaway prototype code: not the game.
 -->
@@ -113,7 +113,7 @@
   <button id="drop" type="button" hidden disabled>Drop</button>
   <div id="card"><div class="box" id="box"></div></div>
   <div id="fail" hidden><div class="box"><h1>3D view could not start</h1><p id="failmsg"></p>
-    <p>The flat version of this game needs no 3D support and plays the same way.</p></div></div>
+    <p>The flat version of this game needs no 3D support. It has the carrying rule, without the rules added here since.</p></div></div>
 </div>
 
 <script>/* vendor/three.min.js (three.js r160, MIT) */
@@ -128,12 +128,17 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 </script>
 <script>/* src/sim.js */
 /* Crate Run — the game rules. No drawing, no DOM, no clock: the same code runs in the
-   browser and in Node (test/sim.test.js). Ported 1:1 from prototypes/crate-run so the 2D and
-   3D views play the same game. Distances are in "sim pixels"; the 3D view scales them. */
+   browser and in Node (test/sim.test.js). Began as a 1:1 port of prototypes/crate-run; the rules
+   added since (hunting patrols, grace, heat tiers, disguise, dub plates, a second runner) are in
+   this file only. Distances are in "sim pixels"; the 3D view scales them.
+   State added by those rules: seenFor, grace, tier, known, outfit, changing, plates, spotted.
+   Events added: known, changed, plate, tier. CAST is read by position (see main.js): add new
+   entries at the end. */
 (function (root) {
   "use strict";
 
-  /* ---- tuning: every number the game uses lives here ---- */
+  /* ---- tuning: the values meant to be tuned live here. The newer rules also use constants that are
+     not in this table: HOLD, TIERS, the two 20% tier bonuses, the halved grace and the 26 px and 22 px reaches ---- */
   const config = {
     walkSpeed:    { value: 150, min: 80,  max: 260, step: 5 },    // px/s, empty-handed
     carrySpeed:   { value: 115, min: 60,  max: 220, step: 5 },    // px/s, carrying a crate
@@ -196,7 +201,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     { id: "ped-afro",     name: "Passer-by", hair: "afro",     skin: "#8a5a36", shirt: "#b07ad0", note: "rounded afro" },
     { id: "ped-canerows", name: "Passer-by", hair: "canerows", skin: "#54311c", shirt: "#e07a9a", note: "canerows" },
     { id: "patrol", name: "Foot patrol",            hair: "cap",           skin: "#7a4a2b", shirt: "#2c3f66", note: "sees you carrying" },
-    { id: "kemar",  name: "Kemar 'Tide' Bailey",    hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", print: "floral", beard: true, note: "you, if you choose: printed shirts" },
+    { id: "tavian", name: "Tavian 'Leaf' Wedderburn", hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", print: "floral", beard: true, note: "you, if you choose: printed shirts" },
   ];
   const NPCS = [ // people who stand in one place
     { cast: 1, x: 1100, y: 250, ang: Math.PI },   // Omari at the rig
@@ -247,6 +252,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
   const TIERS = [0, 34, 67];                            // heat at which the street turns calm -> alert (patrols see 20% further) -> lockdown (and move 20% faster)
   function heatTier(S) { return S.heat >= TIERS[2] ? 2 : S.heat >= TIERS[1] ? 1 : 0; }
+  function sightRange(S) { return tune.seeRange * (heatTier(S) >= 1 ? 1.2 : 1); }   // the drawn vision cone uses this too, so the two cannot drift apart
   function patrolSpeed(S, g) {
     return (heatTier(S) === 2 ? 1.2 : 1) * (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
   }
@@ -259,7 +265,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, plates: [false, false, false], spotted: false, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, grace: 0, tier: 0, known: false, outfit: 0, changing: 0, plates: [false, false, false], spotted: false, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -314,7 +320,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     for (const g of S.patrols) {
       const pts = g.route.pts, speed = patrolSpeed(S, g), chase = speed * tune.chasePercent / 100;
       const dx = p.x - g.x, dy = p.y - g.y, dd = Math.hypot(dx, dy);
-      g.sees = S.carrying && dd < tune.seeRange * (1 + 0.2 * Math.min(1, heatTier(S))) && dd > 0 &&
+      g.sees = S.carrying && dd < sightRange(S) && dd > 0 &&
                (dx * Math.cos(g.ang) + dy * Math.sin(g.ang)) / dd > cosHalf && clearSight(g, p);
       if (g.sees) { g.memory = { x: p.x, y: p.y }; if (g.mode !== "hunt") { g.mode = "hunt"; g.stuck = 0; } }
       else if (!S.carrying && g.mode !== "route" && g.mode !== "return") g.mode = "return";
@@ -351,7 +357,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     if (S.changing >= tune.changeSeconds) { S.changing = 0; S.outfit ^= 1; const was = S.known; S.known = false; S.events.push({ type: "changed", outfit: S.outfit, wasKnown: was }); }
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
-    if (S.seen) S.spotted = true;                                                       // a clean run is one where no patrol ever saw you carrying
+    if (S.seen) S.spotted = true;                                                       // an unseen run is one where no patrol ever saw you carrying
     PLATES.forEach(([x, y], i) => { if (!S.plates[i] && Math.hypot(p.x - x, p.y - y) < 22) { S.plates[i] = true; S.events.push({ type: "plate", count: S.plates.filter(Boolean).length }); } });
     const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
 
@@ -367,7 +373,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, PLATES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, PLATES, heatTier, sightRange, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
@@ -398,8 +404,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
    SHADOWS   meshes that should cast set castShadow = true; ground and roofs set receiveShadow = true.
    LIGHTS    only lighting.js creates THREE.Light objects. Everything else glows with emissive materials
              and flat additive "pool of light" shapes on the ground.
-   TEXTURES  no image files. A texture may be drawn once at start-up on a small canvas (256 px or less)
-             and used as a THREE.CanvasTexture. Set texture.colorSpace = THREE.SRGBColorSpace for colour maps.
+   TEXTURES  no image files. A texture may be drawn once at start-up on a small canvas (256 px or less;
+             the lettered ones are wider so the words stay sharp: the two mural panels are 640x256 and the
+             four shop signs 512x192) and used as a THREE.CanvasTexture. Set texture.colorSpace = THREE.SRGBColorSpace for colour maps.
    MERGING   BufferGeometryUtils is NOT in this build (it is an add-on). Merge by hand or use InstancedMesh.
    BUDGET    a phone must hold 60 fps: share geometries and materials, merge static meshes, use
              InstancedMesh for repeats, no per-frame allocation (no `new` inside update), no extra
@@ -1015,7 +1022,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 <script>/* src/people.js */
 /* people: every character in the game. Each one is a single skinned figure with its own hairstyle.
    API: NH.people.make(cast) -> { group, carry, update(dt, st) }
-     cast  = an entry of NH.sim.CAST ({ id, name, hair, skin, shirt, note })
+     cast  = an entry of NH.sim.CAST, or a copy of one with its own id: { id, name, hair, skin, shirt, note }, plus optional
+             pattern (hex colour of a print), print ("floral" or "leopard"), beard (true) and look (the id whose build,
+             trousers and shoes to reuse, so a change of shirt changes only the shirt)
      group = THREE.Group, feet at y = 0, 1.8 m tall, facing +X (main.js scales it by NH.HERO)
      carry = THREE.Object3D inside the group where a carried crate is parented (in front of the chest). It rests at
              (0.55, 1.05, 0) in the group's space and rides on the chest bone, so the crate moves with the hands that hold it
@@ -1026,7 +1035,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
    How it is drawn: one THREE.SkinnedMesh per person with three material groups, so three draw calls each:
      skin  - a MeshStandardMaterial whose colour is cast.skin, untouched (shared by everyone with that skin)
-     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap
+     cloth - one shared vertex-coloured material: clothes, shoes, eyes, the head wrap, the patrol cap. Shirt vertices of a
+             printed shirt also carry an `ink` attribute, and the material's shader draws the print from it
      hair  - one shared vertex-coloured material, NH.PALETTE.hair throughout; only the 360 waves add a second,
              lighter tone of the same hair on the crests of the ripples so the pattern reads from above
    The geometry is merged by hand once per cast id and shared; the skeleton is per person. Everything stays inside
@@ -1172,7 +1182,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const BOTTOMS = ["skirt", "shorts", "longshorts", "trousers", "cropped"], HEMS = { shorts: 0.6, longshorts: 0.45, cropped: 0.27, skirt: 2 };   // hem height; 2 = no trouser legs at all
   const LEG_COLS = [0x55633a, 0x5f7fa8, 0xb09868, 0x30333c, 0xf0e8d6, 0x2a3a5c], SHOE_COLS = [0x1c1c20, 0xece8dd, 0x8c2a2e];
 
-  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of the id ---------------- */
+  /* ---------------- what each cast entry wears, and how they are built and walk: all from a hash of cast.look, or of the id when there is no look ---------------- */
   function lookFor(cast) {
     const h = hash(cast.look || cast.id), pick   /* cast.look: wear another entry's build and clothes, so a change of shirt changes only the shirt */ = (list, sh) => list[(h >>> sh) % list.length], f = (sh) => ((h >>> sh) % 8) / 7, patrol = cast.hair === "cap", boat = /boatwright/.test(cast.note || "");
     return {
@@ -1400,9 +1410,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
                                             coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
      NH.props.pickup(i)                  -> THREE.Object3D   (i = index, for variety: a parked, sun-faded pickup truck, 5.2 m long,
                                             1.9 m wide, cab toward +X, origin at base centre; 1 draw call)
-     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6 m long and 2.4 m tall, its +X face
-                                            hand-painted: harbour sunset, palms, a speaker stack and lettering for the cast's own venues;
-                                            2 draw calls)
+     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6.3 m long and 2.6 m tall (2.7 m with
+                                            its capping), with a 6 by 2.4 m panel on its +X face hand-painted: harbour sunset, palms, a
+                                            speaker stack and made-up lettering built on two cast nicknames; 2 draw calls)
      NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
                                             where the player changes shirt; 1 draw call)
      NH.props.plate()                    -> THREE.Object3D   (a dub plate: a 12-inch record standing on edge, 0.5 m across so it reads
@@ -1411,7 +1421,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
                                             top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
      NH.props.contact(list)              -> THREE.Object3D   (soft dark patches on the ground, one mesh for the whole list, 1 draw call;
                                             list = [[x, z, halfLength, halfWidth, turn, strength], ...] in the parent's metres. They ground
-                                            things at night and in shade, when the sun casts no shadow for them)
+                                            things at night and in shade, when the sun casts no shadow for them. Two calls with the same
+                                            list share one geometry)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -1421,7 +1432,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
      NH.props.arrow()                    -> THREE.Object3D   (flat arrow on the ground pointing +X, 1.4 m long) with setColor(hex)
 
    How it is drawn. Every prop is merged by hand into one mesh per material, and geometries, textures and materials are
-   built once and shared, so a second crate, palm or car costs no new geometry. Draw calls: crate 1, speaker 1, palm 1,
+   built once and shared, so a second crate, palm or car costs no new geometry (the one exception is a string of lights,
+   which is built to fit its two ends). Draw calls: crate 1, speaker 1, palm 1,
    skiff 1, lamp post 2 (1 by day), string of lights 2, vision cone 1, ring 1, arrow 1, car 3.
      solid   one vertex-coloured MeshStandardMaterial for almost everything. Each vertex also carries a column of a tiny
              palette texture that sets its roughness, so paint, glass, rubber and steel share a draw call.
@@ -1915,8 +1927,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
       g.add(frame, face); return g;
     },
-    contact(list) { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0);
-      return glowMesh(finish(b, -1, true), once("contactMat", () => mats().glow())); },
+    contact(list) { // the same list gives the same geometry, so the patch under every person's feet is built once
+      const geo = once("contact" + JSON.stringify(list), () => { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0); return finish(b, -1, true); });
+      return glowMesh(geo, once("contactMat", () => mats().glow())); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
@@ -2310,7 +2323,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 <script>/* src/main.js */
 /* main: boot, renderer, camera, input, screens, sound, the loop and the test hooks.
    The rules live in sim.js. The look lives in world.js, people.js, props.js and lighting.js.
-   This file only wires them together. */
+   This file wires them together. It also holds a little content of its own: where the street scenery
+   stands (carts, pickups, murals, signs) and what each runner's second shirt looks like. */
 (function () {
   "use strict";
   const NH = window.NH, sim = NH.sim, tune = sim.tune, STEP = sim.STEP, U = NH.U, P = NH.PALETTE;
@@ -2350,13 +2364,12 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   function ghost(parent, shape, kind) { const m = new THREE.Mesh(ghostGeo[shape], ghostMats[kind]); m.userData.ghost = m.userData.overlay = true; m.renderOrder = 1; actor(parent); parent.add(m); return m; }
 
   /* ---------------- things in the scene that follow the rules' state ---------------- */
-  const foot = () => NH.props.contact([[0, 0, 0.5, 0.42, 0, 0.42]]);   // the soft patch under a person's feet
+  const foot = () => NH.props.contact([[0, 0, 0.5, 0.42, 0, 0.42]]);   // the soft patch under a person's feet: one mesh each, sharing one geometry
   const person = (castIndex, kind) => { const p = NH.people.make(sim.CAST[castIndex]); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", kind || "other"); scene.add(p.group); return p; };
-  // two outfits for you, built once: yellow and green shirts. Changing at a clothesline shows the other one.
   // two runners to choose from on the title card, two shirts each (the second is what a clothesline change puts on)
-  const KEMAR = sim.CAST[7];
+  const SECOND = 7, TAVIAN = sim.CAST[SECOND];   // the second runner's place in the cast list
   const heroes = [[player0(sim.CAST[0]), player0(Object.assign({}, sim.CAST[0], { id: "imani-green", look: "imani", shirt: "#2f8f5a" }))],
-                  [player0(KEMAR), player0(Object.assign({}, KEMAR, { id: "kemar-leopard", look: "kemar", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
+                  [player0(TAVIAN), player0(Object.assign({}, TAVIAN, { id: "tavian-leopard", look: "tavian", shirt: "#c9965a", pattern: "#3a2416", print: "leopard" }))]];
   let hero = 0, outfits = heroes[0]; heroes.forEach((h) => h.forEach((p) => { p.group.visible = false; })); outfits[0].group.visible = true;
   function player0(cast) { const p = NH.people.make(cast); p.group.scale.setScalar(NH.HERO); p.group.add(foot()); ghost(p.group, "person", "you"); scene.add(p.group); return p; }
   let player = outfits[0];
@@ -2385,26 +2398,30 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   const arrow = NH.props.arrow(); scene.add(arrow);
   ring.userData.overlay = arrow.userData.overlay = true;   // game markers, not part of the place: the scene exporter leaves "overlay" objects out
   sim.PALMS.forEach(([x, y], i) => { const t = NH.props.palm(i); NH.put(t, x, y, 0); t.rotation.y = i * 1.7; scene.add(t); });
-  // vendors' coconut carts on the pavement, each with its seller standing by; scenery only, the rules do not see them
-  [[372, 560, 0.0, 3], [828, 1210, Math.PI, 4], [372, 1120, 0.0, 5]].forEach(([x, y, a, c], i) => {
+  // street scenery the rules do not see. Each list is written once: the props and their contact shading both read it.
+  const CARTS = [[372, 560, 0.0, 3], [828, 1210, Math.PI, 4], [372, 1120, 0.0, 5]];              // x, y, facing, the seller's place in the cast list
+  const MURALS = [[440, 1384], [825, 1384]];
+  const PICKUPS = [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]];        // x, y, facing
+  // vendors' coconut carts on the pavement, each with its seller standing by
+  CARTS.forEach(([x, y, a, c], i) => {
     const k = NH.props.cart(i); NH.put(k, x, y, 0); k.rotation.y = a + Math.PI / 2; scene.add(k);
     const v = person(c); NH.put(v.group, x + (a ? 24 : -24), y + 14, 0); NH.face(v.group, a); npcs.push(v);   // the seller stands on the street side, facing the cart
   });
-  // two painted walls at the top of the quay, facing the harbour (and the camera); scenery only
-  [[440, 1384, 0], [825, 1384, 1]].forEach(([x, y, i]) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
+  // two painted walls at the top of the quay, facing the harbour (and the camera)
+  MURALS.forEach(([x, y], i) => { const w = NH.props.mural(i); NH.put(w, x, y, 0); w.rotation.y = -Math.PI / 2; scene.add(w); });
   // dub plates to find in the alleys: they turn slowly, and vanish once collected
   const plates = sim.PLATES.map(([x, y]) => { const d = NH.props.plate(); NH.put(d, x, y, 0); scene.add(d); return d; });
   // hand-painted shop signs on the pavements, facing south to the camera; scenery only
   [[480, 392, 0], [720, 392, 1], [600, 912, 2], [480, 1312, 3]].forEach(([x, y, i]) => { const s = NH.props.sign(i); NH.put(s, x, y, 0); s.rotation.y = -Math.PI / 2; scene.add(s); });
   // contact shading under the standing props: one mesh for all of them
   { const U2 = NH.U, wx = (x) => (x - sim.W / 2) * U2, wz = (y) => (y - sim.H / 2) * U2, L = [];
-    [[372, 560], [828, 1210], [372, 1120]].forEach(([x, y]) => L.push([wx(x), wz(y), 0.8, 1.25, 0, 0.5]));                       // carts
-    [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a]) => L.push([wx(x), wz(y), 3.2, 1.6, a, 0.55]));   // pickups
-    [[440, 1384], [825, 1384]].forEach(([x, y]) => L.push([wx(x), wz(y) + 0.3, 3.6, 0.7, 0, 0.4]));                                // mural walls
+    CARTS.forEach(([x, y]) => L.push([wx(x), wz(y), 0.8, 1.25, 0, 0.5]));
+    PICKUPS.forEach(([x, y, a]) => L.push([wx(x), wz(y), 3.2, 1.6, a, 0.55]));
+    MURALS.forEach(([x, y]) => L.push([wx(x), wz(y) + 0.3, 3.6, 0.7, 0, 0.4]));
     sim.PICK && L.push([wx(sim.PICK.x), wz(sim.PICK.y), 1.5, 1.5, 0, 0.45]);                                                       // the crate pile
     scene.add(NH.props.contact(L)); }
-  // pickups parked on the quay; scenery only, the rules do not see them
-  [[650, 1408, 0.02], [1000, 1404, -0.03], [1150, 1415, Math.PI + 0.04]].forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
+  // pickups parked on the quay
+  PICKUPS.forEach(([x, y, a], i) => { const v = NH.props.pickup(i); NH.put(v, x, y, 0); v.rotation.y = a; scene.add(v); });
   sim.SKIFFS.forEach(([x, color], i) => { const b = NH.props.skiff(new THREE.Color(color).getHex()); NH.put(b, x, sim.WATER + 44, -0.35); b.rotation.y = 0.15 * (i - 1); scene.add(b); });
   const lamps = sim.LAMPS.map(([x, y], i) => { // the post stands on a corner; its arm reaches back so the lamp hangs over the lamp point
     const l = NH.props.lampPost(), yard = i === sim.LAMPS.length - 1, arm = NH.LAMP_ARM / U, a = yard ? Math.PI : (i % 2 ? 0.75 : 0.25) * Math.PI;
@@ -2490,7 +2507,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     patrolViews.forEach((v, i) => {
       const g = S.patrols[i], on = !!g; v.group.visible = on; v.cone.mesh.visible = on; v.coneGhost.visible = on; if (!on) return;
       NH.put(v.group, g.x, g.y, 0); NH.face(v.group, g.ang); NH.put(v.cone.mesh, g.x, g.y, 0); NH.face(v.cone.mesh, g.ang); v.cone.set(g.sees);
-      v.coneGhost.position.copy(v.cone.mesh.position); v.coneGhost.rotation.y = v.cone.mesh.rotation.y; v.coneGhostMat.color.setHex(g.sees ? P.heat : 0xfff0be); v.coneGhostMat.opacity = g.sees ? 0.3 : 0.16;
+      const reach = sim.sightRange(S) / tune.seeRange; v.cone.mesh.scale.set(reach, 1, reach);   // from the alert tier patrols see further: the drawn cone grows with the rule
+      v.coneGhost.position.copy(v.cone.mesh.position); v.coneGhost.rotation.y = v.cone.mesh.rotation.y; v.coneGhost.scale.copy(v.cone.mesh.scale); v.coneGhostMat.color.setHex(g.sees ? P.heat : 0xfff0be); v.coneGhostMat.opacity = g.sees ? 0.3 : 0.16;
       if (v.foot) v.update(dt, { moving: playing, carrying: false, walk: S.t * 6 }); else v.update(dt, { sees: g.sees, night: tod.night, t: S.t });
     });
     stash.visible = !!S.stash; if (S.stash) NH.put(stash, S.stash.x, S.stash.y, 0);
@@ -2633,14 +2651,14 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       <p>Doors open at 7:00 PM. Carry <b>5 speaker crates</b> from Keelwright Boatworks to Zinc Roof Soundhall.</p>
       <ul><li>Patrols only care while you are <b>carrying</b>.</li><li>Put the crate down to walk past clean, then come back for it.</li><li>Buildings block their view.</li></ul>
       <p class="sub">Phone: drag anywhere to move, tap Drop. Keyboard: arrows or WASD, Space to drop or pick up, P pause, M sound.</p>
-      <div class="row">${btn("go", "Start")}${btn("who", "Play as: " + sim.CAST[hero ? 7 : 0].name.split(" ")[0], true)}${btn("cast", "Cast", true)}</div>${saved}`;
+      <div class="row">${btn("go", "Start")}${btn("who", "Play as: " + sim.CAST[hero ? SECOND : 0].name.split(" ")[0], true)}${btn("cast", "Cast", true)}</div>${saved}`;
     else if (scn === "figures") { box.innerHTML = ""; say("Tap or press any key to go back"); return; }
     else if (scn === "pause") box.innerHTML = `<h1>Paused</h1><div class="row">${btn("go", "Resume")}${btn("again", "Restart", true)}</div>
       <p class="sub">Codes: tap six directions (or use the arrow keys). Try Up Up Down Left Right Down.</p>
       <div id="code"></div><p class="sub" id="codemsg" role="status"></p>
       <div class="pad"><span></span><button class="key" data-d="U" type="button">Up</button><span></span>
         <button class="key" data-d="L" type="button">Left</button><button class="key" data-d="D" type="button">Down</button><button class="key" data-d="R" type="button">Right</button></div>`;
-    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><p>${S.spotted ? "" : "<b>Clean run:</b> no patrol ever saw you carrying. "}Dub plates found: <b>${S.plates.filter(Boolean).length} of 3</b>.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
+    else if (scn === "won") box.innerHTML = `<h1>Doors <span>open</span></h1><p>All ${tune.cratesToWin} crates are stacked with ${Math.max(0, Math.round((tune.clockSeconds - S.t) / tune.clockSeconds * 180))} minutes to spare, heat at ${Math.round(S.heat)}.</p><p>${S.spotted ? "" : "<b>Unseen run:</b> no patrol ever saw you carrying. "}Dub plates found: <b>${S.plates.filter(Boolean).length} of 3</b>.</p>${S.cheated ? '<p class="sub">Codes were used, so this run does not count.</p>' : ""}<div class="row">${btn("again", "Play again")}</div>${saved}`;
     else box.innerHTML = `<h1>${S.result === "lost-heat" ? "Too much <span>heat</span>" : "Doors <span>stayed shut</span>"}</h1>
       <p>${S.result === "lost-heat" ? "A patrol watched you carry for too long." : "Seven o'clock came with the stack unfinished."} You delivered ${S.delivered} of ${tune.cratesToWin}.</p>${S.cheated ? '<p class="sub">Codes were used on this run.</p>' : ""}<div class="row">${btn("again", "Try again")}</div>${saved}`;
     const go = $("go"), again = $("again"), cast = $("cast"); typed = "";
@@ -2686,9 +2704,11 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   // Check hooks: a script can drive the game and read its state. After the first step() the page
   // stops drawing by itself (software-rendered test machines are slow); call render() before a screenshot.
   window.game = {
-    cam,
-    buzzes,
-    choose(i) { choose(i); }, get hero() { return hero; },
+    // added with the rules and senses of NH-87 to NH-109. start() does not start audio: call sound() before reading hums or circling.
+    cam,                                                    // the camera rig; cam.shake is the jolt
+    buzzes,                                                 // the last eight vibration patterns asked for, oldest first (kept even where the device has no vibration; none while muted)
+    choose(i) { choose(i); }, get hero() { return hero; },  // pick runner 0 or 1; which one is picked
+    get cones() { return patrolViews.map((v) => +v.cone.mesh.scale.x.toFixed(3)); },   // how far each drawn vision cone reaches, as a multiple of seeRange
     get circling() { return !!(beat.panner); }, get hums() { return hums.map((h) => (h ? +h.level.toFixed(4) : 0)); }, sound() { sound(); },
     get scene() { return scn; }, get state() { return S; }, config: sim.config, get three() { return { scene, camera }; },
     get quality() { return quality; }, frameTime(ms, n) { for (let i = 0; i < (n || 1); i++) tally(ms); },

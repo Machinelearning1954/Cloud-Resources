@@ -14,8 +14,10 @@ Options:
     --sun-height deg     sun height above the horizon; default: as exported
     --frames N           with one view: render N frames of a slow move toward that view, as frame_0001.png ...
 
-This is an OFFLINE render of the same geometry and colours the game draws: several seconds a picture,
-not the game running. Nothing here is used by the game.
+This is an OFFLINE render of the same geometry and colours the game draws: seconds a picture on a
+graphics card, minutes on a CPU, not the game running. Nothing here is used by the game.
+The light rig below is this script's own: it takes the sun's direction and daytime colour from the
+export and sets every strength itself, so a change to the game's lighting.js does not show here.
 """
 import base64
 import json

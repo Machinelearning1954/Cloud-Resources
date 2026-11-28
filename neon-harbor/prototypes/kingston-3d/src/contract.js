@@ -22,8 +22,9 @@
    SHADOWS   meshes that should cast set castShadow = true; ground and roofs set receiveShadow = true.
    LIGHTS    only lighting.js creates THREE.Light objects. Everything else glows with emissive materials
              and flat additive "pool of light" shapes on the ground.
-   TEXTURES  no image files. A texture may be drawn once at start-up on a small canvas (256 px or less)
-             and used as a THREE.CanvasTexture. Set texture.colorSpace = THREE.SRGBColorSpace for colour maps.
+   TEXTURES  no image files. A texture may be drawn once at start-up on a small canvas (256 px or less;
+             the lettered ones are wider so the words stay sharp: the two mural panels are 640x256 and the
+             four shop signs 512x192) and used as a THREE.CanvasTexture. Set texture.colorSpace = THREE.SRGBColorSpace for colour maps.
    MERGING   BufferGeometryUtils is NOT in this build (it is an add-on). Merge by hand or use InstancedMesh.
    BUDGET    a phone must hold 60 fps: share geometries and materials, merge static meshes, use
              InstancedMesh for repeats, no per-frame allocation (no `new` inside update), no extra

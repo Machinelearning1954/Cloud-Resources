@@ -6,6 +6,23 @@
      NH.props.crate()                    -> THREE.Object3D   (1 m cube, origin at its base centre)
      NH.props.speaker()                  -> THREE.Object3D   (1.5 m wide, 2 m tall, 1.2 m deep, origin at base centre, drivers on the +X face)
      NH.props.palm(i)                    -> THREE.Object3D   (i = index, for variety: lean, height, 7 to 9 fronds; 6.1 to 6.5 m tall)
+     NH.props.cart(i)                    -> THREE.Object3D   (i = index, for variety: a street vendor's handcart heaped with green
+                                            coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
+     NH.props.pickup(i)                  -> THREE.Object3D   (i = index, for variety: a parked, sun-faded pickup truck, 5.2 m long,
+                                            1.9 m wide, cab toward +X, origin at base centre; 1 draw call)
+     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6.3 m long and 2.6 m tall (2.7 m with
+                                            its capping), with a 6 by 2.4 m panel on its +X face hand-painted: harbour sunset, palms, a
+                                            speaker stack and made-up lettering built on two cast nicknames; 2 draw calls)
+     NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
+                                            where the player changes shirt; 1 draw call)
+     NH.props.plate()                    -> THREE.Object3D   (a dub plate: a 12-inch record standing on edge, 0.5 m across so it reads
+                                            from the game camera, with a yellow label; a collectible; 1 draw call)
+     NH.props.sign(i)                    -> THREE.Object3D   (i = 0..3: a hand-painted shop sign on two posts, board 2.6 m wide with its
+                                            top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
+     NH.props.contact(list)              -> THREE.Object3D   (soft dark patches on the ground, one mesh for the whole list, 1 draw call;
+                                            list = [[x, z, halfLength, halfWidth, turn, strength], ...] in the parent's metres. They ground
+                                            things at night and in shade, when the sun casts no shadow for them. Two calls with the same
+                                            list share one geometry)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -15,7 +32,8 @@
      NH.props.arrow()                    -> THREE.Object3D   (flat arrow on the ground pointing +X, 1.4 m long) with setColor(hex)
 
    How it is drawn. Every prop is merged by hand into one mesh per material, and geometries, textures and materials are
-   built once and shared, so a second crate, palm or car costs no new geometry. Draw calls: crate 1, speaker 1, palm 1,
+   built once and shared, so a second crate, palm or car costs no new geometry (the one exception is a string of lights,
+   which is built to fit its two ends). Draw calls: crate 1, speaker 1, palm 1,
    skiff 1, lamp post 2 (1 by day), string of lights 2, vision cone 1, ring 1, arrow 1, car 3.
      solid   one vertex-coloured MeshStandardMaterial for almost everything. Each vertex also carries a column of a tiny
              palette texture that sets its roughness, so paint, glass, rubber and steel share a draw call.
@@ -162,6 +180,45 @@
       g.beginPath(); g.arc(128, 128, 23, 0, TAU); g.fill();
       g.fillStyle = "#fff"; g.fillRect(0, 0, 256, 17); g.fillRect(0, 238, 18, 18);                                          // under the frame: pale grain for the frame boards, plain white for steel and rope
       for (let s = 0; s < 40; s++) { g.fillStyle = "rgba(40,20,0," + (0.06 + 0.12 * rnd(s, 9)).toFixed(3) + ")"; g.fillRect(rnd(s, 10) * 230, 1 + rnd(s, 11) * 14, 20 + rnd(s, 12) * 60, 1.2); }
+    }));
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  });
+  const MURALS = [
+    { words: ["BASSLINE", "SUNDAYS"], sky: ["#2a1b4a", "#c8466a", "#f6a24a"], sea: "#1f6f86", accent: "#f2c230" },
+    { words: ["BRASS & KEEL", "BOATWORKS"], sky: ["#123a5a", "#2f8f9a", "#f2d28a"], sea: "#0f4f63", accent: "#e8573a" },
+  ];
+  const muralTex = (i) => once("muralTex" + i, () => { // painted in code, like everything else here: no image files
+    const m = MURALS[i % MURALS.length];
+    const t = new THREE.CanvasTexture(canvas(640, 256, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, 170); m.sky.forEach((c, k) => sky.addColorStop(k / (m.sky.length - 1), c)); g.fillStyle = sky; g.fillRect(0, 0, 640, 256);
+      g.fillStyle = "#ffd36b"; g.beginPath(); g.arc(470, 150, 46, 0, TAU); g.fill();                                   // the sun going down
+      g.fillStyle = m.sea; g.fillRect(0, 160, 640, 96);
+      g.fillStyle = "rgba(255,220,140,0.55)"; for (let k = 0; k < 9; k++) g.fillRect(430 + (k % 3) * 9 - k * 2, 168 + k * 9, 70 - k * 6, 3);   // its glitter on the water
+      g.fillStyle = "#14141a"; for (const [x, h] of [[70, 150], [150, 120], [585, 140]]) {                             // palms in silhouette
+        g.fillRect(x - 3, 200 - h, 6, h); for (let f = 0; f < 7; f++) { const a = -PI + f * PI / 6; g.beginPath(); g.ellipse(x + cos(a) * 26, 200 - h + sin(a) * 10, 30, 6, a, 0, TAU); g.fill(); }
+      }
+      g.fillStyle = "#14141a"; g.fillRect(250, 120, 60, 80); g.fillRect(316, 120, 60, 80); g.fillRect(283, 64, 60, 54);   // a sound-system stack
+      g.fillStyle = m.accent; for (const [x, y, r] of [[280, 160, 20], [346, 160, 20], [313, 91, 15]]) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.fillStyle = "#14141a"; g.beginPath(); g.arc(x, y, r * 0.45, 0, TAU); g.fill(); g.fillStyle = m.accent; }
+      g.textAlign = "center"; g.lineJoin = "round";
+      m.words.forEach((w, k) => { const y = 54 + k * 46, size = k ? 34 : 46; g.font = "900 " + size + "px Impact, 'Arial Black', sans-serif";
+        g.lineWidth = 9; g.strokeStyle = "#14141a"; g.strokeText(w, 320, y + (k ? 160 : 0)); g.fillStyle = k ? "#f4efe2" : m.accent; g.fillText(w, 320, y + (k ? 160 : 0)); });
+      g.fillStyle = "rgba(0,0,0,0.18)"; for (let k = 0; k < 220; k++) g.fillRect((k * 97) % 640, (k * 53) % 256, 2 + (k % 3), 1);   // block joints and chips showing through
+    }));
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  });
+  const SIGNS = [
+    { top: "MISS PEARL'S", sub: "COOKSHOP \u00b7 PATTIES \u00b7 SOUP", bg: "#f2c230", ink: "#7a1f14", edge: "#c8573a" },
+    { top: "TIDE CUTS", sub: "BARBER \u00b7 FADES \u00b7 LINE-UPS", bg: "#12343f", ink: "#f4efe2", edge: "#2f8f9a" },
+    { top: "IRIE ICE", sub: "COLD DRINKS \u00b7 SKY JUICE", bg: "#e8573a", ink: "#fff3c4", edge: "#f2c230" },
+    { top: "HARBOUR FIX", sub: "PHONES \u00b7 RADIOS \u00b7 REPAIRS", bg: "#2f8f5a", ink: "#fff8e6", edge: "#14141a" },
+  ];
+  const signTex = (i) => once("signTex" + i, () => { // sign-painter's board: flat colour, a border, fat letters with a drop shadow
+    const m = SIGNS[i % SIGNS.length];
+    const t = new THREE.CanvasTexture(canvas(512, 192, (g) => {
+      g.fillStyle = m.bg; g.fillRect(0, 0, 512, 192); g.strokeStyle = m.edge; g.lineWidth = 12; g.strokeRect(10, 10, 492, 172);
+      g.textAlign = "center"; g.font = "900 72px Impact, 'Arial Black', sans-serif"; g.fillStyle = "rgba(0,0,0,0.35)"; g.fillText(m.top, 260, 96); g.fillStyle = m.ink; g.fillText(m.top, 256, 92);
+      g.font = "700 30px 'Arial Black', Arial, sans-serif"; g.fillText(m.sub, 256, 150);
+      g.fillStyle = "rgba(0,0,0,0.12)"; for (let k = 0; k < 120; k++) g.fillRect((k * 131) % 512, (k * 59) % 192, 3, 1);   // weathering
     }));
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
   });
@@ -317,6 +374,55 @@
       solid(b, ball(7, 5), at(top[0] + cos(a) * 0.21, top[1] - 0.2 - 0.14 * rnd(i, 220 + c), top[2] + sin(a) * 0.21, r, r * 1.15, r), rnd(i, 230 + c) < 0.5 ? lin(0x7f9440) : lin(0x8a6a34), SATIN); }
     return finish(b, 62);
   }
+  function cartGeo(i) { // a vendor's handcart: plank bed on two cart wheels, push handles, a heap of coconuts and a sun shade
+    const b = bag(), WOOD = lin(0x9a6a3c), DARK = lin(0x5a3a22), TYRE = lin(0x1c1c1e), HUB = lin(0x9aa0a6), SHADES = [[0xd8452e, 0xf2c230], [0x2f8f5a, 0xf2c230], [0x2b7fb8, 0xf4efe2]][i % 3];
+    const r = (k) => { const x = Math.sin((i + 1) * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+    solid(b, BOX, at(0, 0.82, 0, 1.6, 0.08, 0.92), WOOD, VARNISH);                                                      // the bed
+    for (const z of [-0.47, 0.47]) solid(b, BOX, at(0, 0.95, z, 1.6, 0.22, 0.04), mul(WOOD, 0.85), VARNISH);          // side boards
+    for (const x of [-0.8, 0.8]) solid(b, BOX, at(x, 0.95, 0, 0.04, 0.22, 0.92), mul(WOOD, 0.8), VARNISH);
+    for (const z of [-0.55, 0.55]) {
+      solid(b, cyl(14), at(-0.25, 0.4, z, 0.8, 0.09, 0.8, PI / 2), TYRE, RUBBER);                                       // cart wheels
+      solid(b, cyl(8), at(-0.25, 0.4, z * 1.02, 0.16, 0.1, 0.16, PI / 2), HUB, METAL);
+      solid(b, BOX, at(1.15, 0.86, z * 0.62, 0.75, 0.05, 0.05, 0, 0, -0.18), DARK, VARNISH);                             // push handles
+      solid(b, BOX, at(0.68, 0.39, z * 0.75, 0.05, 0.78, 0.05), DARK, VARNISH);                                         // front legs
+    }
+    solid(b, BOX, at(-0.25, 0.42, 0, 0.06, 0.06, 1.12), HUB, METAL);                                                    // axle
+    for (let k = 0; k < 26; k++) {                                                                                        // the heap: a low mound of coconuts
+      const a = r(k) * TAU, d = Math.sqrt(r(k + 50)) * 0.62, x = cos(a) * d * 1.15, z = sin(a) * d * 0.62, h = 0.93 + (1 - d / 0.62) * 0.28 + r(k + 90) * 0.05;
+      const green = mix(lin(0x4f8a2a), lin(0x9cbf3a), r(k + 70)), cut = r(k + 30) < 0.12;
+      solid(b, ball(5, 3), at(x * 0.6, h, z * 0.85, 0.23, 0.26, 0.23), cut ? lin(0xf3eedf) : green, MATTE);   // few faces each: from the game camera a heap reads the same, at a quarter of the triangles
+    }
+    solid(b, cyl(6), at(-0.78, 1.45, 0.44, 0.04, 1.3, 0.04), HUB, METAL);                                              // shade pole at the back corner, so the heap shows from above
+    for (let k = 0; k < 8; k++) { const q = k * PI / 4 + PI / 8; solid(b, BOX, at(-0.78 + cos(q) * 0.24, 2.12, 0.44 + sin(q) * 0.24, 0.3, 0.035, 0.2, 0, -q, 0), lin(SHADES[k % 2]), PAINT); }
+    return finish(b, 30);
+  }
+  function pickupGeo(i) { // a working pickup: hood, cab and open bed on four wheels, paint faded by the sun
+    const b = bag(), PAINT_C = lin([0xe8e4da, 0xa8452f, 0x2f7f86][i % 3]), DARK = lin(0x1c1f22), GLASSC = lin(0x26313a), CHROME = lin(0xb9bec2), TYRE = lin(0x18181a), LAMP = lin(0xfff1c8), TAIL = lin(0xb0201a);
+    const body = (p) => mul(PAINT_C, 0.86 + 0.18 * clamp01(p[1] / 1.9));                                                 // paint a shade lighter toward the roof
+    solid(b, BOX, at(0, 0.72, 0, 5.2, 0.5, 1.86), body, PAINT);                                                             // lower body, end to end
+    solid(b, BOX, at(1.95, 1.12, 0, 1.3, 0.32, 1.8), body, PAINT);                                                          // hood
+    solid(b, BOX, at(0.55, 1.4, 0, 1.55, 0.86, 1.8), body, PAINT);                                                          // cab
+    solid(b, BOX, at(1.36, 1.5, 0, 0.06, 0.6, 1.6, 0, 0, 0.5), GLASSC, GLASS);                                             // windscreen, leaning back
+    for (const z of [-0.91, 0.91]) solid(b, BOX, at(0.55, 1.55, z, 1.2, 0.48, 0.03), GLASSC, GLASS);                       // side windows
+    solid(b, BOX, at(-1.25, 0.99, 0, 2.7, 0.06, 1.7), DARK, MATTE);                                                         // bed floor
+    for (const z of [-0.9, 0.9]) solid(b, BOX, at(-1.25, 1.2, z, 2.7, 0.45, 0.07), body, PAINT);                           // bed sides
+    solid(b, BOX, at(-2.57, 1.2, 0, 0.07, 0.45, 1.86), body, PAINT);                                                        // tailgate
+    solid(b, BOX, at(2.62, 0.62, 0, 0.12, 0.2, 1.9), CHROME, METAL); solid(b, BOX, at(-2.62, 0.62, 0, 0.12, 0.2, 1.9), DARK, RUBBER);   // bumpers
+    for (const z of [-0.7, 0.7]) { solid(b, BOX, at(2.6, 0.95, z, 0.05, 0.16, 0.3), LAMP, GLOW); solid(b, BOX, at(-2.6, 1.05, z, 0.05, 0.22, 0.14), TAIL, GLOW); }
+    for (const x of [-1.65, 1.7]) for (const z of [-0.86, 0.86]) {
+      solid(b, cyl(16), at(x, 0.4, z, 0.8, 0.26, 0.8, PI / 2), TYRE, RUBBER);
+      solid(b, cyl(8), at(x, 0.4, z * 1.08, 0.36, 0.06, 0.36, PI / 2), CHROME, METAL);
+    }
+    if (i % 3 === 1) for (let k = 0; k < 3; k++) solid(b, BOX, at(-0.7 - k * 0.75, 1.3, (k % 2 ? 0.35 : -0.3), 0.6, 0.55, 0.6, 0, k * 0.4, 0), lin(0x9a6a3c), VARNISH);   // a few boxes of load in one bed
+    return finish(b, 30);
+  }
+  function lineGeo() {
+    const b = bag(), WOOD = lin(0x7a5a3a), ROPE = lin(0xdccba0);
+    for (const x of [-1.2, 1.2]) solid(b, BOX, at(x, 0.9, 0, 0.08, 1.8, 0.08), WOOD, VARNISH);
+    solid(b, BOX, at(0, 1.72, 0, 2.4, 0.02, 0.02), ROPE, MATTE);
+    [[0xe8b23a, -0.7], [0x2f8f5a, 0], [0xc8573a, 0.7]].forEach(([c, x]) => { solid(b, BOX, at(x, 1.42, 0, 0.5, 0.56, 0.03), lin(c), MATTE); solid(b, BOX, at(x, 1.62, 0, 0.62, 0.14, 0.03), lin(c), MATTE); });
+    return finish(b, 30);
+  }
   function skiffGeo(hex) {
     const b = bag(), HULL = lin(hex), CREAM = lin(0xf2ead6), INNER = mix(HULL, lin(0xe9e0c8), 0.08), WOOD = lin(0xa07c4c), FLOOR = lin(0x7c5d38), RAIL = lin(0x70492a), GREY = lin(0x2c3239), ROPE = lin(0xdccba0);
     const xs = [-2.7, -2.25, -1.6, -0.8, 0, 0.8, 1.5, 2.05, 2.45, 2.7], beams = [0.6, 0.72, 0.81, 0.85, 0.85, 0.79, 0.66, 0.46, 0.22, 0.03], sheers = [0.47, 0.44, 0.42, 0.41, 0.41, 0.43, 0.47, 0.53, 0.59, 0.64], drafts = [0.1, 0.16, 0.19, 0.2, 0.2, 0.19, 0.17, 0.13, 0.07, 0];
@@ -400,6 +506,31 @@
     crate() { return mesh(once("crate", crateGeo), mats().crate, true); },
     speaker() { return mesh(once("speaker", speakerGeo), mats().speaker, true); },
     palm(i) { return mesh(once("palm" + i, () => palmGeo(i)), mats().leaf, true); },
+    pickup(i) { return mesh(once("pickup" + (i % 3), () => pickupGeo(i % 3)), mats().solid, true); },
+    mural(i) {
+      const g = new THREE.Group(), face = new THREE.Mesh(once("muralFace", () => new THREE.PlaneGeometry(6, 2.4)), once("muralMat" + (i % 2), () => new THREE.MeshStandardMaterial({ name: "mural", map: muralTex(i), roughness: 0.9, metalness: 0 })));
+      face.rotation.y = PI / 2; face.position.set(0.11, 1.32, 0); face.receiveShadow = true;
+      const wall = mesh(once("muralWall", () => { const b = bag(), BLOCK = lin(0xbdb6a8);
+        solid(b, BOX, at(0, 1.3, 0, 0.2, 2.6, 6.3), BLOCK, MATTE); solid(b, BOX, at(0, 2.64, 0, 0.3, 0.08, 6.4), mul(BLOCK, 0.85), MATTE);   // the block wall and its capping
+        return finish(b, 30); }), mats().solid, true);
+      g.add(wall, face); return g;
+    },
+    clothesline() { return mesh(once("line", lineGeo), mats().solid, true); },
+    plate() { return mesh(once("plate", () => { const b = bag();
+      solid(b, cyl(20), at(0, 0.45, 0, 0.5, 0.03, 0.5, PI / 2), lin(0x121214), GLASS); solid(b, cyl(12), at(0, 0.45, 0, 0.18, 0.04, 0.18, PI / 2), lin(0xf2c230), PAINT);
+      return finish(b, 30); }), mats().solid, true); },
+    sign(i) {
+      const g = new THREE.Group(), face = new THREE.Mesh(once("signFace", () => new THREE.PlaneGeometry(2.6, 0.98)), once("signMat" + (i % 4), () => new THREE.MeshStandardMaterial({ name: "sign", map: signTex(i), roughness: 0.85, metalness: 0 })));
+      face.rotation.y = PI / 2; face.position.set(0.06, 2.5, 0); face.receiveShadow = true;
+      const frame = mesh(once("signFrame", () => { const b = bag(), WOOD = lin(0x6a4a2e);
+        for (const z of [-1.2, 1.2]) solid(b, BOX, at(0, 1.5, z, 0.09, 3, 0.09), WOOD, VARNISH);
+        solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
+      g.add(frame, face); return g;
+    },
+    contact(list) { // the same list gives the same geometry, so the patch under every person's feet is built once
+      const geo = once("contact" + JSON.stringify(list), () => { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0); return finish(b, -1, true); });
+      return glowMesh(geo, once("contactMat", () => mats().glow())); },
+    cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {
       const M = mats(), group = new THREE.Group(), glowMat = M.glow(), fx = glowMesh(once("lampGlow", lampGlow), glowMat); fx.visible = false; glowMat.color.setScalar(0);

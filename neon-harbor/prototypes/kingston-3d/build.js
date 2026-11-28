@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /* Build the one self-contained page from src/ and vendor/. No dependencies.
      node build.js                       -> index.html
-     node build.js --check               -> exit 1 if index.html is not what the sources produce
-     node build.js --solo people --out dev/out/people.html
+     node build.js --check               -> exit 1 if index.html is not what the sources produce, or if dev/baseline/
+                                            has fallen behind src/
+     node build.js --solo people --out <a path outside the repository>
                                          -> that one module from src/, the other three from dev/baseline/, which holds
                                             the last integrated version of each visual module
-                                            (so a module can be worked on without the others' unfinished changes) */
+                                            (so a module can be worked on without the others' unfinished changes).
+                                            Copy src/world.js, people.js, props.js and lighting.js over dev/baseline/
+                                            when a change to one of them is integrated: --check fails while they differ */
 "use strict";
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const here = (...p) => path.join(__dirname, ...p);
@@ -29,7 +32,11 @@ const scripts = parts.map(([label, file]) => {
 const page = fs.readFileSync(here("src", "shell.html"), "utf8").replace("<!--BUILD:SCRIPTS-->", () => scripts);   // a function, so "$" sequences inside the library are not treated as replace patterns
 if (args.includes("--check")) {
   const same = fs.existsSync(out) && fs.readFileSync(out, "utf8") === page;
-  console.log(same ? "index.html is up to date with src/" : "index.html is STALE: run `node build.js`"); process.exit(same ? 0 : 1);
+  console.log(same ? "index.html is up to date with src/" : "index.html is STALE: run `node build.js`");
+  const read = (...p) => (fs.existsSync(here(...p)) ? fs.readFileSync(here(...p), "utf8") : null);
+  const behind = MODULES.filter((m) => read("dev", "baseline", `${m}.js`) !== read("src", `${m}.js`));   // a stale baseline makes --solo builds pair one new module with old ones
+  console.log(behind.length ? `dev/baseline/ is BEHIND src/ for: ${behind.join(", ")}. Copy those files over once the change is integrated` : "dev/baseline/ matches src/");
+  process.exit(same && !behind.length ? 0 : 1);
 }
 fs.mkdirSync(path.dirname(out), { recursive: true }); fs.writeFileSync(out, page);
 console.log(`built ${path.relative(process.cwd(), out)}: ${(page.length / 1024).toFixed(0)} KB${solo ? ` (solo: ${solo})` : ""}`);

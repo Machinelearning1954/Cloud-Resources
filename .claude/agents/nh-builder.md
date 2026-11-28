@@ -18,8 +18,8 @@ For `neon-harbor/prototypes/kingston-3d/`:
 
 - Read `src/contract.js` first. Its header comment is binding (units, axes, camera, lots, lights, budget).
 - Keep each module's public API exactly as its header comment documents it.
-- Work in short loops: change, `node build.js --solo <module> --out dev/out/<module>/page.html`, `node dev/sheet.js <page> <dir>`, then open the pictures and look at them. `node dev/check.js <page>` must still pass.
-- Rule tests: `node test/sim.test.js` and `node test/lock.test.js`.
+- Work in short loops: change, `node build.js --solo <module> --out <a folder outside the repository>/<module>/page.html`, `node dev/sheet.js <page> <dir>`, then open the pictures and look at them. `node dev/check.js <page>` must still pass.
+- Node tests: `node test/sim.test.js`, `node test/save.test.js` and `node test/lock.test.js`. When your module's change is integrated, copy it over `dev/baseline/` (`node build.js --check` fails while they differ).
 - Anything that hides a street, a person, a patrol car or a vision cone from the game camera is a bug.
 - Never allocate inside a per-frame `update()`.
 

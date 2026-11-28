@@ -1,10 +1,15 @@
 /* Crate Run — the game rules. No drawing, no DOM, no clock: the same code runs in the
-   browser and in Node (test/sim.test.js). Ported 1:1 from prototypes/crate-run so the 2D and
-   3D views play the same game. Distances are in "sim pixels"; the 3D view scales them. */
+   browser and in Node (test/sim.test.js). Began as a 1:1 port of prototypes/crate-run; the rules
+   added since (hunting patrols, grace, heat tiers, disguise, dub plates, a second runner) are in
+   this file only. Distances are in "sim pixels"; the 3D view scales them.
+   State added by those rules: seenFor, grace, tier, known, outfit, changing, plates, spotted.
+   Events added: known, changed, plate, tier. CAST is read by position (see main.js): add new
+   entries at the end. */
 (function (root) {
   "use strict";
 
-  /* ---- tuning: every number the game uses lives here ---- */
+  /* ---- tuning: the values meant to be tuned live here. The newer rules also use constants that are
+     not in this table: HOLD, TIERS, the two 20% tier bonuses, the halved grace and the 26 px and 22 px reaches ---- */
   const config = {
     walkSpeed:    { value: 150, min: 80,  max: 260, step: 5 },    // px/s, empty-handed
     carrySpeed:   { value: 115, min: 60,  max: 220, step: 5 },    // px/s, carrying a crate
@@ -67,7 +72,7 @@
     { id: "ped-afro",     name: "Passer-by", hair: "afro",     skin: "#8a5a36", shirt: "#b07ad0", note: "rounded afro" },
     { id: "ped-canerows", name: "Passer-by", hair: "canerows", skin: "#54311c", shirt: "#e07a9a", note: "canerows" },
     { id: "patrol", name: "Foot patrol",            hair: "cap",           skin: "#7a4a2b", shirt: "#2c3f66", note: "sees you carrying" },
-    { id: "kemar",  name: "Kemar 'Tide' Bailey",    hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", print: "floral", beard: true, note: "you, if you choose: printed shirts" },
+    { id: "tavian", name: "Tavian 'Leaf' Wedderburn", hair: "waves",         skin: "#4f2e1b", shirt: "#16161a", pattern: "#f1eee6", print: "floral", beard: true, note: "you, if you choose: printed shirts" },
   ];
   const NPCS = [ // people who stand in one place
     { cast: 1, x: 1100, y: 250, ang: Math.PI },   // Omari at the rig
@@ -118,6 +123,7 @@
   }
   const TIERS = [0, 34, 67];                            // heat at which the street turns calm -> alert (patrols see 20% further) -> lockdown (and move 20% faster)
   function heatTier(S) { return S.heat >= TIERS[2] ? 2 : S.heat >= TIERS[1] ? 1 : 0; }
+  function sightRange(S) { return tune.seeRange * (heatTier(S) >= 1 ? 1.2 : 1); }   // the drawn vision cone uses this too, so the two cannot drift apart
   function patrolSpeed(S, g) {
     return (heatTier(S) === 2 ? 1.2 : 1) * (tune.patrolSpeed + tune.patrolRamp * S.delivered) * (g.foot ? 0.55 : 1) * (S.t < S.slowUntil ? 0.5 : 1);
   }
@@ -130,7 +136,7 @@
   }
   function create() {
     const S = { seed: 20261114, t: 0, heat: 0, delivered: 0, carrying: false, stash: null, seen: false, result: "", over: false,
-                cheated: false, slowUntil: 0, seenFor: 0, tier: 0, known: false, outfit: 0, changing: 0, plates: [false, false, false], spotted: false, events: [],
+                cheated: false, slowUntil: 0, seenFor: 0, grace: 0, tier: 0, known: false, outfit: 0, changing: 0, plates: [false, false, false], spotted: false, events: [],
                 player: { x: 240, y: 1425, ang: -Math.PI / 2, walk: 0, moving: false },
                 patrols: [newPatrol(0)], peds: [] };
     for (let i = 0; i < 8; i++) {
@@ -185,7 +191,7 @@
     for (const g of S.patrols) {
       const pts = g.route.pts, speed = patrolSpeed(S, g), chase = speed * tune.chasePercent / 100;
       const dx = p.x - g.x, dy = p.y - g.y, dd = Math.hypot(dx, dy);
-      g.sees = S.carrying && dd < tune.seeRange * (1 + 0.2 * Math.min(1, heatTier(S))) && dd > 0 &&
+      g.sees = S.carrying && dd < sightRange(S) && dd > 0 &&
                (dx * Math.cos(g.ang) + dy * Math.sin(g.ang)) / dd > cosHalf && clearSight(g, p);
       if (g.sees) { g.memory = { x: p.x, y: p.y }; if (g.mode !== "hunt") { g.mode = "hunt"; g.stuck = 0; } }
       else if (!S.carrying && g.mode !== "route" && g.mode !== "return") g.mode = "return";
@@ -222,7 +228,7 @@
     if (S.changing >= tune.changeSeconds) { S.changing = 0; S.outfit ^= 1; const was = S.known; S.known = false; S.events.push({ type: "changed", outfit: S.outfit, wasKnown: was }); }
     S.heat = clamp(S.heat + (rising ? tune.heatRise : S.seen ? 0 : -tune.heatFall) * STEP, 0, 100);
     if (S.seen && !wasSeen) S.events.push({ type: "seen" });
-    if (S.seen) S.spotted = true;                                                       // a clean run is one where no patrol ever saw you carrying
+    if (S.seen) S.spotted = true;                                                       // an unseen run is one where no patrol ever saw you carrying
     PLATES.forEach(([x, y], i) => { if (!S.plates[i] && Math.hypot(p.x - x, p.y - y) < 22) { S.plates[i] = true; S.events.push({ type: "plate", count: S.plates.filter(Boolean).length }); } });
     const tier = heatTier(S); if (tier !== S.tier) { S.events.push({ type: "tier", tier, up: tier > S.tier }); S.tier = tier; }
 
@@ -238,7 +244,7 @@
   }
 
   const api = { config, tune, W, H, QUAY, WATER, STEP, PLAYER_RADIUS, ROOF, WALL, B, SOUNDHALL, BOATWORKS, PICK, DROP, LAMPS, STREETS,
-                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, PLATES, heatTier, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
+                PALMS, SKIFFS, ROUTES, CAST, NPCS, CODES, TIERS, LINES, PLATES, heatTier, sightRange, clamp, dist, clearSight, blocked, patrolSpeed, create, step, toggleCrate, nearStash, enterCode };
   root.NH = root.NH || {}; root.NH.sim = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

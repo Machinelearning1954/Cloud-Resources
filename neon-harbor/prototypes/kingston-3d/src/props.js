@@ -10,9 +10,9 @@
                                             coconuts under a striped shade, 1.7 m long, handles toward +X, origin at base centre; 1 draw call)
      NH.props.pickup(i)                  -> THREE.Object3D   (i = index, for variety: a parked, sun-faded pickup truck, 5.2 m long,
                                             1.9 m wide, cab toward +X, origin at base centre; 1 draw call)
-     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6 m long and 2.4 m tall, its +X face
-                                            hand-painted: harbour sunset, palms, a speaker stack and lettering for the cast's own venues;
-                                            2 draw calls)
+     NH.props.mural(i)                   -> THREE.Object3D   (i = 0 or 1: a free-standing block wall, 6.3 m long and 2.6 m tall (2.7 m with
+                                            its capping), with a 6 by 2.4 m panel on its +X face hand-painted: harbour sunset, palms, a
+                                            speaker stack and made-up lettering built on two cast nicknames; 2 draw calls)
      NH.props.clothesline()              -> THREE.Object3D   (two posts 2.4 m apart along X with a line of three shirts pegged out;
                                             where the player changes shirt; 1 draw call)
      NH.props.plate()                    -> THREE.Object3D   (a dub plate: a 12-inch record standing on edge, 0.5 m across so it reads
@@ -21,7 +21,8 @@
                                             top 3 m up, lettering on the +X face, for four made-up local businesses; 2 draw calls)
      NH.props.contact(list)              -> THREE.Object3D   (soft dark patches on the ground, one mesh for the whole list, 1 draw call;
                                             list = [[x, z, halfLength, halfWidth, turn, strength], ...] in the parent's metres. They ground
-                                            things at night and in shade, when the sun casts no shadow for them)
+                                            things at night and in shade, when the sun casts no shadow for them. Two calls with the same
+                                            list share one geometry)
      NH.props.skiff(colorHex)            -> THREE.Object3D   (open boat, 5.4 m hull plus a small outboard, bow toward +X, origin at waterline)
      NH.props.lampPost()                 -> { group, setGlow(k) }   k = 0..1; post at the origin, an arm reaching NH.LAMP_ARM along +X,
                                             the lamp head about 6 m up at the arm's end, and a soft pool of light on the ground under the head
@@ -31,7 +32,8 @@
      NH.props.arrow()                    -> THREE.Object3D   (flat arrow on the ground pointing +X, 1.4 m long) with setColor(hex)
 
    How it is drawn. Every prop is merged by hand into one mesh per material, and geometries, textures and materials are
-   built once and shared, so a second crate, palm or car costs no new geometry. Draw calls: crate 1, speaker 1, palm 1,
+   built once and shared, so a second crate, palm or car costs no new geometry (the one exception is a string of lights,
+   which is built to fit its two ends). Draw calls: crate 1, speaker 1, palm 1,
    skiff 1, lamp post 2 (1 by day), string of lights 2, vision cone 1, ring 1, arrow 1, car 3.
      solid   one vertex-coloured MeshStandardMaterial for almost everything. Each vertex also carries a column of a tiny
              palette texture that sets its roughness, so paint, glass, rubber and steel share a draw call.
@@ -525,8 +527,9 @@
         solid(b, BOX, at(0, 2.5, 0, 0.08, 1.04, 2.66), mul(WOOD, 0.8), VARNISH); return finish(b, 30); }), mats().solid, true);
       g.add(frame, face); return g;
     },
-    contact(list) { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0);
-      return glowMesh(finish(b, -1, true), once("contactMat", () => mats().glow())); },
+    contact(list) { // the same list gives the same geometry, so the patch under every person's feet is built once
+      const geo = once("contact" + JSON.stringify(list), () => { const b = bag(); for (const [x, z, hx, hz, rot, a] of list) glow(b, x, 0.035, z, hx, hz, dark(a), rot || 0); return finish(b, -1, true); });
+      return glowMesh(geo, once("contactMat", () => mats().glow())); },
     cart(i) { return mesh(once("cart" + (i % 3), () => cartGeo(i % 3)), mats().solid, true); },
     skiff(color) { return mesh(once("skiff" + color, () => skiffGeo(color)), mats().solid, true); },
     lampPost() {

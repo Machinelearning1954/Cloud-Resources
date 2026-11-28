@@ -28,16 +28,16 @@
   const RAD = Math.PI / 180;
   const smooth = (x) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
   const KEYS = [ // dusk, sunlight, its strength, sky fill, ground bounce, fill strength, horizon (and fog), zenith, exposure, metres of haze from clear to solid
-    [0.00, 0xfff2dc, 3.60, 0xbdd8ff, 0x9c8a6e, 1.40, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
-    [0.30, 0xffe2b6, 3.80, 0xb6cef8, 0xa88a5e, 1.40, 0xdfe5de, 0x4f8ccf, 1.00, 220],
+    [0.00, 0xfff2dc, 4.10, 0xbdd8ff, 0x9c8a6e, 1.15, 0xcfe2ee, 0x4c8fd6, 1.00, 260],
+    [0.30, 0xffe2b6, 4.30, 0xb6cef8, 0xa88a5e, 1.15, 0xdfe5de, 0x4f8ccf, 1.00, 220],
     [0.50, 0xffbe76, 4.80, 0xb6c4f0, 0xc08a52, 1.38, 0xf6d9a2, 0x6c98d2, 1.03, 140],
     [0.62, 0xff9a52, 7.60, 0x9cb4ea, 0xb87a4c, 1.60, 0xf2a874, 0x5a78c0, 1.05, 125],   // the sun is strong here because tod.sun is already under a half: golden hour holds, then the sun goes quickly
     [0.72, 0xff6a3c, 7.60, 0x8ea2f0, 0x5c5684, 1.85, 0xa87c98, 0x3c4f9c, 1.08, 130],
-    [0.84, 0xff6a3c, 7.60, 0x7890dc, 0x4a5880, 1.62, 0x4c5ea2, 0x1d2c6a, 1.10, 145],
-    [1.00, 0xff6a3c, 7.60, 0x6e86d2, 0x525f8a, 1.30, 0x263a72, 0x0f1a44, 1.10, 155],
+    [0.84, 0xff6a3c, 7.60, 0x8a98c8, 0x5e5f78, 1.62, 0x4c5ea2, 0x1d2c6a, 1.10, 145],
+    [1.00, 0xff6a3c, 7.60, 0x7e8cc0, 0x625f7e, 1.30, 0x263a72, 0x0f1a44, 1.10, 155],
   ].map((k) => ({ at: k[0], sun: new THREE.Color(k[1]), power: k[2], sky: new THREE.Color(k[3]), ground: new THREE.Color(k[4]), fill: k[5],
                   horizon: new THREE.Color(k[6]), zenith: new THREE.Color(k[7]), exposure: k[8], haze: k[9] }));
-  const MOON = new THREE.Color(0xb4c8ff), MOON_POWER = 0.42, MOON_EL = 66 * RAD, MOON_AZ = -82 * RAD;   // the moon stands still, high in the north, so night shadows never move and zinc and water shine back at the camera
+  const MOON = new THREE.Color(0xc4cde0), MOON_POWER = 0.42, MOON_EL = 66 * RAD, MOON_AZ = -82 * RAD;   // the moon stands still, high in the north, so night shadows never move and zinc and water shine back at the camera
   const GLOW = new THREE.Color(0xff9a4a);
 
   NH.lighting = {
@@ -142,8 +142,8 @@
           // each light stays on its lamp while that lamp is one of the nearest two; its strength is zero when its lamp ties with the third nearest, so a move never shows
           if (atA !== n1 && atA !== n2) atA = atB === n1 ? n2 : n1;
           if (atB !== n1 && atB !== n2 || atB === atA) atB = atA === n1 ? n2 : n1;
-          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 38 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
-          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 38 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
+          lampA.position.set(LX[atA], LAMP_Y, LZ[atA]); lampA.intensity = 46 * lit * smooth((d3 - (atA === n1 ? d1 : d2)) / 8);
+          lampB.position.set(LX[atB], LAMP_Y, LZ[atB]); lampB.intensity = 46 * lit * smooth((d3 - (atB === n1 ? d1 : d2)) / 8);
         },
       };
     },

@@ -7,14 +7,14 @@ model: inherit
 
 You check work in the Neon Harbor: Kingston project. You did not write it, and you do not fix it.
 
-Never edit, create or delete project files. Scratch output goes under `neon-harbor/prototypes/kingston-3d/dev/out/` only. No git commands that change anything (`git status` and `git diff` are fine). Never run `tools/publish.sh`.
+Never edit, create or delete project files. Scratch output goes in a folder outside the repository only: `red_team.py` fails on a PNG anywhere under `prototypes/`, even in an untracked `dev/out/`. No git commands that change anything (`git status` and `git diff` are fine). Never run `tools/publish.sh`.
 
 Run, from `neon-harbor/`:
 
 1. `bash tools/repo_doctor.sh` (26 checks).
 2. `python3 tools/red_team.py --scan` (the full attack suite, without `--scan`, when asked for a pre-commit check).
 3. `python3 tools/check_engine_config.py` if `Config/` changed, `python3 tools/check_net_budget.py` if the multiplayer block changed.
-4. For `prototypes/kingston-3d/`: `node test/sim.test.js`, `node test/lock.test.js`, `node build.js --check`, and, when Playwright is available, `node dev/check.js` and `node dev/sheet.js index.html dev/out/check`. Open the pictures.
+4. For `prototypes/kingston-3d/`: `node test/sim.test.js`, `node test/save.test.js`, `node test/lock.test.js`, `node build.js --check`, and, when Playwright is available, `node dev/check.js` and `node dev/sheet.js index.html <a folder outside the repository>/check`. Open the pictures.
 
 Then read the changed files against `neon-harbor/CLAUDE.md` and, for the 3D prototype, `src/contract.js`.
 

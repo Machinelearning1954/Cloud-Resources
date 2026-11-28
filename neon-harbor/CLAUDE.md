@@ -63,11 +63,14 @@ files that claim to be the original — that is fabrication.
    crew/radio references, a swapped third-party library). When you add a checker
    rule, add an attack for it there.
    If `prototypes/kingston-3d/` changed: `node build.js`, then the three Node tests in
-   its `test/` folder, then `node dev/check.js` (25 browser checks; needs Playwright). If
+   its `test/` folder, then `node dev/check.js` (34 browser checks; needs Playwright). If
    `main.js`, `save.js` or `lock.js` changed, also `node dev/lock-check.js` (21 checks).
+   If `world.js`, `people.js`, `props.js` or `lighting.js` changed, copy it over
+   `dev/baseline/` once the change is in: `node build.js --check` fails while they differ.
    Look at a screenshot of anything you changed on screen (`dev/shot.js`) before you
-   commit. Keep screenshots and other scratch output outside the repository: even an
-   untracked `prototypes/kingston-3d/dev/out/` folder makes `red_team.py` fail.
+   commit. Keep screenshots and other scratch output outside the repository:
+   `red_team.py` fails on any file under `prototypes/` that is not UTF-8 text (a PNG,
+   for example), even in an untracked folder such as `prototypes/kingston-3d/dev/out/`.
 3. Commit with an `NH-` prefixed message.
 4. Publish only via `NEON_REMOTE=git@github.com:<you>/neon-harbor.git bash tools/publish.sh`
    (it runs the doctor first; never publish red).
@@ -95,7 +98,10 @@ compiler line numbers, not assumptions.
   cannot be opened, record PENDING and request pasted content. Unverifiable media never
   adopts into architecture (ADR 0014 forensics).
 
-## Standing instructions from the user (ledger rows 87–97)
+## Standing rules from ledger rows 87–97
+
+Only the Money rule is the user's own instruction. The others are project rules that held
+when the requests in those rows asked for the opposite.
 
 - **Money.** No paid compute and no purchase without the user's go-ahead, each time, with
   a cap in credits ("Don't make me spend money"; "alert me before you purchased more
@@ -120,19 +126,31 @@ compiler line numbers, not assumptions.
 `prototypes/kingston-3d/brief.md` is the full description and `evidence/checklist.md` says
 what was checked and how. Since ledger row 86 it has gained:
 
-- **Rules** (`src/sim.js`, 26 rule tests): a grace period before heat climbs, three heat
+- **Rules** (`src/sim.js`, 29 rule tests): a grace period before heat climbs, three heat
   tiers, hunting at normal speed, a disguise rule with clotheslines, three hidden dub
-  plates and a clean-run note.
-- **A second runner**, Kemar 'Tide' Bailey (fictional), chosen on the title card.
+  plates and an unseen-run note.
+- **A second runner**, Tavian 'Leaf' Wedderburn (fictional; the name check is in row 93),
+  chosen on the title card before the first Start.
 - **Senses:** phone vibration, a camera jolt when seen, patrol hums and a circling riddim
   placed for headphones.
 - **Look:** calmer night colours, deeper day shadows, coconut carts, pickups, murals, shop
   signs, contact shading, a far-edge blur, printed shirts, a beard, clearer canerows.
 
-Still true: nobody has played it, nothing has been seen, heard or felt on a real phone,
-and this week's code has had no independent review. The widest view is near the budget
+Still true: nobody has played it, and nothing has been seen, heard or felt on a real phone.
+None of the code added since row 86 (NH-87 to NH-111) has had an independent review, and
+the main loop, the lock and the tooling never had one. The widest view is near the budget
 (176 of 220 draw calls, about 111,000 of 120,000 triangles): lighten the people before
 adding more.
+
+Two things that are easy to get wrong:
+
+- **The offline stills are not the game's lighting.** `dev/raytrace/render.py` has its own
+  light rig, so a change to `src/lighting.js` does not show in a ray-traced picture. Do not
+  tell the user a still "includes" a lighting change (row 87 records that mistake).
+- **A new character name needs its search first** (ADR 0051 item 3): the full name against
+  public figures, the nickname in a Jamaican-music context, and both against
+  `data/registries/`. Record the search in the ledger row. Row 93 records a name that
+  skipped this and had to be replaced.
 
 ## Repo map
 
@@ -154,8 +172,8 @@ tools/publish.sh            GitHub publish (doctor-gated, needs NEON_REMOTE)
 Config/DefaultEngine.ini    renderer settings; names verified, rendering untested (rows 69–70)
 tools/check_engine_config.py  11-check static test for that file; run it after any edit
 tools/check_net_budget.py   14-check arithmetic test of the multiplayer budgets in services.json
-tools/red_team.py           10 extra scans + 62 sabotage attacks on the checkers (ledger rows 75, 80);
-                            7 of the attacks and 4 of the checkers need Node and are skipped without it
+tools/red_team.py           10 extra scans + 63 sabotage attacks on the checkers (ledger rows 75, 80);
+                            8 of the attacks and 4 of the checkers need Node and are skipped without it
 prototypes/crate-run/       playable browser prototype of one mechanic (ledger row 76); throwaway,
                             never imported by game code; walls apply here too
 prototypes/kingston-3d/     the same block in real-time 3D in a browser (ledger rows 80, 86–93), with
